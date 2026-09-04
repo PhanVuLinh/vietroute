@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Định nghĩa các trạng thái của tài khoản
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// Bảng roles (Phân quyền)
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // Các role: ADMIN, MANAGER, DISPATCHER, DRIVER, WAREHOUSE_STAFF
+  description String?
+  users       User[]
+
+  @@map("roles")
+}
+
+// Bảng users (Người dùng)
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  password_hash String
+  full_name     String
+  phone         String?
+  role_id       String
+  role          Role       @relation(fields: [role_id], references: [id])
+  status        UserStatus @default(ACTIVE)
+  
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+
+  @@map("users")
+}
