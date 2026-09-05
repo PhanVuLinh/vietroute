@@ -7,7 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
   imports: [
     JwtModule.register({
       global: true,
-      secret: 'VietRoute_Secret_Key_123!@#',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
   ],
