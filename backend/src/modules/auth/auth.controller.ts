@@ -12,6 +12,8 @@ import {
 import { AuthService } from './auth.service.js';
 
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../../common/guards/roles.guard.js';
+import { Roles } from '../../common/decorators/roles.decorator.js';
 
 @Controller('auth')
 export class AuthController {
@@ -23,9 +25,10 @@ export class AuthController {
     return this.authService.login(signInDto.email, signInDto.password);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('profile')
-  getProfile(@Request() req: any) {
-    return req.user;
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get('admin-dashboard')
+  getAdminData(@Request() req: any) {
+    return { secretData: 'Đây là dữ liệu tuyệt mật chỉ Admin mới thấy' };
   }
 }
