@@ -14,3 +14,5 @@ export * from "./switch";
 export * from "./tabs";
 export * from "./textarea";
 export * from "./tooltip";
+export * from "./card";
+export * from "./alert";

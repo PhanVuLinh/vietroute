@@ -26,6 +26,15 @@ export interface AuthUser {
 }
 
 /**
+ * Thông tin gửi lên khi đăng nhập
+ */
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  remember_me?: boolean;
+}
+
+/**
  * Dữ liệu trả về khi đăng nhập thành công
  */
 export interface LoginResponseData {

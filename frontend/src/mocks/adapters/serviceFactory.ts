@@ -16,8 +16,9 @@ import type {
   Vehicle,
   Warehouse,
 } from "@/core/types/logistics";
-import type { AuthUser } from "@/core/types/auth";
+import type { AuthUser, LoginCredentials, LoginResponseData } from "@/core/types/auth";
 
+import { mockAuthService } from "../services/mockAuthService";
 import { mockUserService } from "../services/mockUserService";
 import { mockDriverService, type DriverFilterParams } from "../services/mockDriverService";
 import { mockVehicleService, type VehicleFilterParams } from "../services/mockVehicleService";
@@ -32,6 +33,11 @@ import { mockAnalyticsService } from "../services/mockAnalyticsService";
 // ==========================================
 // 1. API REAL SERVICES (Dùng khi VITE_USE_MOCK=false)
 // ==========================================
+const apiAuthService = {
+  login: (credentials: LoginCredentials) =>
+    httpClient.post<LoginResponseData | null>("/auth/login", credentials),
+};
+
 const apiUserService = {
   getUsers: () => httpClient.get<AuthUser[]>("/users"),
   getUserById: (id: string) => httpClient.get<AuthUser>(`/users/${id}`),
@@ -93,6 +99,7 @@ const apiAnalyticsService = {
 // ==========================================
 const isMock = ENV.USE_MOCK;
 
+export const authService = isMock ? mockAuthService : apiAuthService;
 export const userService = isMock ? mockUserService : apiUserService;
 export const driverService = isMock ? mockDriverService : apiDriverService;
 export const vehicleService = isMock ? mockVehicleService : apiVehicleService;
@@ -103,3 +110,4 @@ export const dispatchService = isMock ? mockDispatchService : apiDispatchService
 export const routeService = isMock ? mockRouteService : apiRouteService;
 export const notificationService = isMock ? mockNotificationService : apiNotificationService;
 export const analyticsService = isMock ? mockAnalyticsService : apiAnalyticsService;
+

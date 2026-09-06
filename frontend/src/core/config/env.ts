@@ -9,8 +9,8 @@ export const ENV = {
   /** Địa chỉ máy chủ Socket.IO cho luồng Realtime GPS */
   SOCKET_URL: import.meta.env.VITE_SOCKET_URL || "http://localhost:3000",
 
-  /** Chế độ dùng dữ liệu giả lập (Mock Data) khi Backend chưa kết nối */
-  USE_MOCK: import.meta.env.VITE_USE_MOCK === "true" || true,
+  /** Chế độ dùng dữ liệu giả lập (Mock Data) khi Backend chưa kết nối (Mặc định bật) */
+  USE_MOCK: import.meta.env.VITE_USE_MOCK !== "false",
 
   /** Thời gian timeout mặc định cho request HTTP (15 giây) */
   API_TIMEOUT_MS: 15000,
