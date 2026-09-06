@@ -1,0 +1,121 @@
+import type { AuthUser } from "@/core/types/auth";
+
+export const MOCK_USERS: AuthUser[] = [
+  // 1. ADMIN
+  {
+    id: "usr-admin-01",
+    email: "admin@vietroute.vn",
+    full_name: "Phan Vũ Linh",
+    phone: "0901234567",
+    role: "ADMIN",
+    status: "ACTIVE",
+  },
+  // 2. MANAGER
+  {
+    id: "usr-manager-01",
+    email: "manager.hanoi@vietroute.vn",
+    full_name: "Hoàng Minh Tuấn",
+    phone: "0912345678",
+    role: "MANAGER",
+    status: "ACTIVE",
+  },
+  {
+    id: "usr-manager-02",
+    email: "manager.hcm@vietroute.vn",
+    full_name: "Đỗ Thanh Hằng",
+    phone: "0912345679",
+    role: "MANAGER",
+    status: "ACTIVE",
+  },
+  // 3. DISPATCHER
+  {
+    id: "usr-dispatch-01",
+    email: "dieuphoi@vietroute.vn",
+    full_name: "Nguyễn Văn Hùng",
+    phone: "0987654321",
+    role: "DISPATCHER",
+    status: "ACTIVE",
+  },
+  {
+    id: "usr-dispatch-02",
+    email: "dieuphoi.hcm@vietroute.vn",
+    full_name: "Vũ Phương Nam",
+    phone: "0987654322",
+    role: "DISPATCHER",
+    status: "ACTIVE",
+  },
+  {
+    id: "usr-dispatch-03",
+    email: "dieuphoi.danang@vietroute.vn",
+    full_name: "Trần Bảo Long",
+    phone: "0987654323",
+    role: "DISPATCHER",
+    status: "ACTIVE",
+  },
+  // 4. WAREHOUSE_STAFF
+  {
+    id: "usr-wh-01",
+    email: "kho.longbien@vietroute.vn",
+    full_name: "Lê Văn Cường",
+    phone: "0933112233",
+    role: "WAREHOUSE_STAFF",
+    status: "ACTIVE",
+  },
+  {
+    id: "usr-wh-02",
+    email: "kho.catlai@vietroute.vn",
+    full_name: "Ngô Đức Trí",
+    phone: "0933112234",
+    role: "WAREHOUSE_STAFF",
+    status: "ACTIVE",
+  },
+  {
+    id: "usr-wh-03",
+    email: "kho.hoacam@vietroute.vn",
+    full_name: "Trịnh Thúy Vy",
+    phone: "0933112235",
+    role: "WAREHOUSE_STAFF",
+    status: "ACTIVE",
+  },
+  // 5. DRIVERS (Tài xế có tài khoản)
+  {
+    id: "usr-drv-01",
+    email: "taixe.an@vietroute.vn",
+    full_name: "Nguyễn Văn An",
+    phone: "0971001001",
+    role: "DRIVER",
+    status: "ACTIVE",
+  },
+  {
+    id: "usr-drv-02",
+    email: "taixe.hoang@vietroute.vn",
+    full_name: "Trần Minh Hoàng",
+    phone: "0971001002",
+    role: "DRIVER",
+    status: "ACTIVE",
+  },
+  {
+    id: "usr-drv-03",
+    email: "taixe.binh@vietroute.vn",
+    full_name: "Lê Văn Bình",
+    phone: "0971001003",
+    role: "DRIVER",
+    status: "ACTIVE",
+  },
+  {
+    id: "usr-drv-04",
+    email: "taixe.huy@vietroute.vn",
+    full_name: "Phạm Quốc Huy",
+    phone: "0971001004",
+    role: "DRIVER",
+    status: "ACTIVE",
+  },
+  {
+    id: "usr-drv-05",
+    email: "taixe.tung@vietroute.vn",
+    full_name: "Võ Thanh Tùng",
+    phone: "0971001005",
+    role: "DRIVER",
+    status: "ACTIVE",
+  },
+];
