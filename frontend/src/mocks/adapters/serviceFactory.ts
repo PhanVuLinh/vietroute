@@ -64,6 +64,7 @@ const apiOrderService = {
   getOrders: (params?: OrderFilterParams) => httpClient.get<ApiPaginatedResponse<Order>["data"]>("/orders", { params }) as unknown as Promise<ApiPaginatedResponse<Order>>,
   getOrderById: (id: string) => httpClient.get<Order>(`/orders/${id}`),
   updateOrderStatus: (id: string, status: OrderStatus) => httpClient.patch<Order>(`/orders/${id}/status`, { status }),
+  createOrder: (data: unknown) => httpClient.post<Order>("/orders", data),
 };
 
 const apiDeliveryService = {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
@@ -46,7 +47,10 @@ export const DispatchPage: React.FC = () => {
   } = useOrderFilter(orders);
 
   // 3. UI State
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const urlOrderId = searchParams.get("orderId");
+
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(urlOrderId);
   const [selectedCandidate, setSelectedCandidate] = useState<DriverCandidate | null>(null);
   const [orderDetailToView, setOrderDetailToView] = useState<Order | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -54,6 +58,13 @@ export const DispatchPage: React.FC = () => {
   const [mobileTab, setMobileTab] = useState<"ORDERS" | "MAP" | "DRIVERS">("ORDERS");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeSummaryFilter, setActiveSummaryFilter] = useState<string>("ALL");
+
+  // Đồng bộ urlOrderId nếu param thay đổi
+  useEffect(() => {
+    if (urlOrderId) {
+      setSelectedOrderId(urlOrderId);
+    }
+  }, [urlOrderId]);
 
   // Đơn hàng đang được chọn (Tự động chọn đơn đầu tiên cần xử lý nếu chưa chọn)
   const selectedOrder = useMemo(() => {

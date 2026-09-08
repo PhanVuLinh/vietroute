@@ -101,4 +101,73 @@ export const mockOrderService = {
       data: { ...order },
     };
   },
+
+  /** Tạo đơn hàng mới */
+  async createOrder(
+    input: {
+      receiverName: string;
+      receiverPhone: string;
+      receiverAddress: string;
+      warehouseId: string;
+      totalWeight: number;
+      totalVolume?: number;
+      itemCount?: number;
+      codAmount?: number;
+      priority?: OrderPriority;
+      deliveryWindowEnd: string;
+      receiverLatitude?: number;
+      receiverLongitude?: number;
+    },
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<Order>> {
+    await simulateLatency(options);
+
+    const now = new Date().toISOString();
+    const newId = `ord-${Date.now()}`;
+    const newCode = `VR-2026-${(MOCK_ORDERS.length + 1).toString().padStart(3, "0")}`;
+
+    const itemsCount = input.itemCount || 1;
+    const itemWeight = Math.round((input.totalWeight / itemsCount) * 10) / 10;
+
+    const newOrder: Order = {
+      id: newId,
+      orderCode: newCode,
+      customerId: "cus-hn-01",
+      warehouseId: input.warehouseId,
+      receiverName: input.receiverName,
+      receiverPhone: input.receiverPhone,
+      receiverAddress: input.receiverAddress,
+      receiverLatitude: input.receiverLatitude || 21.0285,
+      receiverLongitude: input.receiverLongitude || 105.8544,
+      totalWeight: input.totalWeight,
+      totalVolume: input.totalVolume || 0.05,
+      codAmount: input.codAmount || 0,
+      priority: input.priority || "NORMAL",
+      deliveryWindowStart: now,
+      deliveryWindowEnd: input.deliveryWindowEnd,
+      status: "PENDING",
+      createdAt: now,
+      updatedAt: now,
+      items: Array.from({ length: itemsCount }).map((_, idx) => ({
+        id: `item-${newId}-${idx + 1}`,
+        orderId: newId,
+        productName: `Kiện hàng bưu phẩm số ${idx + 1}`,
+        quantity: 1,
+        weight: itemWeight,
+        volume: 0.02,
+        isFragile: false,
+        isLiquid: false,
+        requiresSpecialHandling: false,
+      })),
+    };
+
+    MOCK_ORDERS.unshift(newOrder);
+
+    return {
+      success: true,
+      statusCode: 201,
+      message: "Tạo đơn hàng mới thành công",
+      data: newOrder,
+    };
+  },
 };
