@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Trash2,
   MapPin,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -36,6 +37,7 @@ interface RouteMobileCardsProps {
   onViewDetail: (route: EnrichedRoute) => void;
   onFocusMap?: (route: EnrichedRoute) => void;
   onEdit: (route: EnrichedRoute) => void;
+  onDuplicate?: (route: EnrichedRoute) => void;
   onUpdateStatus: (id: string, status: RouteStatus) => void;
   onDelete: (route: EnrichedRoute) => void;
 }
@@ -47,6 +49,7 @@ export const RouteMobileCards: React.FC<RouteMobileCardsProps> = ({
   onViewDetail,
   onFocusMap,
   onEdit,
+  onDuplicate,
   onUpdateStatus,
   onDelete,
 }) => {
@@ -139,6 +142,16 @@ export const RouteMobileCards: React.FC<RouteMobileCardsProps> = ({
                       <Edit className="h-3.5 w-3.5 text-amber-500" />
                       <span>Chỉnh sửa tuyến</span>
                     </DropdownMenuItem>
+
+                    {onDuplicate && (
+                      <DropdownMenuItem
+                        onClick={() => onDuplicate(route)}
+                        className="gap-2 text-xs text-blue-600 dark:text-blue-400 font-medium cursor-pointer"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Nhân bản tuyến này</span>
+                      </DropdownMenuItem>
+                    )}
 
                     <DropdownMenuSeparator />
 

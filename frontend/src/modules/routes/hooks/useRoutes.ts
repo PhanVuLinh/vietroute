@@ -5,7 +5,9 @@ import {
   driverService,
   vehicleService,
   warehouseService,
+  orderService,
 } from "@/mocks/adapters/serviceFactory";
+import { MOCK_ROUTE_TEMPLATES, type RouteTemplate } from "@/mocks/data/routeTemplates";
 import type {
   Route,
   RouteStatus,
@@ -14,6 +16,7 @@ import type {
   Driver,
   Vehicle,
   Warehouse,
+  Order,
 } from "@/core/types/logistics";
 
 export interface EnrichedRoute extends Route {
@@ -75,12 +78,34 @@ export function useRoutes() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const rawRoutes = useMemo(() => routesQuery.data || [], [routesQuery.data]);
-  const rawDrivers = useMemo(() => driversQuery.data || [], [driversQuery.data]);
-  const rawVehicles = useMemo(() => vehiclesQuery.data || [], [vehiclesQuery.data]);
-  const rawWarehouses = useMemo(() => warehousesQuery.data || [], [warehousesQuery.data]);
+  // 5. Fetch Orders để phục vụ gom đơn tạo tuyến
+  const ordersQuery = useQuery<Order[]>({
+    queryKey: ["orders", "list"],
+    queryFn: async () => {
+      const res = await orderService.getOrders({ pageSize: 100 });
+      const data = res.data as any;
+      if (Array.isArray(data)) return data;
+      if (data?.items && Array.isArray(data.items)) return data.items;
+      return [];
+    },
+    staleTime: 60 * 1000,
+  });
 
-  // 5. Kết hợp & Bổ sung thông tin chi tiết cho từng tuyến
+  const rawRoutes = useMemo(() => (Array.isArray(routesQuery.data) ? routesQuery.data : []), [routesQuery.data]);
+  const rawDrivers = useMemo(() => (Array.isArray(driversQuery.data) ? driversQuery.data : []), [driversQuery.data]);
+  const rawVehicles = useMemo(() => (Array.isArray(vehiclesQuery.data) ? vehiclesQuery.data : []), [vehiclesQuery.data]);
+  const rawWarehouses = useMemo(() => (Array.isArray(warehousesQuery.data) ? warehousesQuery.data : []), [warehousesQuery.data]);
+  const rawOrders = useMemo(() => (Array.isArray(ordersQuery.data) ? ordersQuery.data : []), [ordersQuery.data]);
+
+  // Lọc các đơn hàng chưa giao (PENDING hoặc CONFIRMED)
+  const pendingOrders = useMemo(() => {
+    const list = Array.isArray(rawOrders) ? rawOrders : [];
+    return list.filter(
+      (o) => o.status === "PENDING" || o.status === "CONFIRMED" || o.status === "ASSIGNED"
+    );
+  }, [rawOrders]);
+
+  // 6. Kết hợp & Bổ sung thông tin chi tiết cho từng tuyến
   const enrichedRoutes: EnrichedRoute[] = useMemo(() => {
     return rawRoutes.map((route) => {
       const driver = rawDrivers.find((d) => d.id === route.driverId);
@@ -107,25 +132,19 @@ export function useRoutes() {
     });
   }, [rawRoutes, rawDrivers, rawVehicles, rawWarehouses]);
 
-  // 6. Lọc danh sách tuyến đường
+  // 7. Lọc danh sách tuyến đường
   const filteredRoutes = useMemo(() => {
     return enrichedRoutes.filter((route) => {
-      // Lọc theo Trạng thái
       if (selectedStatus !== "ALL" && route.status !== selectedStatus) {
         return false;
       }
-
-      // Lọc theo Kho xuất phát
       if (selectedWarehouseId !== "ALL" && route.warehouseId !== selectedWarehouseId) {
         return false;
       }
-
-      // Lọc theo Tài xế
       if (selectedDriverId !== "ALL" && route.driverId !== selectedDriverId) {
         return false;
       }
 
-      // Tìm kiếm theo Mã tuyến, Tên tuyến, Tài xế, Biển số xe, Địa chỉ điểm dừng
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchCode = route.routeCode.toLowerCase().includes(q);
@@ -159,13 +178,13 @@ export function useRoutes() {
     });
   }, [enrichedRoutes, selectedStatus, selectedWarehouseId, selectedDriverId, searchQuery]);
 
-  // 7. Tuyến đang được chọn
+  // 8. Tuyến đang được chọn
   const selectedRoute = useMemo(() => {
     if (!selectedRouteId) return null;
     return enrichedRoutes.find((r) => r.id === selectedRouteId) || null;
   }, [enrichedRoutes, selectedRouteId]);
 
-  // 8. Tính toán KPI tổng quan tuyến đường
+  // 9. Tính toán KPI tổng quan tuyến đường
   const stats = useMemo(() => {
     const total = enrichedRoutes.length;
     const active = enrichedRoutes.filter((r) => r.status === "ACTIVE").length;
@@ -205,7 +224,7 @@ export function useRoutes() {
     };
   }, [enrichedRoutes]);
 
-  // 9. Mutations
+  // 10. Mutations
   const createRouteMutation = useMutation({
     mutationFn: async (newRoute: Omit<Route, "id">) => {
       const res = await routeService.createRoute(newRoute);
@@ -270,6 +289,44 @@ export function useRoutes() {
     },
   });
 
+  // Mutation Nhân bản tuyến đường (Duplicate Route)
+  const duplicateRouteMutation = useMutation({
+    mutationFn: async (routeToClone: EnrichedRoute) => {
+      const newCode = `${routeToClone.routeCode}-CPY${Math.floor(10 + Math.random() * 90)}`;
+      const clonedStops = (routeToClone.stops || []).map((s, idx) => ({
+        ...s,
+        id: `stop-${Date.now()}-${idx + 1}`,
+        status: "PENDING" as RouteStopStatus,
+        actualArrival: undefined,
+      }));
+
+      const newRoute: Omit<Route, "id"> = {
+        routeCode: newCode,
+        routeName: `${routeToClone.routeName || routeToClone.routeCode} (Nhân bản)`,
+        driverId: routeToClone.driverId,
+        vehicleId: routeToClone.vehicleId,
+        warehouseId: routeToClone.warehouseId,
+        totalDistance: routeToClone.totalDistance,
+        estimatedDuration: routeToClone.estimatedDuration,
+        fuelEstLiters: routeToClone.fuelEstLiters,
+        tollFeeEstVND: routeToClone.tollFeeEstVND,
+        totalWeightKg: routeToClone.totalWeightKg,
+        totalVolumeM3: routeToClone.totalVolumeM3,
+        trafficAlerts: routeToClone.trafficAlerts,
+        polyline: routeToClone.polyline,
+        status: "PLANNED",
+        stops: clonedStops,
+      };
+
+      const res = await routeService.createRoute(newRoute);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      queryClient.invalidateQueries({ queryKey: ["dispatch"] });
+    },
+  });
+
   const optimizeStopsMutation = useMutation({
     mutationFn: async ({
       originCoords,
@@ -293,6 +350,9 @@ export function useRoutes() {
     drivers: rawDrivers,
     vehicles: rawVehicles,
     warehouses: rawWarehouses,
+    orders: rawOrders,
+    pendingOrders,
+    routeTemplates: MOCK_ROUTE_TEMPLATES,
     isLoading: routesQuery.isLoading,
     isError: routesQuery.isError,
     searchQuery,
@@ -314,6 +374,8 @@ export function useRoutes() {
     isUpdatingStopStatus: updateStopStatusMutation.isPending,
     deleteRoute: deleteRouteMutation.mutateAsync,
     isDeleting: deleteRouteMutation.isPending,
+    duplicateRoute: duplicateRouteMutation.mutateAsync,
+    isDuplicating: duplicateRouteMutation.isPending,
     optimizeStops: optimizeStopsMutation.mutateAsync,
     isOptimizing: optimizeStopsMutation.isPending,
   };

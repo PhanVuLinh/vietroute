@@ -41,6 +41,9 @@ export const RoutesPage: React.FC = () => {
     drivers,
     vehicles,
     warehouses,
+    orders,
+    pendingOrders,
+    routeTemplates,
     isLoading,
     isError,
     searchQuery,
@@ -57,6 +60,7 @@ export const RoutesPage: React.FC = () => {
     updateRouteStatus,
     updateStopStatus,
     deleteRoute,
+    duplicateRoute,
     optimizeStops,
   } = useRoutes();
 
@@ -80,6 +84,11 @@ export const RoutesPage: React.FC = () => {
   const handleEdit = (route: EnrichedRoute) => {
     setEditingRoute(route);
     setIsDialogOpen(true);
+  };
+
+  // Nhân bản tuyến đường (Duplicate)
+  const handleDuplicate = async (route: EnrichedRoute) => {
+    await duplicateRoute(route);
   };
 
   // Mở Modal lập tuyến mới
@@ -264,6 +273,7 @@ export const RoutesPage: React.FC = () => {
                     onViewDetail={handleViewDetail}
                     onFocusMap={handleFocusMap}
                     onEdit={handleEdit}
+                    onDuplicate={handleDuplicate}
                     onUpdateStatus={handleUpdateRouteStatus}
                     onDelete={handleDelete}
                     onAddNew={handleOpenCreate}
@@ -289,6 +299,7 @@ export const RoutesPage: React.FC = () => {
                     onViewDetail={handleViewDetail}
                     onFocusMap={handleFocusMap}
                     onEdit={handleEdit}
+                    onDuplicate={handleDuplicate}
                     onUpdateStatus={handleUpdateRouteStatus}
                     onDelete={handleDelete}
                   />
@@ -394,6 +405,7 @@ export const RoutesPage: React.FC = () => {
                       onViewDetail={handleViewDetail}
                       onFocusMap={handleFocusMap}
                       onEdit={handleEdit}
+                      onDuplicate={handleDuplicate}
                       onUpdateStatus={handleUpdateRouteStatus}
                       onDelete={handleDelete}
                       onAddNew={handleOpenCreate}
@@ -419,6 +431,7 @@ export const RoutesPage: React.FC = () => {
                       onViewDetail={handleViewDetail}
                       onFocusMap={handleFocusMap}
                       onEdit={handleEdit}
+                      onDuplicate={handleDuplicate}
                       onUpdateStatus={handleUpdateRouteStatus}
                       onDelete={handleDelete}
                     />
@@ -451,6 +464,8 @@ export const RoutesPage: React.FC = () => {
         warehouses={warehouses}
         drivers={drivers}
         vehicles={vehicles}
+        pendingOrders={pendingOrders}
+        routeTemplates={routeTemplates}
       />
     </PageContainer>
   );

@@ -30,6 +30,7 @@ interface RouteTableProps {
   onViewDetail: (route: EnrichedRoute) => void;
   onFocusMap?: (route: EnrichedRoute) => void;
   onEdit: (route: EnrichedRoute) => void;
+  onDuplicate?: (route: EnrichedRoute) => void;
   onUpdateStatus: (id: string, status: RouteStatus) => void;
   onDelete: (route: EnrichedRoute) => void;
   onAddNew?: () => void;
@@ -59,6 +60,7 @@ export const RouteTable: React.FC<RouteTableProps> = ({
   onViewDetail,
   onFocusMap,
   onEdit,
+  onDuplicate,
   onUpdateStatus,
   onDelete,
   onAddNew,
@@ -348,6 +350,7 @@ export const RouteTable: React.FC<RouteTableProps> = ({
                   onViewDetail={onViewDetail}
                   onFocusMap={onFocusMap}
                   onEdit={onEdit}
+                  onDuplicate={onDuplicate}
                   onUpdateStatus={onUpdateStatus}
                   onDelete={onDelete}
                 />

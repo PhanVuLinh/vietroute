@@ -15,6 +15,7 @@ import {
   MapPin,
   Building2,
   Play,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -39,6 +40,7 @@ interface RouteTableRowProps {
   onViewDetail: (route: EnrichedRoute) => void;
   onFocusMap?: (route: EnrichedRoute) => void;
   onEdit: (route: EnrichedRoute) => void;
+  onDuplicate?: (route: EnrichedRoute) => void;
   onUpdateStatus: (id: string, status: RouteStatus) => void;
   onDelete: (route: EnrichedRoute) => void;
 }
@@ -50,6 +52,7 @@ export const RouteTableRow: React.FC<RouteTableRowProps> = ({
   onViewDetail,
   onFocusMap,
   onEdit,
+  onDuplicate,
   onUpdateStatus,
   onDelete,
 }) => {
@@ -225,6 +228,16 @@ export const RouteTableRow: React.FC<RouteTableRowProps> = ({
               <Edit className="h-3.5 w-3.5 text-amber-500" />
               <span>Chỉnh sửa thông số</span>
             </DropdownMenuItem>
+
+            {onDuplicate && (
+              <DropdownMenuItem
+                onClick={() => onDuplicate(route)}
+                className="gap-2 cursor-pointer text-xs text-blue-600 dark:text-blue-400 font-medium"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                <span>Nhân bản tuyến này</span>
+              </DropdownMenuItem>
+            )}
 
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="gap-2 text-xs cursor-pointer">
