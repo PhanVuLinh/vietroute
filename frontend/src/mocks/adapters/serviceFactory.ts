@@ -62,8 +62,12 @@ const apiVehicleService = {
 };
 
 const apiWarehouseService = {
-  getWarehouses: (params?: { city?: string }) => httpClient.get<Warehouse[]>("/warehouses", { params }),
+  getWarehouses: (params?: any) => httpClient.get<Warehouse[]>("/warehouses", { params }),
   getWarehouseById: (id: string) => httpClient.get<Warehouse>(`/warehouses/${id}`),
+  createWarehouse: (data: Omit<Warehouse, "id">) => httpClient.post<Warehouse>("/warehouses", data),
+  updateWarehouse: (id: string, data: Partial<Warehouse>) => httpClient.patch<Warehouse>(`/warehouses/${id}`, data),
+  updateWarehouseStatus: (id: string, status: string) => httpClient.patch<Warehouse>(`/warehouses/${id}/status`, { status }),
+  deleteWarehouse: (id: string) => httpClient.delete<boolean>(`/warehouses/${id}`),
 };
 
 const apiOrderService = {

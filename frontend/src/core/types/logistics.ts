@@ -198,12 +198,22 @@ export interface Vehicle {
 }
 
 /**
+ * Phân loại Kho bãi & Trung tâm trung chuyển (Hub)
+ */
+export type WarehouseType = "CENTRAL_HUB" | "TRANSIT_HUB" | "LAST_MILE_HUB";
+export type WarehouseRegion = "NORTH" | "CENTRAL" | "SOUTH";
+export type WarehouseStorageType = "DRY" | "COLD" | "MIXED";
+export type WarehouseStatus = "ACTIVE" | "MAINTENANCE" | "FULL";
+
+/**
  * Kho bãi & Trung tâm trung chuyển (Hub)
  */
 export interface Warehouse {
   id: string;
   code: string;
   name: string;
+  type?: WarehouseType;
+  region?: WarehouseRegion;
   address: string;
   city: string;
   latitude: number;
@@ -212,7 +222,15 @@ export interface Warehouse {
   closingTime: string; // "22:00"
   capacity: number; // tấn
   usedCapacity: number; // tấn
-  status: "ACTIVE" | "MAINTENANCE" | "FULL";
+  areaSqM?: number; // Diện tích sàn m²
+  totalPallets?: number; // Tổng sức chứa pallet
+  usedPallets?: number; // Pallet đang sử dụng
+  dockDoors?: number; // Số cổng xuất nhập bãi
+  storageType?: WarehouseStorageType; // Loại hình lưu kho
+  managerName?: string; // Người phụ trách
+  managerPhone?: string; // Số điện thoại
+  managerEmail?: string; // Email liên hệ
+  status: WarehouseStatus;
 }
 
 /**
