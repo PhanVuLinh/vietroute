@@ -37,7 +37,7 @@ export const AppLayout: React.FC = () => {
         </div>
 
         {/* Nội dung trang cuộn độc lập */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">
+        <main className="flex-1 flex flex-col min-h-0 overflow-y-auto p-4 sm:p-6 bg-background">
           <Outlet />
         </main>
       </div>

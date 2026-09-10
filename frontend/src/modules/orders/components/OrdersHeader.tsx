@@ -21,10 +21,10 @@ export const OrdersHeader: React.FC<OrdersHeaderProps> = ({
   const handleCreate = onOpenCreateOrder || onCreateOrder;
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border/60">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-border/60">
       {/* 1. Tiêu đề & Mô tả */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
           Quản lý đơn hàng
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">

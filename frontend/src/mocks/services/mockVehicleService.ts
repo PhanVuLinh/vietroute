@@ -16,7 +16,7 @@ export const mockVehicleService = {
     options?: MockServiceOptions
   ): Promise<ApiResponse<Vehicle[]>> {
     await simulateLatency(options);
-    let result = [...MOCK_VEHICLES];
+    let result = MOCK_VEHICLES.map((v) => ({ ...v }));
 
     if (params?.type) {
       result = result.filter((v) => v.type === params.type);
@@ -51,7 +51,7 @@ export const mockVehicleService = {
       success: Boolean(vehicle),
       statusCode: vehicle ? 200 : 404,
       message: vehicle ? "Lấy thông tin phương tiện thành công" : "Không tìm thấy phương tiện",
-      data: vehicle,
+      data: vehicle ? { ...vehicle } : null,
     };
   },
 
@@ -62,8 +62,8 @@ export const mockVehicleService = {
     options?: MockServiceOptions
   ): Promise<ApiResponse<Vehicle | null>> {
     await simulateLatency(options);
-    const vehicle = MOCK_VEHICLES.find((v) => v.id === id);
-    if (!vehicle) {
+    const index = MOCK_VEHICLES.findIndex((v) => v.id === id);
+    if (index === -1) {
       return {
         success: false,
         statusCode: 404,
@@ -72,12 +72,16 @@ export const mockVehicleService = {
       };
     }
 
-    vehicle.status = status;
+    MOCK_VEHICLES[index] = {
+      ...MOCK_VEHICLES[index],
+      status,
+    };
+
     return {
       success: true,
       statusCode: 200,
       message: `Đã cập nhật trạng thái phương tiện sang ${status}`,
-      data: { ...vehicle },
+      data: { ...MOCK_VEHICLES[index] },
     };
   },
 

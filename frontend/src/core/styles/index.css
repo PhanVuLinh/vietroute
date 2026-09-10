@@ -171,6 +171,25 @@
     background: hsl(var(--muted-foreground) / 0.5);
   }
 
+  /* MapLibre Map and Canvas Sizing */
+  .maplibregl-map {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    inset: 0 !important;
+  }
+  .maplibregl-canvas {
+    width: 100% !important;
+    height: 100% !important;
+    outline: none;
+  }
+  .maplibregl-canvas-container {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    inset: 0 !important;
+  }
+
   /* MapLibre Popup Theme Consistency */
   .maplibregl-popup-content {
     background: hsl(var(--card)) !important;

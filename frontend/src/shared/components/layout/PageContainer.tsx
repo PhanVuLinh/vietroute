@@ -24,7 +24,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
     <div
       className={cn(
         "flex flex-col w-full",
-        fullHeight ? "h-full overflow-hidden" : "min-h-full space-y-6 pb-8",
+        fullHeight ? "h-full space-y-4" : "min-h-full space-y-6 pb-8",
         className
       )}
     >
@@ -33,7 +33,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
 
       {/* Page Header */}
       {(title || action) && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-border/60 shrink-0">
           <div>
             {title && <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{title}</h1>}
             {subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
@@ -43,7 +43,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
       )}
 
       {/* Page Content */}
-      <div className={cn("w-full", fullHeight ? "flex-1 overflow-hidden" : "space-y-6")}>
+      <div className={cn("w-full", fullHeight ? "flex-1 min-h-0 overflow-hidden" : "space-y-6")}>
         {children}
       </div>
     </div>

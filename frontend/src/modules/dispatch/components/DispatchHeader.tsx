@@ -18,7 +18,7 @@ export const DispatchHeader: React.FC<DispatchHeaderProps> = ({
   isRefreshing,
 }) => {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border/60">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-border/60">
       {/* 1. Tiêu đề & Mô tả */}
       <div>
         <div className="flex items-center gap-2.5">

@@ -124,7 +124,11 @@ export function useDrivers() {
       const res = await driverService.updateDriverStatus(id, status);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (updatedDriver) => {
+      queryClient.setQueryData<Driver[]>(["drivers", "list"], (old) => {
+        if (!old || !updatedDriver) return old;
+        return old.map((d) => (d.id === updatedDriver.id ? updatedDriver : d));
+      });
       queryClient.invalidateQueries({ queryKey: ["drivers"] });
       queryClient.invalidateQueries({ queryKey: ["dispatch"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });

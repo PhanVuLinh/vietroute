@@ -123,7 +123,11 @@ export function useVehicles() {
       const res = await vehicleService.updateVehicleStatus(id, status);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (updatedVehicle) => {
+      queryClient.setQueryData<Vehicle[]>(["vehicles", "list"], (old) => {
+        if (!old || !updatedVehicle) return old;
+        return old.map((v) => (v.id === updatedVehicle.id ? updatedVehicle : v));
+      });
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       queryClient.invalidateQueries({ queryKey: ["dispatch"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });

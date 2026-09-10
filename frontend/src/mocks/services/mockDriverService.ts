@@ -15,7 +15,7 @@ export const mockDriverService = {
     options?: MockServiceOptions
   ): Promise<ApiResponse<Driver[]>> {
     await simulateLatency(options);
-    let result = [...MOCK_DRIVERS];
+    let result = MOCK_DRIVERS.map((d) => ({ ...d }));
 
     if (params?.status) {
       result = result.filter((d) => d.status === params.status);
@@ -46,7 +46,7 @@ export const mockDriverService = {
       success: Boolean(driver),
       statusCode: driver ? 200 : 404,
       message: driver ? "Lấy thông tin tài xế thành công" : "Không tìm thấy tài xế",
-      data: driver,
+      data: driver ? { ...driver } : null,
     };
   },
 
@@ -57,8 +57,8 @@ export const mockDriverService = {
     options?: MockServiceOptions
   ): Promise<ApiResponse<Driver | null>> {
     await simulateLatency(options);
-    const driver = MOCK_DRIVERS.find((d) => d.id === id);
-    if (!driver) {
+    const index = MOCK_DRIVERS.findIndex((d) => d.id === id);
+    if (index === -1) {
       return {
         success: false,
         statusCode: 404,
@@ -67,12 +67,16 @@ export const mockDriverService = {
       };
     }
 
-    driver.status = status;
+    MOCK_DRIVERS[index] = {
+      ...MOCK_DRIVERS[index],
+      status,
+    };
+
     return {
       success: true,
       statusCode: 200,
       message: `Đã cập nhật trạng thái tài xế sang ${status}`,
-      data: { ...driver },
+      data: { ...MOCK_DRIVERS[index] },
     };
   },
 
