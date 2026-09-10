@@ -58,7 +58,7 @@ export const DeliveryPerformance: React.FC<DeliveryPerformanceProps> = ({
         .reduce((sum, curr) => sum + curr.percentage, 0);
       const strokeDasharray = `${(item.count / totalDistribution) * circumference} ${circumference}`;
       const strokeDashoffset = -(priorPercent / 100) * circumference;
-      const color = statusColors[item.status] || { stroke: "#94a3b8", bg: "bg-slate-400", text: "text-slate-500" };
+      const color = statusColors[item.status] || { stroke: "var(--color-muted-foreground, #94a3b8)", bg: "bg-muted-foreground", text: "text-muted-foreground" };
 
       return {
         ...item,
@@ -294,8 +294,8 @@ export const DeliveryPerformance: React.FC<DeliveryPerformanceProps> = ({
                 <div className="flex-1 w-full space-y-1.5 text-xs">
                   {statusDistribution.map((item) => {
                     const color = statusColors[item.status] || {
-                      bg: "bg-slate-400",
-                      text: "text-slate-500",
+                      bg: "bg-muted-foreground",
+                      text: "text-muted-foreground",
                     };
                     const isHovered = hoveredStatus?.status === item.status;
 

@@ -43,7 +43,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
@@ -142,9 +142,17 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Số liệu trong bảng sử dụng tabular figures */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 
   /* Định dạng thanh cuộn giao diện vận hành */
@@ -161,5 +169,44 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* MapLibre Popup Theme Consistency */
+  .maplibregl-popup-content {
+    background: hsl(var(--card)) !important;
+    color: hsl(var(--card-foreground)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2) !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  .maplibregl-popup-tip {
+    border-top-color: hsl(var(--card)) !important;
+    border-bottom-color: hsl(var(--card)) !important;
+  }
+  .maplibregl-popup-close-button {
+    color: hsl(var(--muted-foreground)) !important;
+    padding: 2px 6px !important;
+  }
+  .maplibregl-popup-close-button:hover {
+    color: hsl(var(--foreground)) !important;
+    background: transparent !important;
+  }
+}
+
+@layer utilities {
+  /* Smooth page transitions */
+  .page-enter {
+    animation: pageEnter 0.25s ease-out;
+  }
+  @keyframes pageEnter {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

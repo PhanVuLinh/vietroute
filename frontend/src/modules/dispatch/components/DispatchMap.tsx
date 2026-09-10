@@ -114,18 +114,18 @@ export const DispatchMap: React.FC<DispatchMapProps> = ({
             <svg class="vehicle-arrow w-3.5 h-3.5 transition-transform duration-300" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(${telemetry.bearing}deg)">
               <polygon points="12,2 19,21 12,17 5,21" />
             </svg>
-            <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ${statusStyle.bg} border-2 border-white dark:border-slate-900"></span>
+            <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ${statusStyle.bg} border-2 border-card"></span>
           </div>
         `;
 
         const popupContent = document.createElement("div");
-        popupContent.className = "p-2 min-w-[180px] text-xs font-sans space-y-1 text-slate-800 dark:text-slate-100";
+        popupContent.className = "p-2 min-w-[180px] text-xs font-sans space-y-1 text-foreground";
         popupContent.innerHTML = `
-          <div class="font-bold text-slate-900 dark:text-white border-b pb-1 flex justify-between">
+          <div class="font-bold text-foreground border-b border-border pb-1 flex justify-between">
             <span>${telemetry.driverName}</span>
             <span class="text-[10px] text-primary">${telemetry.plateNumber}</span>
           </div>
-          <div class="text-[11px] text-slate-500">Vận tốc: <b>${telemetry.speedKmH} km/h</b></div>
+          <div class="text-[11px] text-muted-foreground">Vận tốc: <b>${telemetry.speedKmH} km/h</b></div>
           <div class="text-[10px] text-emerald-600 font-semibold">${statusStyle.label}</div>
         `;
 
@@ -165,9 +165,9 @@ export const DispatchMap: React.FC<DispatchMapProps> = ({
         `;
 
         const popup = new Popup({ offset: 12 }).setHTML(`
-          <div class="p-1.5 text-xs text-slate-900 dark:text-white font-sans">
+          <div class="p-1.5 text-xs text-foreground font-sans">
             <div class="font-bold">${wh.name}</div>
-            <div class="text-[11px] text-slate-500">Kho xuất phát</div>
+            <div class="text-[11px] text-muted-foreground">Kho xuất phát</div>
           </div>
         `);
 
@@ -228,10 +228,10 @@ export const DispatchMap: React.FC<DispatchMapProps> = ({
     `;
 
     const delPopup = new Popup({ offset: 14 }).setHTML(`
-      <div class="p-2 text-xs font-sans space-y-1 text-slate-800 dark:text-slate-100">
+      <div class="p-2 text-xs font-sans space-y-1 text-foreground">
         <div class="font-bold text-rose-600">Đơn ${selectedOrder.orderCode}</div>
         <div class="text-[11px] font-medium">${selectedOrder.receiverName}</div>
-        <div class="text-[10px] text-slate-500 line-clamp-2">${selectedOrder.receiverAddress}</div>
+        <div class="text-[10px] text-muted-foreground line-clamp-2">${selectedOrder.receiverAddress}</div>
       </div>
     `);
 

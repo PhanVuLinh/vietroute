@@ -11,6 +11,7 @@ interface OrderStatusBadgeProps {
 export const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({ status, className }) => {
   switch (status) {
     case "PENDING":
+    case "CONFIRMED":
       return (
         <Badge variant="warning" className={cn("text-[10px] px-2 py-0.5 font-semibold", className)}>
           Chờ phân công

@@ -30,12 +30,12 @@ export const OrderTableRow: React.FC<OrderTableRowProps> = ({
   return (
     <tr
       onClick={() => onViewDetail(order)}
-      className="group hover:bg-slate-800/60 transition-colors border-b border-slate-800/80 cursor-pointer text-xs"
+      className="group hover:bg-accent/50 transition-colors border-b border-border/60 cursor-pointer text-xs"
     >
       {/* 1. Mã đơn */}
-      <td className="py-3.5 px-4 font-mono font-medium text-primary-400 group-hover:text-primary-300 transition-colors whitespace-nowrap">
+      <td className="py-3.5 px-4 font-mono font-medium text-primary group-hover:text-primary/80 transition-colors whitespace-nowrap">
         <div className="flex items-center gap-1.5">
-          <Package className="w-3.5 h-3.5 text-slate-500 group-hover:text-primary-400 shrink-0" />
+          <Package className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
           <span>{order.orderCode}</span>
         </div>
       </td>
@@ -43,14 +43,14 @@ export const OrderTableRow: React.FC<OrderTableRowProps> = ({
       {/* 2. Khách hàng */}
       <td className="py-3.5 px-4 whitespace-nowrap">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 shrink-0 border border-slate-700/60">
+          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0 border border-border">
             <User className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0">
-            <div className="font-medium text-slate-200 truncate max-w-[130px]">
+            <div className="font-medium text-foreground truncate max-w-[130px]">
               {order.receiverName}
             </div>
-            <div className="text-[11px] text-slate-400 font-mono">
+            <div className="text-[11px] text-muted-foreground font-mono">
               {order.receiverPhone}
             </div>
           </div>
@@ -60,8 +60,8 @@ export const OrderTableRow: React.FC<OrderTableRowProps> = ({
       {/* 3. Điểm giao hàng */}
       <td className="py-3.5 px-4 max-w-[190px]">
         <div className="flex items-start gap-1.5">
-          <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
-          <div className="truncate text-slate-300" title={order.receiverAddress}>
+          <MapPin className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0 mt-0.5" />
+          <div className="truncate text-foreground/80" title={order.receiverAddress}>
             {order.receiverAddress}
           </div>
         </div>
@@ -69,8 +69,8 @@ export const OrderTableRow: React.FC<OrderTableRowProps> = ({
 
       {/* 4. Kho xuất */}
       <td className="py-3.5 px-4 whitespace-nowrap">
-        <div className="flex items-center gap-1.5 text-slate-300">
-          <WarehouseIcon className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+        <div className="flex items-center gap-1.5 text-foreground/80">
+          <WarehouseIcon className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
           <span className="truncate max-w-[120px]" title={order.warehouse?.name || order.warehouseId}>
             {order.warehouse?.name || order.warehouseId}
           </span>
@@ -79,10 +79,10 @@ export const OrderTableRow: React.FC<OrderTableRowProps> = ({
 
       {/* 5. Khối lượng & COD */}
       <td className="py-3.5 px-4 whitespace-nowrap">
-        <div className="text-slate-200 font-medium">
+        <div className="text-foreground font-medium tabular-nums">
           {order.totalWeight} kg
         </div>
-        <div className="text-[11px] text-slate-400">
+        <div className="text-[11px] text-muted-foreground tabular-nums">
           {order.codAmount > 0 ? formatCurrency(order.codAmount) : "Không COD"}
         </div>
       </td>
@@ -91,18 +91,18 @@ export const OrderTableRow: React.FC<OrderTableRowProps> = ({
       <td className="py-3.5 px-4 whitespace-nowrap">
         {order.driver ? (
           <div className="flex items-center gap-1.5">
-            <Truck className="w-3.5 h-3.5 text-primary-400 shrink-0" />
+            <Truck className="w-3.5 h-3.5 text-primary shrink-0" />
             <div>
-              <div className="font-medium text-slate-200">
+              <div className="font-medium text-foreground">
                 {order.driver.fullName}
               </div>
-              <div className="text-[11px] text-slate-400 font-mono">
+              <div className="text-[11px] text-muted-foreground font-mono">
                 {order.vehicle?.licensePlate || "Xe tải"}
               </div>
             </div>
           </div>
         ) : (
-          <span className="inline-flex items-center gap-1 text-[11px] text-amber-400/90 font-medium bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+          <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
             Chưa phân công
           </span>
         )}
@@ -133,7 +133,7 @@ export const OrderTableRow: React.FC<OrderTableRowProps> = ({
             <button
               type="button"
               onClick={() => navigate(`/dispatch?orderId=${order.id}`)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-md border border-amber-500/30 transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-md border border-amber-500/30 transition-colors"
               title="Điều phối đơn này"
             >
               <Send className="w-3 h-3" />

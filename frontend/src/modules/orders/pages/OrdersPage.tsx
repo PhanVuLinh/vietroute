@@ -102,17 +102,23 @@ export const OrdersPage: React.FC = () => {
   };
 
   return (
-    <PageContainer
-      title="Quản lý đơn hàng"
-      subtitle="Theo dõi toàn bộ vòng đời đơn hàng, giám sát cam kết SLA, phân loại trạng thái và tích hợp điều phối thông minh."
-    >
+    <PageContainer className="space-y-6">
       <div className="space-y-6">
         {/* Toast thông báo nổi bật */}
         {toastMessage && (
           <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
-            <div className="flex items-center gap-3 px-4 py-3 bg-slate-900/95 border border-emerald-500/40 text-emerald-300 rounded-2xl shadow-2xl backdrop-blur-md">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span className="text-xs font-medium">{toastMessage}</span>
+            <div className="flex items-center gap-3 pl-4 pr-2 py-2.5 bg-card/95 border border-emerald-500/30 text-foreground rounded-xl shadow-2xl backdrop-blur-md ring-1 ring-emerald-500/10">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 shrink-0">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              </div>
+              <span className="text-xs font-medium pr-2">{toastMessage}</span>
+              <button
+                onClick={() => setToastMessage(null)}
+                className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer shrink-0"
+                title="Đóng"
+              >
+                <span className="text-sm leading-none">×</span>
+              </button>
             </div>
           </div>
         )}
@@ -157,15 +163,15 @@ export const OrdersPage: React.FC = () => {
 
         {/* 4. Trạng thái lỗi tải dữ liệu */}
         {isError && (
-          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center justify-between gap-4 text-xs text-rose-300">
+          <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-2xl flex items-center justify-between gap-4 text-xs text-destructive">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+              <AlertCircle className="w-4 h-4 shrink-0 text-destructive" />
               <span>Không thể đồng bộ danh sách đơn hàng từ máy chủ.</span>
             </div>
             <button
               type="button"
               onClick={handleRefresh}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl font-medium transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-destructive/20 hover:bg-destructive/30 border border-destructive/40 rounded-xl font-medium transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Thử lại</span>
@@ -175,11 +181,11 @@ export const OrdersPage: React.FC = () => {
 
         {/* 5. Skeleton Loading State */}
         {isLoading && (
-          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-4 animate-pulse">
-            <div className="h-6 bg-slate-800 rounded w-1/4" />
+          <div className="bg-card border border-border rounded-xl p-6 space-y-4 animate-pulse">
+            <div className="h-6 bg-muted rounded w-1/4" />
             <div className="space-y-3">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-12 bg-slate-800/60 rounded-xl" />
+                <div key={i} className="h-12 bg-muted/60 rounded-xl" />
               ))}
             </div>
           </div>

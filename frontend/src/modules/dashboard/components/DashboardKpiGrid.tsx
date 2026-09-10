@@ -187,19 +187,19 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
               </div>
 
               {/* Bottom row: Trend or Description */}
-              <div className="mt-2.5 flex items-center justify-between text-[11px] pt-1.5 border-t border-border/40">
-                <span className="text-muted-foreground truncate max-w-[100px] sm:max-w-[120px]">
+              <div className="mt-2.5 flex items-center justify-between gap-2 text-[11px] pt-1.5 border-t border-border/40">
+                <span className="text-muted-foreground truncate flex-1 min-w-0">
                   {kpi.description}
                 </span>
                 {kpi.isHighlight ? (
                   <Badge
                     variant="warning"
-                    className="h-4.5 px-1.5 text-[10px] font-semibold gap-0.5 tracking-tight animate-pulse"
+                    className="h-4.5 px-1.5 text-[10px] font-semibold gap-0.5 tracking-tight animate-pulse shrink-0"
                   >
                     {kpi.trend}
                   </Badge>
                 ) : (
-                  <span className="flex items-center gap-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="flex items-center gap-0.5 font-semibold text-emerald-600 dark:text-emerald-400 shrink-0 whitespace-nowrap">
                     <TrendingUp className="h-3 w-3" />
                     {kpi.trend}
                   </span>

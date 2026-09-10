@@ -61,11 +61,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={onMobileItemClick}
         className={({ isActive }) =>
           cn(
-            "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150 outline-none",
-            isActive
-              ? "bg-primary text-primary-foreground font-semibold shadow-xs shadow-primary/25"
-              : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-            !isExpanded && "justify-center px-0 h-10 w-10 mx-auto"
+            "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 outline-none",
+            isExpanded
+              ? isActive
+                ? "bg-primary text-primary-foreground font-semibold shadow-xs shadow-primary/25"
+                : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+              : cn(
+                  "justify-center px-0 h-10 w-10 mx-auto rounded-xl",
+                  isActive
+                    ? "bg-primary/12 text-primary ring-1 ring-primary/30 shadow-xs shadow-primary/10"
+                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                )
           )
         }
       >
@@ -73,16 +79,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <>
             <Icon
               className={cn(
-                "h-4 w-4 shrink-0 transition-transform duration-150 group-hover:scale-105",
-                isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                "h-4 w-4 shrink-0 transition-transform duration-150 group-hover:scale-110",
+                isExpanded
+                  ? isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                  : isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
               )}
             />
             {isExpanded && <span className="truncate tracking-tight">{item.label}</span>}
-
-            {/* Indicator thanh viền cho trạng thái active khi thu gọn */}
-            {isActive && !isExpanded && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-primary" />
-            )}
           </>
         )}
       </NavLink>
@@ -161,14 +164,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div key={group.groupTitle || groupIdx} className="space-y-0.5">
             {isExpanded ? (
               group.groupTitle && (
-                <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 select-none">
+                <div className="px-2.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 select-none">
                   {group.groupTitle}
                 </div>
               )
             ) : (
-              groupIdx > 0 && <div className="my-2 border-t border-border/50 mx-2" />
+              groupIdx > 0 && <div className="my-2.5 border-t border-border/40 mx-3" />
             )}
-            <div className="space-y-1">
+            <div className={cn("space-y-1", !isExpanded && "space-y-1.5 flex flex-col items-center")}>
               {group.items.map(renderNavLink)}
             </div>
           </div>
@@ -183,17 +186,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* 4. Phiên bản hệ thống */}
-      {isExpanded && (
-        <div className="px-4 py-2.5 border-t border-border/60 text-[10px] text-muted-foreground/80 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span>VietRoute Enterprise</span>
+      <div className={cn(
+        "border-t border-border/60 shrink-0 transition-all",
+        isExpanded ? "px-4 py-2.5" : "px-2 py-2"
+      )}>
+        {isExpanded ? (
+          <div className="text-[10px] text-muted-foreground/80 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span>VietRoute Enterprise</span>
+            </div>
+            <span className="font-mono text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+              v1.0
+            </span>
           </div>
-          <span className="font-mono text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-            v1.0
-          </span>
-        </div>
-      )}
+        ) : (
+          <div className="flex justify-center">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" title="VietRoute Enterprise v1.0" />
+          </div>
+        )}
+      </div>
     </aside>
   );
 };

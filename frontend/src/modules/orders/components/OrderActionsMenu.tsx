@@ -68,7 +68,7 @@ export const OrderActionsMenu: React.FC<OrderActionsMenuProps> = ({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-ring/40"
         title="Thao tác"
         aria-label="Thao tác"
       >
@@ -76,7 +76,7 @@ export const OrderActionsMenu: React.FC<OrderActionsMenuProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-30 mt-1 w-48 origin-top-right rounded-xl bg-slate-900 border border-slate-700/80 shadow-2xl py-1 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 z-30 mt-1 w-48 origin-top-right rounded-xl bg-popover border border-border shadow-2xl py-1 animate-in fade-in zoom-in-95 duration-150">
           {/* Xem chi tiết */}
           <button
             type="button"
@@ -85,9 +85,9 @@ export const OrderActionsMenu: React.FC<OrderActionsMenuProps> = ({
               setIsOpen(false);
               onViewDetail(order);
             }}
-            className="flex items-center w-full px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 hover:text-primary-400 transition-colors text-left"
+            className="flex items-center w-full px-3 py-2 text-xs font-medium text-popover-foreground hover:bg-accent hover:text-primary transition-colors text-left"
           >
-            <Eye className="w-4 h-4 mr-2.5 text-slate-400" />
+            <Eye className="w-4 h-4 mr-2.5 text-muted-foreground" />
             Xem chi tiết đơn
           </button>
 
@@ -96,9 +96,9 @@ export const OrderActionsMenu: React.FC<OrderActionsMenuProps> = ({
             <button
               type="button"
               onClick={handleDispatch}
-              className="flex items-center w-full px-3 py-2 text-xs font-medium text-amber-400 hover:bg-amber-500/10 transition-colors text-left"
+              className="flex items-center w-full px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors text-left"
             >
-              <Send className="w-4 h-4 mr-2.5 text-amber-400" />
+              <Send className="w-4 h-4 mr-2.5" />
               Điều phối đơn này
             </button>
           )}
@@ -108,9 +108,9 @@ export const OrderActionsMenu: React.FC<OrderActionsMenuProps> = ({
             <button
               type="button"
               onClick={handleDispatch}
-              className="flex items-center w-full px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors text-left"
+              className="flex items-center w-full px-3 py-2 text-xs font-medium text-popover-foreground/80 hover:bg-accent hover:text-foreground transition-colors text-left"
             >
-              <ExternalLink className="w-4 h-4 mr-2.5 text-slate-400" />
+              <ExternalLink className="w-4 h-4 mr-2.5 text-muted-foreground" />
               Xem tại Điều phối
             </button>
           )}
@@ -119,16 +119,16 @@ export const OrderActionsMenu: React.FC<OrderActionsMenuProps> = ({
           <button
             type="button"
             onClick={handleCopyCode}
-            className="flex items-center w-full px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors text-left"
+            className="flex items-center w-full px-3 py-2 text-xs font-medium text-popover-foreground/80 hover:bg-accent transition-colors text-left"
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4 mr-2.5 text-emerald-400" />
-                <span className="text-emerald-400">Đã sao chép!</span>
+                <Check className="w-4 h-4 mr-2.5 text-emerald-500 dark:text-emerald-400" />
+                <span className="text-emerald-500 dark:text-emerald-400">Đã sao chép!</span>
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4 mr-2.5 text-slate-400" />
+                <Copy className="w-4 h-4 mr-2.5 text-muted-foreground" />
                 Sao chép mã đơn
               </>
             )}

@@ -116,24 +116,24 @@ export const RealtimeMapCard: React.FC<RealtimeMapCardProps> = ({
             <svg class="vehicle-arrow w-4 h-4 transition-transform duration-300" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(${telemetry.bearing}deg)">
               <polygon points="12,2 19,21 12,17 5,21" />
             </svg>
-            <span class="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full ${statusStyle.bg} border-2 border-white dark:border-slate-900"></span>
+            <span class="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full ${statusStyle.bg} border-2 border-card"></span>
           </div>
         `;
 
         const popupContent = document.createElement("div");
-        popupContent.className = "p-2.5 min-w-[200px] text-xs font-sans space-y-1.5 text-slate-800 dark:text-slate-100";
+        popupContent.className = "p-2.5 min-w-[200px] text-xs font-sans space-y-1.5 text-foreground";
         popupContent.innerHTML = `
-          <div class="flex items-center justify-between gap-2 border-b pb-1.5 border-slate-200 dark:border-slate-700">
-            <span class="font-bold text-sm text-slate-900 dark:text-white">${telemetry.driverName}</span>
+          <div class="flex items-center justify-between gap-2 border-b pb-1.5 border-border">
+            <span class="font-bold text-sm text-foreground">${telemetry.driverName}</span>
             <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white ${statusStyle.bg}">${statusStyle.label}</span>
           </div>
           <div class="grid grid-cols-2 gap-1 text-[11px] pt-1">
-            <span class="text-slate-500 dark:text-slate-400">Biển số:</span>
-            <span class="font-semibold text-right">${telemetry.plateNumber}</span>
-            <span class="text-slate-500 dark:text-slate-400">Vận tốc:</span>
-            <span class="font-semibold text-right vehicle-speed">${telemetry.speedKmH} km/h</span>
-            <span class="text-slate-500 dark:text-slate-400">Nhiên liệu:</span>
-            <span class="font-semibold text-right">${telemetry.fuelPercent}%</span>
+            <span class="text-muted-foreground">Biển số:</span>
+            <span class="font-semibold text-right text-foreground">${telemetry.plateNumber}</span>
+            <span class="text-muted-foreground">Vận tốc:</span>
+            <span class="font-semibold text-right text-foreground vehicle-speed">${telemetry.speedKmH} km/h</span>
+            <span class="text-muted-foreground">Nhiên liệu:</span>
+            <span class="font-semibold text-right text-foreground">${telemetry.fuelPercent}%</span>
           </div>
         `;
 
@@ -175,12 +175,12 @@ export const RealtimeMapCard: React.FC<RealtimeMapCardProps> = ({
         `;
 
         const popup = new Popup({ offset: 14 }).setHTML(`
-          <div class="p-2 text-xs space-y-1 text-slate-800 dark:text-slate-100">
-            <div class="font-bold text-slate-900 dark:text-white">${wh.name}</div>
-            <div class="text-[11px] text-slate-500">${wh.address}</div>
-            <div class="text-[11px] pt-1 border-t border-slate-200 dark:border-slate-700 flex justify-between">
+          <div class="p-2 text-xs space-y-1 text-foreground">
+            <div class="font-bold text-foreground">${wh.name}</div>
+            <div class="text-[11px] text-muted-foreground">${wh.address}</div>
+            <div class="text-[11px] pt-1 border-t border-border flex justify-between">
               <span>Sức chứa:</span>
-              <span class="font-semibold text-blue-600">${wh.usedCapacity}/${wh.capacity} tấn</span>
+              <span class="font-semibold text-primary">${wh.usedCapacity}/${wh.capacity} tấn</span>
             </div>
           </div>
         `);
@@ -206,10 +206,10 @@ export const RealtimeMapCard: React.FC<RealtimeMapCardProps> = ({
         `;
 
         const popup = new Popup({ offset: 10 }).setHTML(`
-          <div class="p-1.5 text-xs text-slate-800 dark:text-slate-100 space-y-1">
-            <div class="font-bold text-violet-600 dark:text-violet-400">Đơn ${order.orderCode}</div>
-            <div class="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2">${order.receiverAddress}</div>
-            <div class="text-[10px] text-slate-400">Người nhận: ${order.receiverName}</div>
+          <div class="p-1.5 text-xs text-foreground space-y-1">
+            <div class="font-bold text-primary">Đơn ${order.orderCode}</div>
+            <div class="text-[11px] text-muted-foreground line-clamp-2">${order.receiverAddress}</div>
+            <div class="text-[10px] text-muted-foreground/80">Người nhận: ${order.receiverName}</div>
           </div>
         `);
 
