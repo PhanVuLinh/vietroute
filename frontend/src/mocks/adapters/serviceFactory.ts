@@ -47,12 +47,18 @@ const apiDriverService = {
   getDrivers: (params?: DriverFilterParams) => httpClient.get<Driver[]>("/drivers", { params }),
   getDriverById: (id: string) => httpClient.get<Driver>(`/drivers/${id}`),
   updateDriverStatus: (id: string, status: string) => httpClient.patch<Driver>(`/drivers/${id}/status`, { status }),
+  createDriver: (data: Omit<Driver, "id">) => httpClient.post<Driver>("/drivers", data),
+  updateDriver: (id: string, data: Partial<Driver>) => httpClient.patch<Driver>(`/drivers/${id}`, data),
+  deleteDriver: (id: string) => httpClient.delete<boolean>(`/drivers/${id}`),
 };
 
 const apiVehicleService = {
   getVehicles: (params?: VehicleFilterParams) => httpClient.get<Vehicle[]>("/vehicles", { params }),
   getVehicleById: (id: string) => httpClient.get<Vehicle>(`/vehicles/${id}`),
   updateVehicleStatus: (id: string, status: string) => httpClient.patch<Vehicle>(`/vehicles/${id}/status`, { status }),
+  createVehicle: (data: Omit<Vehicle, "id">) => httpClient.post<Vehicle>("/vehicles", data),
+  updateVehicle: (id: string, data: Partial<Vehicle>) => httpClient.patch<Vehicle>(`/vehicles/${id}`, data),
+  deleteVehicle: (id: string) => httpClient.delete<boolean>(`/vehicles/${id}`),
 };
 
 const apiWarehouseService = {

@@ -75,4 +75,77 @@ export const mockDriverService = {
       data: { ...driver },
     };
   },
+
+  /** Tạo mới tài xế */
+  async createDriver(
+    data: Omit<Driver, "id">,
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<Driver>> {
+    await simulateLatency(options);
+    const newId = `drv-${Date.now()}`;
+    const newDriver: Driver = {
+      ...data,
+      id: newId,
+    };
+    MOCK_DRIVERS.unshift(newDriver);
+    return {
+      success: true,
+      statusCode: 201,
+      message: "Tạo mới tài xế thành công",
+      data: newDriver,
+    };
+  },
+
+  /** Cập nhật thông tin tài xế */
+  async updateDriver(
+    id: string,
+    data: Partial<Driver>,
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<Driver | null>> {
+    await simulateLatency(options);
+    const index = MOCK_DRIVERS.findIndex((d) => d.id === id);
+    if (index === -1) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: "Không tìm thấy tài xế",
+        data: null,
+      };
+    }
+    MOCK_DRIVERS[index] = {
+      ...MOCK_DRIVERS[index],
+      ...data,
+    };
+    return {
+      success: true,
+      statusCode: 200,
+      message: "Cập nhật tài xế thành công",
+      data: { ...MOCK_DRIVERS[index] },
+    };
+  },
+
+  /** Xóa tài xế */
+  async deleteDriver(
+    id: string,
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<boolean>> {
+    await simulateLatency(options);
+    const index = MOCK_DRIVERS.findIndex((d) => d.id === id);
+    if (index === -1) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: "Không tìm thấy tài xế để xóa",
+        data: false,
+      };
+    }
+    MOCK_DRIVERS.splice(index, 1);
+    return {
+      success: true,
+      statusCode: 200,
+      message: "Đã xóa tài xế thành công",
+      data: true,
+    };
+  },
 };
+

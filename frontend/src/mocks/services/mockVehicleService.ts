@@ -80,4 +80,77 @@ export const mockVehicleService = {
       data: { ...vehicle },
     };
   },
+
+  /** Tạo mới phương tiện */
+  async createVehicle(
+    data: Omit<Vehicle, "id">,
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<Vehicle>> {
+    await simulateLatency(options);
+    const newId = `veh-${Date.now()}`;
+    const newVehicle: Vehicle = {
+      ...data,
+      id: newId,
+    };
+    MOCK_VEHICLES.unshift(newVehicle);
+    return {
+      success: true,
+      statusCode: 201,
+      message: "Thêm mới phương tiện thành công",
+      data: newVehicle,
+    };
+  },
+
+  /** Cập nhật thông tin phương tiện */
+  async updateVehicle(
+    id: string,
+    data: Partial<Vehicle>,
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<Vehicle | null>> {
+    await simulateLatency(options);
+    const index = MOCK_VEHICLES.findIndex((v) => v.id === id);
+    if (index === -1) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: "Không tìm thấy phương tiện",
+        data: null,
+      };
+    }
+    MOCK_VEHICLES[index] = {
+      ...MOCK_VEHICLES[index],
+      ...data,
+    };
+    return {
+      success: true,
+      statusCode: 200,
+      message: "Cập nhật phương tiện thành công",
+      data: { ...MOCK_VEHICLES[index] },
+    };
+  },
+
+  /** Xóa phương tiện */
+  async deleteVehicle(
+    id: string,
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<boolean>> {
+    await simulateLatency(options);
+    const index = MOCK_VEHICLES.findIndex((v) => v.id === id);
+    if (index === -1) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: "Không tìm thấy phương tiện để xóa",
+        data: false,
+      };
+    }
+    MOCK_VEHICLES.splice(index, 1);
+    return {
+      success: true,
+      statusCode: 200,
+      message: "Đã xóa phương tiện thành công",
+      data: true,
+    };
+  },
 };
+
