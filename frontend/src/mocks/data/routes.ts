@@ -1,98 +1,506 @@
 import type { Route, RouteStatus, RouteStop, RouteStopStatus } from "@/core/types/logistics";
-import { MOCK_DRIVERS } from "./drivers";
-import { MOCK_WAREHOUSES } from "./warehouses";
-import { MOCK_DELIVERIES } from "./deliveries";
-import { MOCK_ORDERS } from "./orders";
 
-const ROUTE_CONFIGS = [
-  { code: "TUYEN-HAN-01", city: "Hà Nội", whId: "wh-hn-lb", driverIdx: 0, status: "ACTIVE" as RouteStatus, distance: 34.5, duration: 95 },
-  { code: "TUYEN-HAN-02", city: "Hà Nội", whId: "wh-hn-lb", driverIdx: 1, status: "COMPLETED" as RouteStatus, distance: 28.0, duration: 75 },
-  { code: "TUYEN-HAN-03", city: "Hà Nội", whId: "wh-hn-qm", driverIdx: 2, status: "ACTIVE" as RouteStatus, distance: 42.1, duration: 110 },
-  { code: "TUYEN-SGN-04", city: "TP.HCM", whId: "wh-hcm-cl", driverIdx: 4, status: "ACTIVE" as RouteStatus, distance: 51.2, duration: 135 },
-  { code: "TUYEN-SGN-05", city: "TP.HCM", whId: "wh-hcm-cl", driverIdx: 5, status: "PLANNED" as RouteStatus, distance: 38.6, duration: 105 },
-  { code: "TUYEN-SGN-06", city: "TP.HCM", whId: "wh-hcm-tb", driverIdx: 6, status: "COMPLETED" as RouteStatus, distance: 26.4, duration: 70 },
-  { code: "TUYEN-DAD-07", city: "Đà Nẵng", whId: "wh-dad-hc", driverIdx: 8, status: "ACTIVE" as RouteStatus, distance: 22.8, duration: 60 },
-  { code: "TUYEN-DAD-08", city: "Đà Nẵng", whId: "wh-dad-hc", driverIdx: 9, status: "COMPLETED" as RouteStatus, distance: 18.5, duration: 50 },
-  { code: "TUYEN-QNG-09", city: "Quảng Ngãi", whId: "wh-qng-qn", driverIdx: 11, status: "ACTIVE" as RouteStatus, distance: 31.0, duration: 80 },
-  { code: "TUYEN-CTO-10", city: "Cần Thơ", whId: "wh-ct-cr", driverIdx: 13, status: "ACTIVE" as RouteStatus, distance: 27.5, duration: 70 },
-  { code: "TUYEN-HAN-11", city: "Hà Nội", whId: "wh-hn-lb", driverIdx: 0, status: "PLANNED" as RouteStatus, distance: 33.0, duration: 90 },
-  { code: "TUYEN-SGN-12", city: "TP.HCM", whId: "wh-hcm-tb", driverIdx: 5, status: "CANCELLED" as RouteStatus, distance: 19.2, duration: 55 },
+export const MOCK_ROUTES: Route[] = [
+  // 1. Tuyến Hà Nội 01: Long Biên -> Cầu Giấy -> Nam Từ Liêm -> Hà Đông (Đang chạy ACTIVE)
+  {
+    id: "route-001",
+    routeCode: "RT-HAN-01",
+    routeName: "Tuyến Vành Đai 3 - Cầu Giấy - Hà Đông",
+    driverId: "drv-01",
+    vehicleId: "veh-01",
+    warehouseId: "wh-hn-lb",
+    totalDistance: 38.5,
+    estimatedDuration: 110,
+    status: "ACTIVE",
+    startedAt: "2026-09-10T07:30:00Z",
+    tollFeeEstVND: 35000,
+    fuelEstLiters: 9.6,
+    totalWeightKg: 1850,
+    totalVolumeM3: 8.5,
+    trafficAlerts: "Mật độ cao giờ cao điểm tại nút giao Khuất Duy Tiến",
+    polyline: [
+      [105.9082, 21.0368], // Long Biên
+      [105.8650, 21.0400], // Cầu Chương Dương
+      [105.8200, 21.0300], // Ba Đình
+      [105.7890, 21.0365], // Điểm dừng 1: Cầu Giấy
+      [105.7720, 21.0250], // Điểm dừng 2: Mỹ Đình
+      [105.7780, 20.9780], // Điểm dừng 3: Hà Đông
+      [105.9082, 21.0368], // Về kho Long Biên
+    ],
+    stops: [
+      {
+        id: "stop-001-1",
+        routeId: "route-001",
+        deliveryId: "del-01",
+        sequence: 1,
+        latitude: 21.0365,
+        longitude: 105.7890,
+        customerName: "Công ty Công nghệ FPT Cầu Giấy",
+        customerPhone: "0912.345.678",
+        address: "Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội",
+        orderCode: "ORD-HN-2026-001",
+        weightKg: 650,
+        packageCount: 12,
+        timeWindowStart: "08:15",
+        timeWindowEnd: "09:00",
+        estimatedArrival: "2026-09-10T08:30:00Z",
+        actualArrival: "2026-09-10T08:28:00Z",
+        status: "COMPLETED",
+        notes: "Giao tại tầng 1 sảnh lễ tân",
+      },
+      {
+        id: "stop-001-2",
+        routeId: "route-001",
+        deliveryId: "del-02",
+        sequence: 2,
+        latitude: 21.0250,
+        longitude: 105.7720,
+        customerName: "Đại siêu thị Big C Thăng Long",
+        customerPhone: "0934.567.890",
+        address: "222 Trần Duy Hưng, Trung Hòa, Cầu Giấy, Hà Nội",
+        orderCode: "ORD-HN-2026-002",
+        weightKg: 800,
+        packageCount: 25,
+        timeWindowStart: "09:15",
+        timeWindowEnd: "10:30",
+        estimatedArrival: "2026-09-10T09:45:00Z",
+        actualArrival: "2026-09-10T09:40:00Z",
+        status: "ARRIVED",
+        notes: "Cửa nhập hàng B2, liên hệ thủ kho A. Tuấn",
+      },
+      {
+        id: "stop-001-3",
+        routeId: "route-001",
+        deliveryId: "del-03",
+        sequence: 3,
+        latitude: 20.9780,
+        longitude: 105.7780,
+        customerName: "Trung tâm TM Aeon Mall Hà Đông",
+        customerPhone: "0988.776.655",
+        address: "Khu đô thị Dương Nội, Hà Đông, Hà Nội",
+        orderCode: "ORD-HN-2026-003",
+        weightKg: 400,
+        packageCount: 8,
+        timeWindowStart: "10:45",
+        timeWindowEnd: "11:45",
+        estimatedArrival: "2026-09-10T11:00:00Z",
+        status: "PENDING",
+        notes: "Giao cổng sau khu bốc dỡ hàng",
+      },
+    ],
+  },
+
+  // 2. Tuyến Hà Nội 02: Mê Linh -> Sóc Sơn -> Nội Bài (Đã lập kế hoạch PLANNED)
+  {
+    id: "route-002",
+    routeCode: "RT-HAN-02",
+    routeName: "Tuyến Bắc Thăng Long - Nội Bài Logistics",
+    driverId: "drv-02",
+    vehicleId: "veh-02",
+    warehouseId: "wh-hn-qm",
+    totalDistance: 29.0,
+    estimatedDuration: 75,
+    status: "PLANNED",
+    tollFeeEstVND: 25000,
+    fuelEstLiters: 7.2,
+    totalWeightKg: 1200,
+    totalVolumeM3: 5.8,
+    trafficAlerts: "Lưu thông thông suốt",
+    polyline: [
+      [105.7485, 21.1892], // Quang Minh
+      [105.7850, 21.2150], // Sóc Sơn
+      [105.8050, 21.2210], // Ga Hàng hóa Nội Bài
+      [105.7485, 21.1892], // Về kho Quang Minh
+    ],
+    stops: [
+      {
+        id: "stop-002-1",
+        routeId: "route-002",
+        deliveryId: "del-04",
+        sequence: 1,
+        latitude: 21.2150,
+        longitude: 105.7850,
+        customerName: "Nhà máy Honda Việt Nam",
+        customerPhone: "0904.112.233",
+        address: "KCN Phúc Thắng, Phúc Yên (giáp Sóc Sơn)",
+        orderCode: "ORD-HN-2026-004",
+        weightKg: 700,
+        packageCount: 15,
+        timeWindowStart: "13:30",
+        timeWindowEnd: "15:00",
+        estimatedArrival: "2026-09-10T14:00:00Z",
+        status: "PENDING",
+      },
+      {
+        id: "stop-002-2",
+        routeId: "route-002",
+        deliveryId: "del-05",
+        sequence: 2,
+        latitude: 21.2210,
+        longitude: 105.8050,
+        customerName: "Kho hàng Không ALS Nội Bài",
+        customerPhone: "0918.999.888",
+        address: "Cảng Hàng không Quốc tế Nội Bài, Sóc Sơn, Hà Nội",
+        orderCode: "ORD-HN-2026-005",
+        weightKg: 500,
+        packageCount: 10,
+        timeWindowStart: "15:15",
+        timeWindowEnd: "16:30",
+        estimatedArrival: "2026-09-10T15:45:00Z",
+        status: "PENDING",
+      },
+    ],
+  },
+
+  // 3. Tuyến TP.HCM 01: Cát Lái -> Quận 7 -> Nhà Bè -> Bình Chánh (Đang chạy ACTIVE)
+  {
+    id: "route-003",
+    routeCode: "RT-SGN-01",
+    routeName: "Tuyến Nam Sài Gòn: Cát Lái - Phú Mỹ Hưng - Nhà Bè",
+    driverId: "drv-05",
+    vehicleId: "veh-05",
+    warehouseId: "wh-hcm-cl",
+    totalDistance: 46.8,
+    estimatedDuration: 130,
+    status: "ACTIVE",
+    startedAt: "2026-09-10T08:00:00Z",
+    tollFeeEstVND: 50000,
+    fuelEstLiters: 11.8,
+    totalWeightKg: 3200,
+    totalVolumeM3: 14.5,
+    trafficAlerts: "Cảnh báo cấm tải trọng >5T cầu Phú Mỹ trước 09h00",
+    polyline: [
+      [106.7794, 10.7639], // Cát Lái
+      [106.7450, 10.7500], // Cầu Phú Mỹ
+      [106.7180, 10.7300], // Quận 7 - Crescent Mall
+      [106.7350, 10.6850], // Hiệp Phước - Nhà Bè
+      [106.7794, 10.7639], // Về Cát Lái
+    ],
+    stops: [
+      {
+        id: "stop-003-1",
+        routeId: "route-003",
+        deliveryId: "del-06",
+        sequence: 1,
+        latitude: 10.7300,
+        longitude: 106.7180,
+        customerName: "Trung tâm TM Crescent Mall",
+        customerPhone: "0908.112.334",
+        address: "101 Tôn Dật Tiên, Tân Phú, Quận 7, TP.HCM",
+        orderCode: "ORD-HCM-2026-001",
+        weightKg: 1200,
+        packageCount: 30,
+        timeWindowStart: "08:45",
+        timeWindowEnd: "10:00",
+        estimatedArrival: "2026-09-10T09:15:00Z",
+        actualArrival: "2026-09-10T09:10:00Z",
+        status: "COMPLETED",
+      },
+      {
+        id: "stop-003-2",
+        routeId: "route-003",
+        deliveryId: "del-07",
+        sequence: 2,
+        latitude: 10.6850,
+        longitude: 106.7350,
+        customerName: "Khu Công Nghiệp Hiệp Phước",
+        customerPhone: "0933.445.566",
+        address: "Đường số 1, KCN Hiệp Phước, Nhà Bè, TP.HCM",
+        orderCode: "ORD-HCM-2026-002",
+        weightKg: 2000,
+        packageCount: 40,
+        timeWindowStart: "10:30",
+        timeWindowEnd: "12:00",
+        estimatedArrival: "2026-09-10T11:00:00Z",
+        status: "ARRIVED",
+      },
+    ],
+  },
+
+  // 4. Tuyến TP.HCM 02: Tân Bình -> Quận 1 -> Quận 3 -> Bình Thạnh (Đã hoàn thành COMPLETED)
+  {
+    id: "route-004",
+    routeCode: "RT-SGN-02",
+    routeName: "Tuyến Giao Nhanh Nội Đô Sài Gòn",
+    driverId: "drv-06",
+    vehicleId: "veh-06",
+    warehouseId: "wh-hcm-tb",
+    totalDistance: 24.2,
+    estimatedDuration: 85,
+    status: "COMPLETED",
+    startedAt: "2026-09-10T06:00:00Z",
+    completedAt: "2026-09-10T08:15:00Z",
+    tollFeeEstVND: 0,
+    fuelEstLiters: 5.8,
+    totalWeightKg: 950,
+    totalVolumeM3: 4.2,
+    trafficAlerts: "Hoàn thành an toàn, không vi phạm giờ cấm tải",
+    polyline: [
+      [106.6214, 10.8172], // Tân Bình
+      [106.6800, 10.7850], // Quận 3
+      [106.7020, 10.7760], // Quận 1 - Bitexco
+      [106.7150, 10.7950], // Landmark 81
+      [106.6214, 10.8172], // Về Tân Bình
+    ],
+    stops: [
+      {
+        id: "stop-004-1",
+        routeId: "route-004",
+        deliveryId: "del-08",
+        sequence: 1,
+        latitude: 10.7760,
+        longitude: 106.7020,
+        customerName: "Tòa nhà Bitexco Financial Tower",
+        customerPhone: "0903.778.899",
+        address: "2 Hải Triều, Bến Nghé, Quận 1, TP.HCM",
+        orderCode: "ORD-HCM-2026-003",
+        weightKg: 350,
+        packageCount: 6,
+        timeWindowStart: "06:30",
+        timeWindowEnd: "07:15",
+        estimatedArrival: "2026-09-10T06:45:00Z",
+        actualArrival: "2026-09-10T06:40:00Z",
+        status: "COMPLETED",
+      },
+      {
+        id: "stop-004-2",
+        routeId: "route-004",
+        deliveryId: "del-09",
+        sequence: 2,
+        latitude: 10.7950,
+        longitude: 106.7150,
+        customerName: "Vinhomes Central Park (Landmark 81)",
+        customerPhone: "0919.882.211",
+        address: "720A Điện Biên Phủ, Phường 22, Bình Thạnh, TP.HCM",
+        orderCode: "ORD-HCM-2026-004",
+        weightKg: 600,
+        packageCount: 14,
+        timeWindowStart: "07:30",
+        timeWindowEnd: "08:15",
+        estimatedArrival: "2026-09-10T07:50:00Z",
+        actualArrival: "2026-09-10T07:45:00Z",
+        status: "COMPLETED",
+      },
+    ],
+  },
+
+  // 5. Tuyến Đà Nẵng 01: Hòa Cầm -> Hải Châu -> Sơn Trà -> Ngũ Hành Sơn (Đang chạy ACTIVE)
+  {
+    id: "route-005",
+    routeCode: "RT-DAD-01",
+    routeName: "Tuyến Phân Phối Ven Biển Đà Nẵng",
+    driverId: "drv-09",
+    vehicleId: "veh-09",
+    warehouseId: "wh-dad-hc",
+    totalDistance: 27.5,
+    estimatedDuration: 70,
+    status: "ACTIVE",
+    startedAt: "2026-09-10T08:15:00Z",
+    tollFeeEstVND: 0,
+    fuelEstLiters: 6.2,
+    totalWeightKg: 1400,
+    totalVolumeM3: 6.5,
+    trafficAlerts: "Thời tiết khô ráo, đường thông thoáng",
+    polyline: [
+      [108.1824, 16.0125], // Hòa Cầm
+      [108.2200, 16.0600], // Cầu Rồng - Hải Châu
+      [108.2450, 16.0700], // Sơn Trà
+      [108.2550, 16.0200], // Ngũ Hành Sơn
+      [108.1824, 16.0125], // Về Hòa Cầm
+    ],
+    stops: [
+      {
+        id: "stop-005-1",
+        routeId: "route-005",
+        deliveryId: "del-10",
+        sequence: 1,
+        latitude: 16.0600,
+        longitude: 108.2200,
+        customerName: "Khách sạn Novotel Danang Premier",
+        customerPhone: "0945.112.345",
+        address: "36 Bạch Đằng, Hải Châu, Đà Nẵng",
+        orderCode: "ORD-DAD-2026-001",
+        weightKg: 500,
+        packageCount: 10,
+        timeWindowStart: "08:45",
+        timeWindowEnd: "09:30",
+        estimatedArrival: "2026-09-10T09:00:00Z",
+        actualArrival: "2026-09-10T08:55:00Z",
+        status: "COMPLETED",
+      },
+      {
+        id: "stop-005-2",
+        routeId: "route-005",
+        deliveryId: "del-11",
+        sequence: 2,
+        latitude: 16.0200,
+        longitude: 108.2550,
+        customerName: "Furama Resort Đà Nẵng",
+        customerPhone: "0977.889.900",
+        address: "105 Võ Nguyên Giáp, Khuê Mỹ, Ngũ Hành Sơn, Đà Nẵng",
+        orderCode: "ORD-DAD-2026-002",
+        weightKg: 900,
+        packageCount: 18,
+        timeWindowStart: "09:45",
+        timeWindowEnd: "10:45",
+        estimatedArrival: "2026-09-10T10:00:00Z",
+        status: "ARRIVED",
+      },
+    ],
+  },
+
+  // 6. Tuyến Hải Phòng 01: Đình Vũ -> KCN Tràng Duệ -> KCN Nomura (Đang chạy ACTIVE)
+  {
+    id: "route-006",
+    routeCode: "RT-HPH-01",
+    routeName: "Tuyến Logistics Công Nghiệp Hải Phòng",
+    driverId: "drv-04",
+    vehicleId: "veh-04",
+    warehouseId: "wh-hp-ds",
+    totalDistance: 36.0,
+    estimatedDuration: 85,
+    status: "ACTIVE",
+    startedAt: "2026-09-10T08:00:00Z",
+    tollFeeEstVND: 35000,
+    fuelEstLiters: 9.0,
+    totalWeightKg: 4500,
+    totalVolumeM3: 18.0,
+    trafficAlerts: "Xe container đông tại nút giao Đình Vũ",
+    polyline: [
+      [106.7458, 20.8415], // Đình Vũ
+      [106.6500, 20.8500], // Trung tâm Hải Phòng
+      [106.5800, 20.8650], // KCN Tràng Duệ
+      [106.7458, 20.8415], // Về Đình Vũ
+    ],
+    stops: [
+      {
+        id: "stop-006-1",
+        routeId: "route-006",
+        deliveryId: "del-12",
+        sequence: 1,
+        latitude: 20.8650,
+        longitude: 106.5800,
+        customerName: "Tập đoàn LG Display Hải Phòng",
+        customerPhone: "0909.887.766",
+        address: "Lô E, KCN Tràng Duệ, An Dương, Hải Phòng",
+        orderCode: "ORD-HPH-2026-001",
+        weightKg: 4500,
+        packageCount: 50,
+        timeWindowStart: "09:00",
+        timeWindowEnd: "10:30",
+        estimatedArrival: "2026-09-10T09:30:00Z",
+        status: "ARRIVED",
+      },
+    ],
+  },
+
+  // 7. Tuyến Cần Thơ 01: Cái Răng -> Ninh Kiều -> Bình Thủy -> Ô Môn (Đã lập kế hoạch PLANNED)
+  {
+    id: "route-007",
+    routeCode: "RT-CTO-01",
+    routeName: "Tuyến Trục Dọc Sông Hậu - Ô Môn",
+    driverId: "drv-13",
+    vehicleId: "veh-13",
+    warehouseId: "wh-ct-cr",
+    totalDistance: 32.5,
+    estimatedDuration: 75,
+    status: "PLANNED",
+    tollFeeEstVND: 0,
+    fuelEstLiters: 7.5,
+    totalWeightKg: 1600,
+    totalVolumeM3: 7.0,
+    trafficAlerts: "Đường tỉnh thông thoáng",
+    polyline: [
+      [105.7891, 10.0152], // Cái Răng
+      [105.7800, 10.0350], // Bến Ninh Kiều
+      [105.7400, 10.0700], // Bình Thủy
+      [105.6200, 10.1200], // Ô Môn
+      [105.7891, 10.0152], // Về Cái Răng
+    ],
+    stops: [
+      {
+        id: "stop-007-1",
+        routeId: "route-007",
+        deliveryId: "del-13",
+        sequence: 1,
+        latitude: 10.0350,
+        longitude: 105.7800,
+        customerName: "Hệ thống Siêu thị Co.opmart Cần Thơ",
+        customerPhone: "0944.556.677",
+        address: "Số 1 Đại lộ Hòa Bình, Ninh Kiều, Cần Thơ",
+        orderCode: "ORD-CTO-2026-001",
+        weightKg: 900,
+        packageCount: 20,
+        timeWindowStart: "13:30",
+        timeWindowEnd: "14:45",
+        estimatedArrival: "2026-09-10T14:00:00Z",
+        status: "PENDING",
+      },
+      {
+        id: "stop-007-2",
+        routeId: "route-007",
+        deliveryId: "del-14",
+        sequence: 2,
+        latitude: 10.1200,
+        longitude: 105.6200,
+        customerName: "Khu Công Nghiệp Trà Nóc 2",
+        customerPhone: "0912.334.455",
+        address: "Phường Phước Thới, Ô Môn, Cần Thơ",
+        orderCode: "ORD-CTO-2026-002",
+        weightKg: 700,
+        packageCount: 15,
+        timeWindowStart: "15:00",
+        timeWindowEnd: "16:30",
+        estimatedArrival: "2026-09-10T15:30:00Z",
+        status: "PENDING",
+      },
+    ],
+  },
+
+  // 8. Tuyến Quảng Ngãi 01: Tịnh Phong -> TP. Quảng Ngãi -> Dung Quất (Đã hoàn thành COMPLETED)
+  {
+    id: "route-008",
+    routeCode: "RT-QNG-01",
+    routeName: "Tuyến Dung Quất - Cảng Biển Nước Sâu",
+    driverId: "drv-11",
+    vehicleId: "veh-11",
+    warehouseId: "wh-qng-qn",
+    totalDistance: 45.0,
+    estimatedDuration: 90,
+    status: "COMPLETED",
+    startedAt: "2026-09-10T05:30:00Z",
+    completedAt: "2026-09-10T07:45:00Z",
+    tollFeeEstVND: 35000,
+    fuelEstLiters: 10.5,
+    totalWeightKg: 2800,
+    totalVolumeM3: 11.2,
+    trafficAlerts: "Giao hàng sớm hoàn thành 100%",
+    polyline: [
+      [108.7692, 15.1843], // Tịnh Phong
+      [108.8000, 15.1200], // TP. Quảng Ngãi
+      [108.7800, 15.3500], // Dung Quất
+      [108.7692, 15.1843], // Về Tịnh Phong
+    ],
+    stops: [
+      {
+        id: "stop-008-1",
+        routeId: "route-008",
+        deliveryId: "del-15",
+        sequence: 1,
+        latitude: 15.3500,
+        longitude: 108.7800,
+        customerName: "Nhà máy Lọc dầu Dung Quất (BSR)",
+        customerPhone: "0989.123.456",
+        address: "Khu Kinh tế Dung Quất, Bình Sơn, Quảng Ngãi",
+        orderCode: "ORD-QNG-2026-001",
+        weightKg: 2800,
+        packageCount: 35,
+        timeWindowStart: "06:15",
+        timeWindowEnd: "07:30",
+        estimatedArrival: "2026-09-10T06:45:00Z",
+        actualArrival: "2026-09-10T06:40:00Z",
+        status: "COMPLETED",
+      },
+    ],
+  },
 ];
-
-function generateMockRoutes(): Route[] {
-  const routes: Route[] = [];
-
-  ROUTE_CONFIGS.forEach((cfg, rIdx) => {
-    const routeId = `route-${(rIdx + 1).toString().padStart(3, "0")}`;
-    const driver = MOCK_DRIVERS[cfg.driverIdx];
-    const warehouse = MOCK_WAREHOUSES.find((w) => w.id === cfg.whId) || MOCK_WAREHOUSES[0];
-
-    // Lấy danh sách delivery thuộc kho này
-    const deliveriesForWarehouse = MOCK_DELIVERIES.filter((d) => {
-      const order = MOCK_ORDERS.find((o) => o.id === d.orderId);
-      return order && order.warehouseId === warehouse.id;
-    });
-
-    const stops: RouteStop[] = [];
-    const stopCount = Math.min(deliveriesForWarehouse.length, 3 + (rIdx % 5));
-
-    for (let sIdx = 0; sIdx < stopCount; sIdx++) {
-      const delivery = deliveriesForWarehouse[sIdx];
-      const order = MOCK_ORDERS.find((o) => o.id === delivery.orderId);
-
-      const etaHour = 8 + Math.floor((sIdx * 25) / 60);
-      const etaMinute = (sIdx * 25) % 60;
-      const estimatedArrival = `2026-09-06T${etaHour.toString().padStart(2, "0")}:${etaMinute.toString().padStart(2, "0")}:00Z`;
-
-      let stopStatus: RouteStopStatus = "PENDING";
-      let actualArrival: string | undefined;
-
-      if (cfg.status === "COMPLETED") {
-        stopStatus = "COMPLETED";
-        actualArrival = estimatedArrival;
-      } else if (cfg.status === "ACTIVE") {
-        if (sIdx === 0) {
-          stopStatus = "COMPLETED";
-          actualArrival = estimatedArrival;
-        } else if (sIdx === 1) {
-          stopStatus = "ARRIVED";
-          actualArrival = estimatedArrival;
-        } else {
-          stopStatus = "PENDING";
-        }
-      } else if (cfg.status === "CANCELLED") {
-        stopStatus = "SKIPPED";
-      }
-
-      stops.push({
-        id: `stop-${routeId}-${sIdx + 1}`,
-        routeId,
-        deliveryId: delivery.id,
-        sequence: sIdx + 1,
-        latitude: order ? order.receiverLatitude : warehouse.latitude + 0.02 * (sIdx + 1),
-        longitude: order ? order.receiverLongitude : warehouse.longitude + 0.02 * (sIdx + 1),
-        estimatedArrival,
-        actualArrival,
-        status: stopStatus,
-      });
-    }
-
-    routes.push({
-      id: routeId,
-      routeCode: cfg.code,
-      driverId: driver.id,
-      vehicleId: driver.currentVehicleId || "veh-01",
-      warehouseId: warehouse.id,
-      totalDistance: cfg.distance,
-      estimatedDuration: cfg.duration,
-      status: cfg.status,
-      startedAt: cfg.status !== "PLANNED" ? "2026-09-06T08:00:00Z" : undefined,
-      completedAt: cfg.status === "COMPLETED" ? "2026-09-06T10:30:00Z" : undefined,
-      stops,
-    });
-  });
-
-  return routes;
-}
-
-export const MOCK_ROUTES: Route[] = generateMockRoutes();

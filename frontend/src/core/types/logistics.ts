@@ -315,7 +315,7 @@ export interface DriverAssignment {
 }
 
 /**
- * Điểm dừng trên tuyến đường
+ * Điểm dừng trên tuyến đường giao nhận
  */
 export type RouteStopStatus = "PENDING" | "ARRIVED" | "COMPLETED" | "SKIPPED";
 
@@ -329,6 +329,15 @@ export interface RouteStop {
   estimatedArrival: string;
   actualArrival?: string;
   status: RouteStopStatus;
+  customerName?: string;
+  customerPhone?: string;
+  address?: string;
+  orderCode?: string;
+  weightKg?: number;
+  packageCount?: number;
+  timeWindowStart?: string; // "08:30"
+  timeWindowEnd?: string;   // "11:00"
+  notes?: string;
 }
 
 /**
@@ -342,6 +351,7 @@ export type RouteStatus = "PLANNED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 export interface Route {
   id: string;
   routeCode: string;
+  routeName?: string;
   driverId: string;
   vehicleId: string;
   warehouseId: string;
@@ -350,6 +360,12 @@ export interface Route {
   status: RouteStatus;
   startedAt?: string;
   completedAt?: string;
+  tollFeeEstVND?: number;    // Chi phí trạm thu phí BOT ước tính (VNĐ)
+  fuelEstLiters?: number;    // Ước tính dầu Diesel tiêu thụ (Lít)
+  totalWeightKg?: number;    // Tổng khối lượng hàng trên tuyến (kg)
+  totalVolumeM3?: number;    // Tổng thể tích hàng (m³)
+  polyline?: [number, number][]; // Tọa độ vẽ đường lộ trình [lng, lat]
+  trafficAlerts?: string[] | string; // Cảnh báo giao thông / cấm giờ xe tải
   stops?: RouteStop[];
 }
 

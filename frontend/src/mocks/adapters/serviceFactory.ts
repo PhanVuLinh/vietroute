@@ -93,6 +93,12 @@ const apiDispatchService = {
 const apiRouteService = {
   getRoutes: (params?: RouteFilterParams) => httpClient.get<Route[]>("/routes", { params }),
   getRouteById: (id: string) => httpClient.get<Route>(`/routes/${id}`),
+  createRoute: (data: Omit<Route, "id">) => httpClient.post<Route>("/routes", data),
+  updateRoute: (id: string, data: Partial<Route>) => httpClient.patch<Route>(`/routes/${id}`, data),
+  updateRouteStatus: (id: string, status: RouteStatus) => httpClient.patch<Route>(`/routes/${id}/status`, { status }),
+  updateStopStatus: (routeId: string, stopId: string, status: RouteStopStatus) => httpClient.patch<Route>(`/routes/${routeId}/stops/${stopId}/status`, { status }),
+  deleteRoute: (id: string) => httpClient.delete<boolean>(`/routes/${id}`),
+  optimizeStops: (originCoords: [number, number], stops: RouteStop[]) => httpClient.post<RouteStop[]>("/routes/optimize", { originCoords, stops }),
 };
 
 const apiNotificationService = {
