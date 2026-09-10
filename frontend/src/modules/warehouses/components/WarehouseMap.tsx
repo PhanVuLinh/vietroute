@@ -86,19 +86,19 @@ export const WarehouseMap: React.FC<WarehouseMapProps> = ({
       }`;
 
       el.innerHTML = `
-        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl shadow-lg border-2 ${colorClass} ${
-          isSelected ? "ring-4 ring-primary/40 shadow-2xl" : ""
+        <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-lg shadow-md border ${colorClass} ${
+          isSelected ? "ring-2 ring-primary ring-offset-1 shadow-xl scale-110" : ""
         }">
-          <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
             <path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/>
           </svg>
-          <div class="flex flex-col">
-            <span class="text-[11px] font-bold leading-tight truncate max-w-[130px]">
-              ${wh.name.replace("Tổng kho ", "").replace("Kho Trung chuyển ", "")}
+          <div class="flex flex-col min-w-0">
+            <span class="text-[10px] font-bold leading-tight truncate max-w-[100px] whitespace-nowrap">
+              ${wh.name.replace("Tổng kho ", "").replace("Kho Trung chuyển ", "").replace("Hub Giao nhận ", "").replace("Kho Phân phối ", "")}
             </span>
-            <span class="text-[9px] opacity-90 font-mono">
-              ${wh.usedCapacity}/${wh.capacity}T (${occupancy}%)
+            <span class="text-[9px] opacity-90 font-mono leading-tight whitespace-nowrap">
+              ${occupancy}% (${wh.usedCapacity}T)
             </span>
           </div>
         </div>

@@ -35,31 +35,28 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     if (!mapContainerRef.current) return;
     if (mapInstanceRef.current) return;
 
-    // Khởi tạo instance MapLibre với dữ liệu OpenStreetMap phân phối qua CDN CARTO (khắc phục lỗi ERR_CONNECTION_REFUSED)
+    // Khởi tạo instance MapLibre với dữ liệu OpenStreetMap chuẩn không watermark
     const map = new Map({
       container: mapContainerRef.current,
       style: {
         version: 8,
         sources: {
-          osm_carto: {
+          osm_tiles: {
             type: "raster",
             tiles: [
-              "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-              "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-              "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-              "https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+              "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
-            attribution: "© OpenStreetMap contributors © CARTO | VietRoute Engine",
+            attribution: "© OpenStreetMap contributors | VietRoute Logistics",
           },
         },
         layers: [
           {
-            id: "osm-carto-layer",
+            id: "osm-tiles-layer",
             type: "raster",
-            source: "osm_carto",
+            source: "osm_tiles",
             minzoom: 0,
-            maxzoom: 20,
+            maxzoom: 19,
           },
         ],
       },

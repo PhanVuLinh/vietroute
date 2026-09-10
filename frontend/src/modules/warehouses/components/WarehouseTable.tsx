@@ -1,16 +1,13 @@
 import React, { useState, useMemo } from "react";
 import {
   Search,
-  Filter,
   X,
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
   Building2,
   Boxes,
-  Plus,
   RefreshCw,
-  Download,
 } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
@@ -38,7 +35,7 @@ interface WarehouseTableProps {
   onEdit: (warehouse: Warehouse) => void;
   onUpdateStatus: (id: string, status: WarehouseStatus) => void;
   onDelete: (warehouse: Warehouse) => void;
-  onAddNew: () => void;
+  onAddNew?: () => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   selectedRegion: WarehouseRegion | "ALL";
@@ -65,7 +62,6 @@ export const WarehouseTable: React.FC<WarehouseTableProps> = ({
   onEdit,
   onUpdateStatus,
   onDelete,
-  onAddNew,
   searchQuery,
   setSearchQuery,
   selectedRegion,
@@ -153,11 +149,11 @@ export const WarehouseTable: React.FC<WarehouseTableProps> = ({
   return (
     <div className="bg-card rounded-xl border border-border shadow-2xs overflow-hidden flex flex-col">
       {/* 1. Header Toolbar & Filters */}
-      <div className="p-4 border-b border-border/70 space-y-3">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="p-3.5 sm:p-4 border-b border-border/70 space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           {/* Search bar */}
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Tìm theo tên kho, mã số, thành phố, địa chỉ, quản lý..."
@@ -166,7 +162,7 @@ export const WarehouseTable: React.FC<WarehouseTableProps> = ({
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-9 pr-8 h-9 text-xs"
+              className="pl-9 pr-8 h-8 text-xs"
             />
             {searchQuery && (
               <button
@@ -178,15 +174,15 @@ export const WarehouseTable: React.FC<WarehouseTableProps> = ({
             )}
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Quick Actions & Counter */}
+          <div className="flex items-center gap-2 justify-between sm:justify-end shrink-0">
             {onRefresh && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onRefresh}
                 disabled={isLoading}
-                className="h-9 px-2.5 text-xs gap-1.5"
+                className="h-8 px-2.5 text-xs gap-1.5"
                 title="Tải lại dữ liệu"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
@@ -194,81 +190,70 @@ export const WarehouseTable: React.FC<WarehouseTableProps> = ({
               </Button>
             )}
 
-            <Button
-              onClick={onAddNew}
-              size="sm"
-              className="h-9 px-3 text-xs gap-1.5 font-semibold shadow-xs"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Thêm kho mới</span>
-            </Button>
+            <div className="text-[11px] text-muted-foreground font-mono whitespace-nowrap">
+              Hiển thị <strong>{sortedWarehouses.length}</strong> kho bãi
+            </div>
           </div>
         </div>
 
         {/* Filters Row */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-2 pt-0.5">
           {/* Lọc Khu vực */}
-          <div className="flex items-center gap-1">
-            <Select
-              value={selectedRegion}
-              onValueChange={(val) => {
-                setSelectedRegion(val as WarehouseRegion | "ALL");
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="h-8 text-xs w-[130px]">
-                <SelectValue placeholder="Khu vực" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tất cả miền</SelectItem>
-                <SelectItem value="NORTH">Miền Bắc</SelectItem>
-                <SelectItem value="CENTRAL">Miền Trung</SelectItem>
-                <SelectItem value="SOUTH">Miền Nam</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Select
+            value={selectedRegion}
+            onValueChange={(val) => {
+              setSelectedRegion(val as WarehouseRegion | "ALL");
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="h-8 text-xs w-[125px]">
+              <SelectValue placeholder="Khu vực" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tất cả miền</SelectItem>
+              <SelectItem value="NORTH">Miền Bắc</SelectItem>
+              <SelectItem value="CENTRAL">Miền Trung</SelectItem>
+              <SelectItem value="SOUTH">Miền Nam</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Lọc Loại Hub */}
-          <div className="flex items-center gap-1">
-            <Select
-              value={selectedType}
-              onValueChange={(val) => {
-                setSelectedType(val as WarehouseType | "ALL");
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="h-8 text-xs w-[160px]">
-                <SelectValue placeholder="Loại hình hub" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tất cả loại hình</SelectItem>
-                <SelectItem value="CENTRAL_HUB">Tổng kho phân phối</SelectItem>
-                <SelectItem value="TRANSIT_HUB">Kho trung chuyển</SelectItem>
-                <SelectItem value="LAST_MILE_HUB">Hub chặng cuối</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Select
+            value={selectedType}
+            onValueChange={(val) => {
+              setSelectedType(val as WarehouseType | "ALL");
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="h-8 text-xs w-[145px]">
+              <SelectValue placeholder="Loại hình hub" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tất cả loại hình</SelectItem>
+              <SelectItem value="CENTRAL_HUB">Tổng kho phân phối</SelectItem>
+              <SelectItem value="TRANSIT_HUB">Kho trung chuyển</SelectItem>
+              <SelectItem value="LAST_MILE_HUB">Hub chặng cuối</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Lọc Trạng thái */}
-          <div className="flex items-center gap-1">
-            <Select
-              value={selectedStatus}
-              onValueChange={(val) => {
-                setSelectedStatus(val as WarehouseStatus | "ALL");
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="h-8 text-xs w-[150px]">
-                <SelectValue placeholder="Trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-                <SelectItem value="ACTIVE">Hoạt động</SelectItem>
-                <SelectItem value="MAINTENANCE">Bảo trì bến bãi</SelectItem>
-                <SelectItem value="FULL">Quá tải / Đầy tải</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Select
+            value={selectedStatus}
+            onValueChange={(val) => {
+              setSelectedStatus(val as WarehouseStatus | "ALL");
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="h-8 text-xs w-[140px]">
+              <SelectValue placeholder="Trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+              <SelectItem value="ACTIVE">Hoạt động</SelectItem>
+              <SelectItem value="MAINTENANCE">Bảo trì bến bãi</SelectItem>
+              <SelectItem value="FULL">Quá tải / Đầy tải</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Nút Xóa bộ lọc */}
           {hasActiveFilters && (
@@ -279,24 +264,20 @@ export const WarehouseTable: React.FC<WarehouseTableProps> = ({
               className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
             >
               <X className="h-3.5 w-3.5" />
-              <span>Xóa bộ lọc</span>
+              <span>Xóa lọc</span>
             </Button>
           )}
-
-          <div className="ml-auto text-xs text-muted-foreground font-mono">
-            Hiển thị <strong>{sortedWarehouses.length}</strong> kho bãi
-          </div>
         </div>
       </div>
 
-      {/* 2. Table Data */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      {/* 2. Table Data with Horizontal Scroll protection */}
+      <div className="overflow-x-auto w-full">
+        <table className="w-full text-left border-collapse min-w-[920px]">
           <thead>
-            <tr className="border-b border-border/80 bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
+            <tr className="border-b border-border/80 bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none whitespace-nowrap">
               <th
                 onClick={() => handleSort("name")}
-                className="py-3 px-4 cursor-pointer hover:text-foreground transition-colors"
+                className="py-3 px-4 cursor-pointer hover:text-foreground transition-colors min-w-[230px]"
               >
                 <div className="flex items-center gap-1.5">
                   <Building2 className="h-3.5 w-3.5" />
@@ -305,7 +286,7 @@ export const WarehouseTable: React.FC<WarehouseTableProps> = ({
                 </div>
               </th>
 
-              <th className="py-3 px-4">Địa chỉ & Tỉnh thành</th>
+              <th className="py-3 px-4 min-w-[170px]">Địa chỉ & Tỉnh thành</th>
 
               <th
                 onClick={() => handleSort("occupancy")}
@@ -319,20 +300,20 @@ export const WarehouseTable: React.FC<WarehouseTableProps> = ({
 
               <th
                 onClick={() => handleSort("dockDoors")}
-                className="py-3 px-4 cursor-pointer hover:text-foreground transition-colors"
+                className="py-3 px-4 cursor-pointer hover:text-foreground transition-colors min-w-[140px]"
               >
                 <div className="flex items-center gap-1.5">
                   <Boxes className="h-3.5 w-3.5" />
-                  <span>Cửa Dock & Giờ</span>
+                  <span>Cửa Dock & X/N</span>
                   <ArrowUpDown className="h-3 w-3 opacity-60" />
                 </div>
               </th>
 
-              <th className="py-3 px-4">Quản lý / Hotline</th>
+              <th className="py-3 px-4 min-w-[130px]">Quản lý / Hotline</th>
 
-              <th className="py-3 px-4">Trạng thái</th>
+              <th className="py-3 px-4 min-w-[120px]">Trạng thái</th>
 
-              <th className="py-3 px-4 text-right">Thao tác</th>
+              <th className="py-3 px-4 text-right w-10">Thao tác</th>
             </tr>
           </thead>
           <tbody>

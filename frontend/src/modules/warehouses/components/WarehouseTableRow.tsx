@@ -10,14 +10,12 @@ import {
   AlertTriangle,
   Phone,
   Clock,
-  Layers,
   Boxes,
   ThermometerSnowflake,
   Sun,
   Shuffle,
   ShieldCheck,
   Activity,
-  Share2,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -77,11 +75,11 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
   const getStorageIcon = () => {
     switch (warehouse.storageType) {
       case "COLD":
-        return <ThermometerSnowflake className="h-3 w-3 text-cyan-500 inline mr-1" title="Kho lạnh" />;
+        return <ThermometerSnowflake className="h-3 w-3 text-cyan-500 inline shrink-0 mr-1" title="Kho lạnh" />;
       case "DRY":
-        return <Sun className="h-3 w-3 text-amber-500 inline mr-1" title="Kho khô tiêu chuẩn" />;
+        return <Sun className="h-3 w-3 text-amber-500 inline shrink-0 mr-1" title="Kho khô tiêu chuẩn" />;
       default:
-        return <Shuffle className="h-3 w-3 text-purple-500 inline mr-1" title="Kho hỗn hợp (Khô + Lạnh)" />;
+        return <Shuffle className="h-3 w-3 text-purple-500 inline shrink-0 mr-1" title="Kho hỗn hợp (Khô + Lạnh)" />;
     }
   };
 
@@ -94,22 +92,22 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
       )}
     >
       {/* 1. Thông tin Hub & Mã */}
-      <td className="py-3.5 px-4">
+      <td className="py-3 px-4 min-w-[230px]">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-foreground group-hover:text-primary transition-colors text-sm">
+          <div className="flex items-center gap-1.5 flex-nowrap">
+            <span className="font-bold text-foreground group-hover:text-primary transition-colors text-xs sm:text-sm whitespace-nowrap">
               {warehouse.name}
             </span>
             <WarehouseRegionBadge region={warehouse.region} />
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground text-[11px]">
-            <span className="font-mono font-semibold text-foreground/80 bg-muted/70 px-1.5 py-0.5 rounded border border-border/50">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] whitespace-nowrap">
+            <span className="font-mono font-semibold text-foreground/80 bg-muted/80 px-1.5 py-0.2 rounded border border-border/50 shrink-0">
               {warehouse.code}
             </span>
             <span>•</span>
             <WarehouseTypeBadge type={warehouse.type} />
             <span>•</span>
-            <span className="flex items-center">
+            <span className="inline-flex items-center text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
               {getStorageIcon()}
               {warehouse.storageType === "COLD" ? "Kho Lạnh" : warehouse.storageType === "DRY" ? "Kho Khô" : "Hỗn hợp"}
             </span>
@@ -118,9 +116,9 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
       </td>
 
       {/* 2. Địa chỉ & Tỉnh thành */}
-      <td className="py-3.5 px-4 max-w-[200px]">
+      <td className="py-3 px-4 min-w-[170px] max-w-[220px]">
         <div className="flex flex-col gap-0.5">
-          <span className="font-medium text-foreground truncate">{warehouse.city}</span>
+          <span className="font-semibold text-foreground truncate">{warehouse.city}</span>
           <span className="text-[11px] text-muted-foreground truncate" title={warehouse.address}>
             {warehouse.address}
           </span>
@@ -128,7 +126,7 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
       </td>
 
       {/* 3. Công suất & Tỷ lệ lấp đầy */}
-      <td className="py-3.5 px-4 min-w-[170px]">
+      <td className="py-3 px-4 min-w-[170px] whitespace-nowrap">
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between text-[11px]">
             <span className="font-mono font-semibold text-foreground">
@@ -136,7 +134,7 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
             </span>
             <span
               className={cn(
-                "font-bold font-mono px-1.5 py-0.2 rounded text-[11px]",
+                "font-bold font-mono px-1.5 py-0.2 rounded text-[10px]",
                 isOverload
                   ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                   : isHighOccupancy
@@ -155,19 +153,15 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-            <span>
-              Pallets: <strong className="font-mono text-foreground/80">{warehouse.usedPallets || 0}</strong>/{warehouse.totalPallets || 0}
-            </span>
-            <span>
-              Sàn: <strong className="font-mono text-foreground/80">{(warehouse.areaSqM || 0).toLocaleString()} m²</strong>
-            </span>
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
+            <span>Pallets: {warehouse.usedPallets || 0}/{warehouse.totalPallets || 0}</span>
+            <span>Sàn: {(warehouse.areaSqM || 0).toLocaleString()} m²</span>
           </div>
         </div>
       </td>
 
-      {/* 4. Cổng Dock & Thông lượng Throughput */}
-      <td className="py-3.5 px-4">
+      {/* 4. Cổng Dock & Thông lượng */}
+      <td className="py-3 px-4 min-w-[140px] whitespace-nowrap">
         <div className="flex flex-col gap-1 text-[11px]">
           <div className="flex items-center gap-1.5 text-foreground font-medium">
             <Boxes className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -175,39 +169,39 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
               <strong className="font-mono">{warehouse.dockDoors || 0}</strong> Cửa Dock
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] font-mono">
+          <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
             <Activity className="h-3 w-3 text-blue-500 shrink-0" />
             <span>
-              Xuất/Nhập: <strong>{warehouse.dailyInboundTons || 0}</strong> / <strong>{warehouse.dailyOutboundTons || 0}</strong> T
+              X/N: {warehouse.dailyInboundTons || 0}/{warehouse.dailyOutboundTons || 0}T
             </span>
           </div>
         </div>
       </td>
 
       {/* 5. Ban Quản lý Kho */}
-      <td className="py-3.5 px-4">
+      <td className="py-3 px-4 min-w-[130px] whitespace-nowrap">
         <div className="flex flex-col gap-0.5">
-          <span className="font-medium text-foreground">{warehouse.managerName || "Chưa phân công"}</span>
+          <span className="font-medium text-foreground truncate">{warehouse.managerName || "Chưa có"}</span>
           {warehouse.managerPhone && (
             <a
               href={`tel:${warehouse.managerPhone}`}
               onClick={(e) => e.stopPropagation()}
               className="text-[11px] text-primary hover:underline flex items-center gap-1 font-mono"
             >
-              <Phone className="h-2.5 w-2.5" />
-              {warehouse.managerPhone}
+              <Phone className="h-2.5 w-2.5 shrink-0" />
+              <span>{warehouse.managerPhone}</span>
             </a>
           )}
         </div>
       </td>
 
       {/* 6. Trạng thái & PCCC */}
-      <td className="py-3.5 px-4">
+      <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
         <div className="flex flex-col gap-1 items-start">
           <WarehouseStatusBadge status={warehouse.status} />
           {warehouse.compliance?.pcccCertificateNumber && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-mono">
-              <ShieldCheck className="h-2.5 w-2.5 text-emerald-500" />
+            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
+              <ShieldCheck className="h-2.5 w-2.5 shrink-0" />
               <span>PCCC chuẩn</span>
             </span>
           )}
@@ -215,7 +209,7 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
       </td>
 
       {/* 7. Menu Thao tác */}
-      <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+      <td className="py-3 px-4 text-right w-10 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

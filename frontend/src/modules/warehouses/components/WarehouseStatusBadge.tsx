@@ -4,16 +4,13 @@ import {
   Wrench,
   AlertTriangle,
   Building2,
-  Boxes,
   MapPin,
-  Flame,
 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import type {
   WarehouseStatus,
   WarehouseType,
   WarehouseRegion,
-  WarehouseStorageType,
 } from "@/core/types/logistics";
 
 interface WarehouseStatusBadgeProps {
@@ -33,7 +30,7 @@ const STATUS_CONFIG: Record<
   }
 > = {
   ACTIVE: {
-    label: "Hoạt động bình thường",
+    label: "Hoạt động",
     icon: CheckCircle2,
     bgClass: "bg-emerald-500/10 dark:bg-emerald-500/15",
     textClass: "text-emerald-700 dark:text-emerald-300",
@@ -41,7 +38,7 @@ const STATUS_CONFIG: Record<
     dotClass: "bg-emerald-500",
   },
   MAINTENANCE: {
-    label: "Bảo trì bến bãi",
+    label: "Bảo trì bãi",
     icon: Wrench,
     bgClass: "bg-amber-500/10 dark:bg-amber-500/15",
     textClass: "text-amber-700 dark:text-amber-300",
@@ -49,7 +46,7 @@ const STATUS_CONFIG: Record<
     dotClass: "bg-amber-500",
   },
   FULL: {
-    label: "Quá tải / Đầy tải",
+    label: "Quá tải",
     icon: AlertTriangle,
     bgClass: "bg-rose-500/15 dark:bg-rose-500/20",
     textClass: "text-rose-700 dark:text-rose-300 font-bold",
@@ -68,7 +65,7 @@ export const WarehouseStatusBadge: React.FC<WarehouseStatusBadgeProps> = ({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all select-none",
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap shrink-0 select-none transition-all",
         config.bgClass,
         config.textClass,
         config.borderClass,
@@ -95,19 +92,19 @@ const TYPE_CONFIG: Record<
   { label: string; bgClass: string; textClass: string; borderClass: string }
 > = {
   CENTRAL_HUB: {
-    label: "Tổng kho phân phối",
+    label: "Tổng kho",
     bgClass: "bg-purple-500/10 dark:bg-purple-500/15",
     textClass: "text-purple-700 dark:text-purple-300 font-bold",
     borderClass: "border-purple-500/25",
   },
   TRANSIT_HUB: {
-    label: "Kho trung chuyển",
+    label: "Trung chuyển",
     bgClass: "bg-blue-500/10 dark:bg-blue-500/15",
     textClass: "text-blue-700 dark:text-blue-300 font-semibold",
     borderClass: "border-blue-500/25",
   },
   LAST_MILE_HUB: {
-    label: "Hub chặng cuối",
+    label: "Chặng cuối",
     bgClass: "bg-teal-500/10 dark:bg-teal-500/15",
     textClass: "text-teal-700 dark:text-teal-300 font-semibold",
     borderClass: "border-teal-500/25",
@@ -123,14 +120,14 @@ export const WarehouseTypeBadge: React.FC<WarehouseTypeBadgeProps> = ({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border select-none",
+        "inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[11px] font-medium border whitespace-nowrap shrink-0 select-none",
         config.bgClass,
         config.textClass,
         config.borderClass,
         className
       )}
     >
-      <Building2 className="h-3 w-3 shrink-0" />
+      <Building2 className="h-2.5 w-2.5 shrink-0" />
       <span>{config.label}</span>
     </span>
   );
@@ -146,7 +143,7 @@ interface WarehouseRegionBadgeProps {
 
 const REGION_CONFIG: Record<
   WarehouseRegion,
-  { label: string; bgClass: string; textClass: string }
+  { label: string; bgClass: string }
 > = {
   NORTH: {
     label: "Miền Bắc",
@@ -171,12 +168,12 @@ export const WarehouseRegionBadge: React.FC<WarehouseRegionBadgeProps> = ({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold border select-none",
+        "inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold border whitespace-nowrap shrink-0 select-none",
         config.bgClass,
         className
       )}
     >
-      <MapPin className="h-2.5 w-2.5" />
+      <MapPin className="h-2.5 w-2.5 shrink-0" />
       <span>{config.label}</span>
     </span>
   );
