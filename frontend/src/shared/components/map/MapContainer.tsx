@@ -4,21 +4,69 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { ENV } from "@/core/config/env";
 import { cn } from "@/shared/utils/cn";
 
+export type MapTileStyle = "google_roadmap" | "google_satellite" | "google_hybrid" | "esri_streets";
+
 export interface MapContainerProps {
   center?: [number, number];
   zoom?: number;
+  mapType?: MapTileStyle;
   className?: string;
   onMapLoad?: (map: Map) => void;
   children?: React.ReactNode;
 }
 
+const TILE_SOURCES: Record<MapTileStyle, { tiles: string[]; maxzoom: number; attribution: string }> = {
+  // 1. Google Maps Chuẩn (Đường phố, Tiếng Việt 100%, Siêu mượt, Không Watermark, Không Giới Hạn)
+  google_roadmap: {
+    tiles: [
+      "https://mt0.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+      "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+      "https://mt2.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+      "https://mt3.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+    ],
+    maxzoom: 20,
+    attribution: "© Google Maps | VietRoute Engine",
+  },
+  // 2. Google Maps Vệ Tinh (Satellite)
+  google_satellite: {
+    tiles: [
+      "https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+      "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+      "https://mt2.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+      "https://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    ],
+    maxzoom: 20,
+    attribution: "© Google Satellite | VietRoute Engine",
+  },
+  // 3. Google Maps Kết Hợp (Hybrid: Vệ tinh + Tên đường tiếng Việt)
+  google_hybrid: {
+    tiles: [
+      "https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      "https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      "https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+    ],
+    maxzoom: 20,
+    attribution: "© Google Hybrid | VietRoute Engine",
+  },
+  // 4. Esri World Street Map (Dự phòng độ tin cậy cao)
+  esri_streets: {
+    tiles: [
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+    ],
+    maxzoom: 19,
+    attribution: "© Esri ArcGIS | VietRoute Engine",
+  },
+};
+
 /**
- * Component nền tảng bản đồ số MapLibre GL JS cho hệ thống VietRoute
- * Đảm bảo tự động resize, tải layer mượt mà và không bị gián đoạn/trắng trang
+ * Component nền tảng bản đồ số MapLibre GL JS tích hợp Google Maps Engine cho VietRoute
+ * Hiển thị đường sá tiếng Việt cực nét, không lag, không watermark, không giới hạn request
  */
 export const MapContainer: React.FC<MapContainerProps> = ({
   center = ENV.MAP_DEFAULT_CENTER_HN,
   zoom = 12,
+  mapType = "google_roadmap",
   className,
   onMapLoad,
   children,
@@ -35,34 +83,33 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     if (!mapContainerRef.current) return;
     if (mapInstanceRef.current) return;
 
-    // Khởi tạo instance MapLibre với dữ liệu OpenStreetMap chuẩn không watermark
+    const sourceConfig = TILE_SOURCES[mapType] || TILE_SOURCES.google_roadmap;
+
     const map = new Map({
       container: mapContainerRef.current,
       style: {
         version: 8,
         sources: {
-          osm_tiles: {
+          base_tiles: {
             type: "raster",
-            tiles: [
-              "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            ],
+            tiles: sourceConfig.tiles,
             tileSize: 256,
-            attribution: "© OpenStreetMap contributors | VietRoute Logistics",
+            attribution: sourceConfig.attribution,
           },
         },
         layers: [
           {
-            id: "osm-tiles-layer",
+            id: "base-tiles-layer",
             type: "raster",
-            source: "osm_tiles",
+            source: "base_tiles",
             minzoom: 0,
-            maxzoom: 19,
+            maxzoom: sourceConfig.maxzoom,
           },
         ],
       },
       center: center,
       zoom: zoom,
-      fadeDuration: 100,
+      fadeDuration: 0,
     });
 
     // Thêm điều khiển điều hướng chuẩn (Phóng to / Thu nhỏ / Xoay la bàn)
@@ -109,4 +156,3 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     </div>
   );
 };
-

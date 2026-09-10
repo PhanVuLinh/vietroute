@@ -8,8 +8,10 @@ import {
   Phone,
   Clock,
   Layers,
+  Globe,
+  Map as MapIcon,
 } from "lucide-react";
-import { MapContainer } from "@/shared/components/map/MapContainer";
+import { MapContainer, type MapTileStyle } from "@/shared/components/map/MapContainer";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import type { Warehouse } from "@/core/types/logistics";
@@ -36,6 +38,7 @@ export const WarehouseMap: React.FC<WarehouseMapProps> = ({
 }) => {
   const mapInstanceRef = useRef<Map | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [currentLayer, setCurrentLayer] = useState<MapTileStyle>("google_roadmap");
   const markersRef = useRef<Marker[]>([]);
 
   const handleMapLoad = useCallback((map: Map) => {
@@ -54,6 +57,37 @@ export const WarehouseMap: React.FC<WarehouseMapProps> = ({
       speed: 1.2,
       curve: 1.4,
     });
+  };
+
+  // Đổi kiểu lớp bản đồ Google (Đường phố / Vệ tinh / Kết hợp)
+  const handleSwitchLayer = (type: MapTileStyle) => {
+    setCurrentLayer(type);
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    const tilesMap: Record<MapTileStyle, string[]> = {
+      google_roadmap: [
+        "https://mt0.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+        "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+        "https://mt2.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+      ],
+      google_satellite: [
+        "https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+        "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+      ],
+      google_hybrid: [
+        "https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+        "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      ],
+      esri_streets: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+      ],
+    };
+
+    const source = map.getSource("base_tiles") as any;
+    if (source && typeof source.setTiles === "function") {
+      source.setTiles(tilesMap[type]);
+    }
   };
 
   // Render & cập nhật Markers các kho
@@ -82,12 +116,12 @@ export const WarehouseMap: React.FC<WarehouseMapProps> = ({
 
       const el = document.createElement("div");
       el.className = `group cursor-pointer select-none transition-transform duration-200 ${
-        isSelected ? "scale-125 z-30" : "hover:scale-110 z-10"
+        isSelected ? "scale-115 z-30" : "hover:scale-110 z-10"
       }`;
 
       el.innerHTML = `
         <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-lg shadow-md border ${colorClass} ${
-          isSelected ? "ring-2 ring-primary ring-offset-1 shadow-xl scale-110" : ""
+          isSelected ? "ring-2 ring-primary ring-offset-1 shadow-xl" : ""
         }">
           <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
@@ -195,11 +229,12 @@ export const WarehouseMap: React.FC<WarehouseMapProps> = ({
       <MapContainer
         center={[107.5, 16.0]}
         zoom={5.2}
+        mapType={currentLayer}
         onMapLoad={handleMapLoad}
       />
 
       {/* Floating Region Selector (Top-Left) */}
-      <div className="absolute top-3 left-3 z-10 bg-card/90 backdrop-blur-md p-1.5 rounded-xl border border-border/70 shadow-md flex items-center gap-1">
+      <div className="absolute top-3 left-3 z-10 bg-card/95 backdrop-blur-md p-1 rounded-xl border border-border/80 shadow-md flex items-center gap-0.5">
         <Compass className="h-3.5 w-3.5 text-muted-foreground ml-1 mr-0.5" />
         <Button
           variant="ghost"
@@ -235,8 +270,32 @@ export const WarehouseMap: React.FC<WarehouseMapProps> = ({
         </Button>
       </div>
 
+      {/* Floating Map Layer Switcher (Top-Right under zoom control) */}
+      <div className="absolute top-24 right-3 z-10 bg-card/95 backdrop-blur-md p-1 rounded-xl border border-border/80 shadow-md flex flex-col gap-0.5">
+        <Button
+          variant={currentLayer === "google_roadmap" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => handleSwitchLayer("google_roadmap")}
+          className="h-7 px-2 text-[10px] gap-1 justify-start"
+          title="Bản đồ đường phố Google Maps"
+        >
+          <MapIcon className="h-3 w-3" />
+          <span>Đường phố</span>
+        </Button>
+        <Button
+          variant={currentLayer === "google_hybrid" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => handleSwitchLayer("google_hybrid")}
+          className="h-7 px-2 text-[10px] gap-1 justify-start"
+          title="Bản đồ vệ tinh Google Maps"
+        >
+          <Globe className="h-3 w-3" />
+          <span>Vệ tinh</span>
+        </Button>
+      </div>
+
       {/* Floating Legend (Bottom-Left) */}
-      <div className="absolute bottom-3 left-3 z-10 bg-card/90 backdrop-blur-md p-2 rounded-xl border border-border/70 shadow-md text-[10px] space-y-1 select-none">
+      <div className="absolute bottom-3 left-3 z-10 bg-card/95 backdrop-blur-md p-2 rounded-xl border border-border/80 shadow-md text-[10px] space-y-1 select-none">
         <span className="font-bold text-muted-foreground uppercase text-[9px] tracking-wider block">
           Tỷ lệ lấp đầy kho bãi
         </span>
