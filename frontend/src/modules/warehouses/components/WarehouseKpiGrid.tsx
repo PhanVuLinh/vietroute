@@ -7,6 +7,7 @@ import {
   Wrench,
   CheckCircle2,
   Layers,
+  Activity,
 } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import type { WarehouseStatus } from "@/core/types/logistics";
@@ -25,6 +26,10 @@ interface WarehouseKpiGridProps {
     totalPallets: number;
     usedPallets: number;
     totalDockDoors: number;
+    totalDailyInboundTons?: number;
+    totalDailyOutboundTons?: number;
+    totalYardParkingCapacity?: number;
+    totalYardParkingOccupied?: number;
     northCount: number;
     centralCount: number;
     southCount: number;
@@ -84,7 +89,7 @@ export const WarehouseKpiGrid: React.FC<WarehouseKpiGridProps> = ({
         </CardContent>
       </Card>
 
-      {/* 3. Tỷ lệ lấp đầy bình quân */}
+      {/* 3. Tỷ lệ lấp đầy & Thông lượng */}
       <Card className="border border-border/80 shadow-2xs hover:border-purple-500/40 transition-colors">
         <CardContent className="p-4 flex items-center justify-between">
           <div className="space-y-1.5 flex-1 pr-2">
@@ -114,8 +119,8 @@ export const WarehouseKpiGrid: React.FC<WarehouseKpiGridProps> = ({
                 style={{ width: `${stats.avgOccupancyPercent}%` }}
               />
             </div>
-            <p className="text-[10px] text-muted-foreground">
-              Đã dùng {stats.totalUsedCapacityTons} / {stats.totalCapacityTons} Tấn
+            <p className="text-[10px] text-muted-foreground font-mono">
+              Hôm nay: Nhập {stats.totalDailyInboundTons || 0}T • Xuất {stats.totalDailyOutboundTons || 0}T
             </p>
           </div>
           <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
@@ -154,7 +159,7 @@ export const WarehouseKpiGrid: React.FC<WarehouseKpiGridProps> = ({
               </span>
             </div>
             <p className="text-[10px] text-rose-600/80 dark:text-rose-400/80">
-              Nhấn để lọc kho cần giải tỏa
+              Nhấn để lọc kho cần phân luồng
             </p>
           </div>
           <div className="h-10 w-10 rounded-xl bg-rose-500/15 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">

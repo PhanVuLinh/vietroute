@@ -206,6 +206,60 @@ export type WarehouseStorageType = "DRY" | "COLD" | "MIXED";
 export type WarehouseStatus = "ACTIVE" | "MAINTENANCE" | "FULL";
 
 /**
+ * Phân khu chức năng trong kho bãi (Zoning)
+ */
+export type WarehouseZoneType =
+  | "CROSS_DOCK"    // Khu trung chuyển nhanh trong ngày
+  | "PALLET_RACK"   // Khu giá kệ cao tầng
+  | "COLD_STORAGE"  // Khu kho lạnh/mát kiểm soát nhiệt độ
+  | "HAZMAT"        // Khu hàng hóa chất / đặc biệt
+  | "STAGING";      // Khu tập kết chờ xuất hàng
+
+export interface WarehouseZone {
+  id: string;
+  code: string; // "ZONE-A", "ZONE-COLD"
+  name: string; // "Khu Kệ Pallet Cao Tầng A", "Khu Kho Lạnh -18°C"
+  type: WarehouseZoneType;
+  capacityPallets: number;
+  usedPallets: number;
+  temperatureCelsius?: number; // Cảm biến nhiệt độ (°C)
+  humidityPercent?: number;    // Cảm biến độ ẩm (%)
+}
+
+/**
+ * Quản lý Cổng xuất nhập bãi (Dock & Yard Management - YMS)
+ */
+export type DockStatus = "AVAILABLE" | "LOADING" | "UNLOADING" | "INSPECTING" | "MAINTENANCE";
+export type DockDoorType = "INBOUND" | "OUTBOUND" | "BIDIRECTIONAL";
+
+export interface DockDoor {
+  id: string;
+  doorNumber: string; // "Dock #01"
+  name: string; // "Cổng Xuất Hàng Nhanh 01"
+  type: DockDoorType;
+  status: DockStatus;
+  currentVehiclePlate?: string;
+  currentDriverName?: string;
+  cargoType?: string;
+  startedAt?: string;
+  estimatedCompletionTime?: string;
+  progressPercent?: number;
+}
+
+/**
+ * Hồ sơ Pháp lý, An toàn PCCC & Bảo hiểm Bến Bãi
+ */
+export interface WarehouseCompliance {
+  pcccCertificateNumber?: string; // Số chứng nhận PCCC (VD: "PCCC-HN-2024/9821")
+  pcccExpiryDate?: string;        // Hạn kiểm tra định kỳ PCCC
+  pcccInspector?: string;         // Đơn vị cấp PCCC
+  insurancePolicyNumber?: string; // Số hợp đồng Bảo hiểm Cháy Nổ Kho
+  insuranceExpiryDate?: string;   // Hạn bảo hiểm kho
+  insuranceProvider?: string;     // Công ty bảo hiểm (Bảo Việt, PVI,...)
+  rackInspectionExpiry?: string;  // Hạn kiểm định tải trọng giàn giá kệ
+}
+
+/**
  * Kho bãi & Trung tâm trung chuyển (Hub)
  */
 export interface Warehouse {
@@ -231,6 +285,15 @@ export interface Warehouse {
   managerPhone?: string; // Số điện thoại
   managerEmail?: string; // Email liên hệ
   status: WarehouseStatus;
+
+  // Nghiệp vụ thực tế chuyên sâu (Real-world Operations)
+  zones?: WarehouseZone[];               // Danh sách phân khu chức năng
+  dockList?: DockDoor[];                 // Trạng thái từng cổng Dock realtime
+  compliance?: WarehouseCompliance;       // Pháp lý PCCC & Bảo hiểm kho hàng
+  dailyInboundTons?: number;             // Lưu lượng hàng nhập trong ngày (Tấn)
+  dailyOutboundTons?: number;            // Lưu lượng hàng xuất trong ngày (Tấn)
+  yardParkingCapacity?: number;          // Sức chứa bãi đỗ xe tải/container (vị trí)
+  yardParkingOccupied?: number;          // Số xe đang đỗ chờ tại bãi
 }
 
 /**

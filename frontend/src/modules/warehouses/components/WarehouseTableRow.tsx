@@ -15,6 +15,9 @@ import {
   ThermometerSnowflake,
   Sun,
   Shuffle,
+  ShieldCheck,
+  Activity,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -115,7 +118,7 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
       </td>
 
       {/* 2. Địa chỉ & Tỉnh thành */}
-      <td className="py-3.5 px-4 max-w-[220px]">
+      <td className="py-3.5 px-4 max-w-[200px]">
         <div className="flex flex-col gap-0.5">
           <span className="font-medium text-foreground truncate">{warehouse.city}</span>
           <span className="text-[11px] text-muted-foreground truncate" title={warehouse.address}>
@@ -163,19 +166,19 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
         </div>
       </td>
 
-      {/* 4. Cổng Dock & Vận hành */}
+      {/* 4. Cổng Dock & Thông lượng Throughput */}
       <td className="py-3.5 px-4">
         <div className="flex flex-col gap-1 text-[11px]">
           <div className="flex items-center gap-1.5 text-foreground font-medium">
             <Boxes className="h-3.5 w-3.5 text-primary shrink-0" />
             <span>
-              <strong className="font-mono">{warehouse.dockDoors || 0}</strong> cửa Dock
+              <strong className="font-mono">{warehouse.dockDoors || 0}</strong> Cửa Dock
             </span>
           </div>
-          <div className="flex items-center gap-1 text-muted-foreground text-[10px]">
-            <Clock className="h-3 w-3 shrink-0" />
-            <span className="font-mono">
-              {warehouse.openingTime} - {warehouse.closingTime}
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] font-mono">
+            <Activity className="h-3 w-3 text-blue-500 shrink-0" />
+            <span>
+              Xuất/Nhập: <strong>{warehouse.dailyInboundTons || 0}</strong> / <strong>{warehouse.dailyOutboundTons || 0}</strong> T
             </span>
           </div>
         </div>
@@ -198,9 +201,17 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
         </div>
       </td>
 
-      {/* 6. Trạng thái */}
+      {/* 6. Trạng thái & PCCC */}
       <td className="py-3.5 px-4">
-        <WarehouseStatusBadge status={warehouse.status} />
+        <div className="flex flex-col gap-1 items-start">
+          <WarehouseStatusBadge status={warehouse.status} />
+          {warehouse.compliance?.pcccCertificateNumber && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-mono">
+              <ShieldCheck className="h-2.5 w-2.5 text-emerald-500" />
+              <span>PCCC chuẩn</span>
+            </span>
+          )}
+        </div>
       </td>
 
       {/* 7. Menu Thao tác */}
@@ -215,13 +226,13 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 shadow-lg">
+          <DropdownMenuContent align="end" className="w-52 shadow-lg">
             <DropdownMenuItem
               onClick={() => onViewDetail(warehouse)}
-              className="gap-2 cursor-pointer text-xs"
+              className="gap-2 cursor-pointer text-xs font-semibold"
             >
               <Eye className="h-3.5 w-3.5 text-primary" />
-              <span>Xem chi tiết Hub</span>
+              <span>Xem chi tiết & Cổng Dock</span>
             </DropdownMenuItem>
 
             {onFocusMap && (
@@ -239,7 +250,7 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
               className="gap-2 cursor-pointer text-xs"
             >
               <Edit className="h-3.5 w-3.5 text-amber-500" />
-              <span>Chỉnh sửa thông tin</span>
+              <span>Chỉnh sửa thông số kho</span>
             </DropdownMenuItem>
 
             <DropdownMenuSub>

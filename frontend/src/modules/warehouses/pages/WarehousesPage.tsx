@@ -381,6 +381,7 @@ export const WarehousesPage: React.FC = () => {
       {/* Detail Drawer */}
       <WarehouseDetailDrawer
         warehouse={activeDrawerWarehouse}
+        allWarehouses={allWarehouses}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         onEdit={handleEdit}

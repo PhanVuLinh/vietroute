@@ -10,7 +10,11 @@ import {
   User,
   Phone,
   Mail,
-  Compass,
+  ShieldCheck,
+  Flame,
+  FileText,
+  Activity,
+  ParkingSquare,
 } from "lucide-react";
 import {
   Dialog,
@@ -74,6 +78,17 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
   const [managerEmail, setManagerEmail] = useState("");
   const [status, setStatus] = useState<WarehouseStatus>("ACTIVE");
 
+  // Nghiệp vụ thực tế
+  const [dailyInboundTons, setDailyInboundTons] = useState<number>(80);
+  const [dailyOutboundTons, setDailyOutboundTons] = useState<number>(85);
+  const [yardParkingCapacity, setYardParkingCapacity] = useState<number>(15);
+  const [pcccCertificateNumber, setPcccCertificateNumber] = useState("");
+  const [pcccExpiryDate, setPcccExpiryDate] = useState("");
+  const [pcccInspector, setPcccInspector] = useState("");
+  const [insurancePolicyNumber, setInsurancePolicyNumber] = useState("");
+  const [insuranceExpiryDate, setInsuranceExpiryDate] = useState("");
+  const [insuranceProvider, setInsuranceProvider] = useState("");
+
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -100,6 +115,16 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
       setManagerPhone(editingWarehouse.managerPhone || "");
       setManagerEmail(editingWarehouse.managerEmail || "");
       setStatus(editingWarehouse.status);
+
+      setDailyInboundTons(editingWarehouse.dailyInboundTons || 80);
+      setDailyOutboundTons(editingWarehouse.dailyOutboundTons || 85);
+      setYardParkingCapacity(editingWarehouse.yardParkingCapacity || 15);
+      setPcccCertificateNumber(editingWarehouse.compliance?.pcccCertificateNumber || "");
+      setPcccExpiryDate(editingWarehouse.compliance?.pcccExpiryDate || "");
+      setPcccInspector(editingWarehouse.compliance?.pcccInspector || "");
+      setInsurancePolicyNumber(editingWarehouse.compliance?.insurancePolicyNumber || "");
+      setInsuranceExpiryDate(editingWarehouse.compliance?.insuranceExpiryDate || "");
+      setInsuranceProvider(editingWarehouse.compliance?.insuranceProvider || "");
     } else {
       const rand = Math.floor(10 + Math.random() * 90);
       setCode(`HUB-NEW-${rand}`);
@@ -123,6 +148,20 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
       setManagerPhone("");
       setManagerEmail("");
       setStatus("ACTIVE");
+
+      setDailyInboundTons(60);
+      setDailyOutboundTons(65);
+      setYardParkingCapacity(15);
+      setPcccCertificateNumber(`PCCC-HN-${new Date().getFullYear()}/0882`);
+      const nextYear = new Date();
+      nextYear.setFullYear(nextYear.getFullYear() + 2);
+      setPcccExpiryDate(nextYear.toISOString().split("T")[0]);
+      setPcccInspector("Cảnh sát PCCC & CNCH TP. Hà Nội");
+      setInsurancePolicyNumber(`BV-FIRE-${Math.floor(100000 + Math.random() * 900000)}`);
+      const nextIns = new Date();
+      nextIns.setFullYear(nextIns.getFullYear() + 1);
+      setInsuranceExpiryDate(nextIns.toISOString().split("T")[0]);
+      setInsuranceProvider("Tổng Công ty Bảo hiểm Bảo Việt");
     }
     setError(null);
   }, [editingWarehouse, isOpen]);
@@ -142,6 +181,10 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
       setRegion("CENTRAL");
       setLatitude(16.0544);
       setLongitude(108.2022);
+    } else if (cityName === "Quảng Ngãi") {
+      setRegion("CENTRAL");
+      setLatitude(15.1843);
+      setLongitude(108.7692);
     } else if (cityName === "Nha Trang") {
       setRegion("CENTRAL");
       setLatitude(12.2388);
@@ -207,6 +250,22 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
           managerPhone: managerPhone.trim() || undefined,
           managerEmail: managerEmail.trim() || undefined,
           status,
+          dailyInboundTons: Number(dailyInboundTons),
+          dailyOutboundTons: Number(dailyOutboundTons),
+          yardParkingCapacity: Number(yardParkingCapacity),
+          yardParkingOccupied: editingWarehouse?.yardParkingOccupied || Math.round(Number(yardParkingCapacity) * 0.5),
+          compliance: pcccCertificateNumber.trim()
+            ? {
+                pcccCertificateNumber: pcccCertificateNumber.trim(),
+                pcccExpiryDate: pcccExpiryDate || undefined,
+                pcccInspector: pcccInspector.trim() || undefined,
+                insurancePolicyNumber: insurancePolicyNumber.trim() || undefined,
+                insuranceExpiryDate: insuranceExpiryDate || undefined,
+                insuranceProvider: insuranceProvider.trim() || undefined,
+              }
+            : undefined,
+          zones: editingWarehouse?.zones,
+          dockList: editingWarehouse?.dockList,
         },
         editingWarehouse?.id
       );
@@ -220,7 +279,7 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-primary/15 text-primary flex items-center justify-center font-bold">
@@ -228,12 +287,10 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-foreground">
-                {isEditMode ? "Chỉnh sửa thông tin kho bãi" : "Thêm mới kho hàng / Hub trung chuyển"}
+                {isEditMode ? "Chỉnh sửa thông tin kho bãi & Hub" : "Thêm mới kho hàng / Hub trung chuyển"}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                {isEditMode
-                  ? "Cập nhật công suất, cổng dock, nhân sự và thông số vận hành Hub."
-                  : "Đăng ký điểm trung chuyển hoặc trung tâm phân phối vào mạng lưới VietRoute."}
+                Đăng ký chỉ số bến bãi, năng lực bốc dỡ, bãi đỗ xe và hồ sơ pháp lý an toàn PCCC.
               </DialogDescription>
             </div>
           </div>
@@ -404,17 +461,17 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
             </div>
           </div>
 
-          {/* 3. Công suất & Quy mô */}
+          {/* 3. Công suất & Thông lượng */}
           <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-3">
             <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Boxes className="h-3.5 w-3.5 text-blue-500" />
-              <span>3. Công suất, Ô Pallet & Cổng Dock</span>
+              <span>3. Công suất, Cổng Dock, Throughput & Bãi Đỗ Xe</span>
             </h4>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <label className="text-xs font-medium text-foreground block mb-1">
-                  Sức chứa tối đa (Tấn) <span className="text-rose-500">*</span>
+                  Sức chứa (Tấn) <span className="text-rose-500">*</span>
                 </label>
                 <Input
                   type="number"
@@ -446,11 +503,41 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
               </div>
 
               <div>
-                <label className="text-xs font-medium text-foreground block mb-1">Pallet đang xếp</label>
+                <label className="text-xs font-medium text-foreground block mb-1">Số Cửa Dock</label>
                 <Input
                   type="number"
-                  value={usedPallets}
-                  onChange={(e) => setUsedPallets(parseInt(e.target.value) || 0)}
+                  value={dockDoors}
+                  onChange={(e) => setDockDoors(parseInt(e.target.value) || 0)}
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-foreground block mb-1">Hàng nhập/ngày (Tấn)</label>
+                <Input
+                  type="number"
+                  value={dailyInboundTons}
+                  onChange={(e) => setDailyInboundTons(parseInt(e.target.value) || 0)}
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-foreground block mb-1">Hàng xuất/ngày (Tấn)</label>
+                <Input
+                  type="number"
+                  value={dailyOutboundTons}
+                  onChange={(e) => setDailyOutboundTons(parseInt(e.target.value) || 0)}
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-foreground block mb-1">Bãi đỗ xe (Vị trí)</label>
+                <Input
+                  type="number"
+                  value={yardParkingCapacity}
+                  onChange={(e) => setYardParkingCapacity(parseInt(e.target.value) || 0)}
                   className="h-8 text-xs font-mono"
                 />
               </div>
@@ -464,46 +551,84 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
                   className="h-8 text-xs font-mono"
                 />
               </div>
+            </div>
+          </div>
 
+          {/* 4. Hồ sơ Pháp lý & An toàn PCCC */}
+          <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-3">
+            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+              <span>4. Pháp lý An toàn PCCC & Hợp đồng Bảo hiểm Kho</span>
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-medium text-foreground block mb-1">Số Cửa Dock</label>
+                <label className="text-xs font-medium text-foreground block mb-1">Số chứng nhận PCCC</label>
                 <Input
-                  type="number"
-                  value={dockDoors}
-                  onChange={(e) => setDockDoors(parseInt(e.target.value) || 0)}
+                  value={pcccCertificateNumber}
+                  onChange={(e) => setPcccCertificateNumber(e.target.value)}
+                  placeholder="VD: PCCC-HN-2024/0981"
                   className="h-8 text-xs font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-foreground block mb-1">Giờ mở cửa</label>
+                <label className="text-xs font-medium text-foreground block mb-1">Hạn PCCC định kỳ</label>
                 <Input
-                  type="text"
-                  value={openingTime}
-                  onChange={(e) => setOpeningTime(e.target.value)}
-                  placeholder="06:00"
+                  type="date"
+                  value={pcccExpiryDate}
+                  onChange={(e) => setPcccExpiryDate(e.target.value)}
                   className="h-8 text-xs font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-foreground block mb-1">Giờ đóng cửa</label>
+                <label className="text-xs font-medium text-foreground block mb-1">Cơ quan cấp PCCC</label>
                 <Input
-                  type="text"
-                  value={closingTime}
-                  onChange={(e) => setClosingTime(e.target.value)}
-                  placeholder="22:00"
+                  value={pcccInspector}
+                  onChange={(e) => setPcccInspector(e.target.value)}
+                  placeholder="VD: Cảnh sát PCCC TP. Hà Nội"
+                  className="h-8 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-foreground block mb-1">Số HĐ Bảo hiểm cháy nổ</label>
+                <Input
+                  value={insurancePolicyNumber}
+                  onChange={(e) => setInsurancePolicyNumber(e.target.value)}
+                  placeholder="VD: BV-FIRE-882194"
                   className="h-8 text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-foreground block mb-1">Hạn hợp đồng bảo hiểm</label>
+                <Input
+                  type="date"
+                  value={insuranceExpiryDate}
+                  onChange={(e) => setInsuranceExpiryDate(e.target.value)}
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-foreground block mb-1">Công ty bảo hiểm</label>
+                <Input
+                  value={insuranceProvider}
+                  onChange={(e) => setInsuranceProvider(e.target.value)}
+                  placeholder="VD: Bảo hiểm Bảo Việt"
+                  className="h-8 text-xs"
                 />
               </div>
             </div>
           </div>
 
-          {/* 4. Ban quản lý kho */}
+          {/* 5. Ban quản lý kho */}
           <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-3">
             <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
               <User className="h-3.5 w-3.5 text-emerald-500" />
-              <span>4. Thông tin Quản lý phụ trách</span>
+              <span>5. Thông tin Quản lý phụ trách</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

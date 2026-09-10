@@ -101,9 +101,10 @@ export function useWarehouses() {
       return pct >= 85;
     }).length;
 
-    const northCount = allWarehouses.filter((w) => w.region === "NORTH").length;
-    const centralCount = allWarehouses.filter((w) => w.region === "CENTRAL").length;
-    const southCount = allWarehouses.filter((w) => w.region === "SOUTH").length;
+    const totalDailyInboundTons = allWarehouses.reduce((acc, w) => acc + (w.dailyInboundTons || 0), 0);
+    const totalDailyOutboundTons = allWarehouses.reduce((acc, w) => acc + (w.dailyOutboundTons || 0), 0);
+    const totalYardParkingCapacity = allWarehouses.reduce((acc, w) => acc + (w.yardParkingCapacity || 0), 0);
+    const totalYardParkingOccupied = allWarehouses.reduce((acc, w) => acc + (w.yardParkingOccupied || 0), 0);
 
     return {
       total,
@@ -118,6 +119,10 @@ export function useWarehouses() {
       totalPallets,
       usedPallets,
       totalDockDoors,
+      totalDailyInboundTons,
+      totalDailyOutboundTons,
+      totalYardParkingCapacity,
+      totalYardParkingOccupied,
       northCount,
       centralCount,
       southCount,

@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   MoreVertical,
   Navigation,
+  Activity,
+  ShieldCheck,
 } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
@@ -109,10 +111,10 @@ export const WarehouseMobileCards: React.FC<WarehouseMobileCardsProps> = ({
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-44">
-                      <DropdownMenuItem onClick={() => onViewDetail(wh)} className="gap-2 text-xs">
+                    <DropdownMenuContent align="end" className="w-48 shadow-lg">
+                      <DropdownMenuItem onClick={() => onViewDetail(wh)} className="gap-2 text-xs font-semibold">
                         <Eye className="h-3.5 w-3.5 text-primary" />
-                        <span>Xem chi tiết</span>
+                        <span>Xem chi tiết & Dock</span>
                       </DropdownMenuItem>
                       {onFocusMap && (
                         <DropdownMenuItem onClick={() => onFocusMap(wh)} className="gap-2 text-xs">
@@ -122,7 +124,7 @@ export const WarehouseMobileCards: React.FC<WarehouseMobileCardsProps> = ({
                       )}
                       <DropdownMenuItem onClick={() => onEdit(wh)} className="gap-2 text-xs">
                         <Edit className="h-3.5 w-3.5 text-amber-500" />
-                        <span>Chỉnh sửa</span>
+                        <span>Chỉnh sửa thông số</span>
                       </DropdownMenuItem>
                       <DropdownMenuSub>
                         <DropdownMenuSubTrigger className="gap-2 text-xs">
@@ -191,6 +193,20 @@ export const WarehouseMobileCards: React.FC<WarehouseMobileCardsProps> = ({
                 </div>
               </div>
 
+              {/* Throughput & Safety Badges */}
+              <div className="flex items-center justify-between text-[11px] bg-muted/20 p-2 rounded-md border border-border/40 font-mono">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Activity className="h-3 w-3 text-blue-500" />
+                  <span>Xuất/Nhập: {wh.dailyInboundTons || 0}/{wh.dailyOutboundTons || 0}T</span>
+                </div>
+                {wh.compliance?.pcccCertificateNumber && (
+                  <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-sans text-[10px]">
+                    <ShieldCheck className="h-3 w-3" />
+                    <span>PCCC hợp lệ</span>
+                  </span>
+                )}
+              </div>
+
               {/* Footer info & Quick buttons */}
               <div className="flex items-center justify-between pt-1 text-xs">
                 <div className="space-y-0.5">
@@ -217,7 +233,7 @@ export const WarehouseMobileCards: React.FC<WarehouseMobileCardsProps> = ({
                       e.stopPropagation();
                       onViewDetail(wh);
                     }}
-                    className="h-7 px-2 text-xs gap-1"
+                    className="h-7 px-2.5 text-xs gap-1 font-semibold"
                   >
                     <Eye className="h-3 w-3" />
                     <span>Chi tiết</span>
