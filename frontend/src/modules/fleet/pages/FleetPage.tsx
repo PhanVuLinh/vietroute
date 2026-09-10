@@ -28,6 +28,8 @@ export const FleetPage: React.FC = () => {
     setSelectedStatus,
     selectedType,
     setSelectedType,
+    selectedInspectionStatus,
+    setSelectedInspectionStatus,
     refetchAll,
     updateStatus,
     createVehicle,
@@ -80,12 +82,13 @@ export const FleetPage: React.FC = () => {
     setSearchQuery("");
     setSelectedStatus("ALL");
     setSelectedType("ALL");
+    setSelectedInspectionStatus("ALL");
   };
 
   return (
     <PageContainer
       title="Quản lý phương tiện & Hạm đội xe"
-      subtitle="Theo dõi phân bổ xe tải, trọng tải định mức, mức tiêu hao nhiên liệu và kế hoạch bảo dưỡng định kỳ."
+      subtitle="Theo dõi phân bổ xe tải, trọng tải định mức, hạn kiểm định đăng kiểm, bảo hiểm TNDS và kế hoạch bảo dưỡng định kỳ."
       action={
         <div className="flex items-center gap-2">
           <Button
@@ -129,7 +132,11 @@ export const FleetPage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <VehicleKpiGrid stats={stats} />
+          <VehicleKpiGrid
+            stats={stats}
+            selectedInspectionStatus={selectedInspectionStatus}
+            onSelectInspectionStatus={setSelectedInspectionStatus}
+          />
         )}
 
         {/* 3. Danh sách phương tiện */}
@@ -150,6 +157,8 @@ export const FleetPage: React.FC = () => {
                 onStatusChange={setSelectedStatus}
                 selectedType={selectedType}
                 onTypeChange={setSelectedType}
+                selectedInspectionStatus={selectedInspectionStatus}
+                onInspectionStatusChange={setSelectedInspectionStatus}
                 onViewDetail={handleViewDetail}
                 onEdit={handleEdit}
                 onUpdateStatus={handleUpdateStatus}

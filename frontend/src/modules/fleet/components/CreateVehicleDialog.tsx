@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Truck, Edit, Save, AlertCircle, Gauge, Calendar, User } from "lucide-react";
+import { Truck, Edit, Save, AlertCircle, Gauge, Calendar, User, ShieldCheck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +50,14 @@ export const CreateVehicleDialog: React.FC<CreateVehicleDialogProps> = ({
   const [status, setStatus] = useState<VehicleStatus>("AVAILABLE");
   const [driverId, setDriverId] = useState<string>("NONE");
 
+  // Các trường đăng kiểm & bảo hiểm pháp lý thực tế
+  const [inspectionCertificateNumber, setInspectionCertificateNumber] = useState("");
+  const [lastInspectionDate, setLastInspectionDate] = useState("");
+  const [inspectionExpiryDate, setInspectionExpiryDate] = useState("");
+  const [insuranceExpiryDate, setInsuranceExpiryDate] = useState("");
+  const [inspectionCenter, setInspectionCenter] = useState("");
+  const [inspectionNotes, setInspectionNotes] = useState("");
+
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,6 +75,13 @@ export const CreateVehicleDialog: React.FC<CreateVehicleDialogProps> = ({
       setNextMaintenanceDate(editingVehicle.nextMaintenanceDate);
       setStatus(editingVehicle.status);
       setDriverId(editingVehicle.driverId || "NONE");
+
+      setInspectionCertificateNumber(editingVehicle.inspectionCertificateNumber || "");
+      setLastInspectionDate(editingVehicle.lastInspectionDate || "");
+      setInspectionExpiryDate(editingVehicle.inspectionExpiryDate || "");
+      setInsuranceExpiryDate(editingVehicle.insuranceExpiryDate || "");
+      setInspectionCenter(editingVehicle.inspectionCenter || "");
+      setInspectionNotes(editingVehicle.inspectionNotes || "");
     } else {
       setLicensePlate("");
       const rand = Math.floor(10 + Math.random() * 90);
@@ -83,9 +98,30 @@ export const CreateVehicleDialog: React.FC<CreateVehicleDialogProps> = ({
       setNextMaintenanceDate(d.toISOString().split("T")[0]);
       setStatus("AVAILABLE");
       setDriverId("NONE");
+
+      // Default inspection values
+      const nowStr = new Date().toISOString().slice(0, 10);
+      setLastInspectionDate(nowStr);
+      const expiry = new Date();
+      expiry.setFullYear(expiry.getFullYear() + 1);
+      setInspectionExpiryDate(expiry.toISOString().slice(0, 10));
+      const insExpiry = new Date();
+      insExpiry.setFullYear(insExpiry.getFullYear() + 1);
+      insExpiry.setMonth(insExpiry.getMonth() + 1);
+      setInsuranceExpiryDate(insExpiry.toISOString().slice(0, 10));
+      setInspectionCertificateNumber(`KD-${Math.floor(1000000 + Math.random() * 9000000)}`);
+      setInspectionCenter("TTĐK 29-03V (Hà Nội)");
+      setInspectionNotes("");
     }
     setError(null);
   }, [editingVehicle, isOpen]);
+
+  // Helper tính chu kỳ đăng kiểm
+  const handleQuickInspectionPeriod = (months: number) => {
+    const baseDate = lastInspectionDate ? new Date(lastInspectionDate) : new Date();
+    baseDate.setMonth(baseDate.getMonth() + months);
+    setInspectionExpiryDate(baseDate.toISOString().slice(0, 10));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,29 +138,36 @@ export const CreateVehicleDialog: React.FC<CreateVehicleDialogProps> = ({
       return;
     }
 
+    setIsSubmitting(true);
+    setError(null);
+
     try {
-      setIsSubmitting(true);
-      setError(null);
-
-      const payload: Omit<Vehicle, "id"> = {
-        vehicleCode: vehicleCode.trim().toUpperCase(),
-        licensePlate: licensePlate.trim().toUpperCase(),
-        type,
-        brand: brand.trim(),
-        model: model.trim(),
-        capacityWeight: Number(capacityWeight),
-        capacityVolume: Number(capacityVolume),
-        currentMileage: Number(currentMileage),
-        fuelPercent: Number(fuelPercent),
-        nextMaintenanceDate: nextMaintenanceDate || "2026-12-31",
-        status,
-        driverId: driverId === "NONE" ? undefined : driverId,
-      };
-
-      await onSubmit(payload, editingVehicle?.id);
+      await onSubmit(
+        {
+          licensePlate: licensePlate.trim().toUpperCase(),
+          vehicleCode: vehicleCode.trim().toUpperCase(),
+          type,
+          brand: brand.trim(),
+          model: model.trim(),
+          capacityWeight,
+          capacityVolume,
+          currentMileage,
+          fuelPercent,
+          nextMaintenanceDate,
+          status,
+          driverId: driverId === "NONE" ? undefined : driverId,
+          inspectionCertificateNumber: inspectionCertificateNumber.trim() || undefined,
+          lastInspectionDate: lastInspectionDate || undefined,
+          inspectionExpiryDate: inspectionExpiryDate || undefined,
+          insuranceExpiryDate: insuranceExpiryDate || undefined,
+          inspectionCenter: inspectionCenter.trim() || undefined,
+          inspectionNotes: inspectionNotes.trim() || undefined,
+        },
+        editingVehicle ? editingVehicle.id : undefined
+      );
       onClose();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra khi lưu phương tiện.");
+    } catch (err: any) {
+      setError(err?.message || "Đã xảy ra lỗi khi lưu thông tin phương tiện.");
     } finally {
       setIsSubmitting(false);
     }
@@ -363,6 +406,117 @@ export const CreateVehicleDialog: React.FC<CreateVehicleDialogProps> = ({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+            </div>
+
+            {/* 4. Hồ sơ Đăng kiểm & Bảo hiểm pháp lý (Thực tế Việt Nam) */}
+            <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-1">
+                <h4 className="text-xs font-bold text-foreground flex items-center gap-2 uppercase tracking-wider">
+                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                  4. Hồ sơ Đăng kiểm & Bảo hiểm pháp lý
+                </h4>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground mr-1">Chọn nhanh chu kỳ:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickInspectionPeriod(6)}
+                    className="px-2 py-0.5 rounded text-[10px] font-medium bg-card border border-border hover:border-primary text-foreground cursor-pointer"
+                  >
+                    +6 Tháng
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickInspectionPeriod(12)}
+                    className="px-2 py-0.5 rounded text-[10px] font-medium bg-card border border-border hover:border-primary text-foreground cursor-pointer"
+                  >
+                    +12 Tháng
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickInspectionPeriod(24)}
+                    className="px-2 py-0.5 rounded text-[10px] font-medium bg-card border border-border hover:border-primary text-foreground cursor-pointer"
+                  >
+                    +24 Tháng
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground">
+                    Số tem kiểm định / Sổ đăng kiểm
+                  </label>
+                  <Input
+                    placeholder="VD: KD-7482910..."
+                    value={inspectionCertificateNumber}
+                    onChange={(e) => setInspectionCertificateNumber(e.target.value)}
+                    className="h-9 text-xs font-mono uppercase"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground">
+                    Trung tâm / Đơn vị kiểm định
+                  </label>
+                  <Input
+                    placeholder="VD: TTĐK 29-03V (Hà Nội)..."
+                    value={inspectionCenter}
+                    onChange={(e) => setInspectionCenter(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground">
+                    Ngày kiểm định gần nhất
+                  </label>
+                  <Input
+                    type="date"
+                    value={lastInspectionDate}
+                    onChange={(e) => setLastInspectionDate(e.target.value)}
+                    className="h-9 text-xs font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground">
+                    Hạn đăng kiểm tiếp theo <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    type="date"
+                    value={inspectionExpiryDate}
+                    onChange={(e) => setInspectionExpiryDate(e.target.value)}
+                    className="h-9 text-xs font-mono font-bold text-primary"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground">
+                    Hạn bảo hiểm bắt buộc TNDS
+                  </label>
+                  <Input
+                    type="date"
+                    value={insuranceExpiryDate}
+                    onChange={(e) => setInsuranceExpiryDate(e.target.value)}
+                    className="h-9 text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-foreground">
+                  Ghi chú cơ sở đăng kiểm / Tiêu chuẩn khí thải
+                </label>
+                <Input
+                  placeholder="VD: Đạt chuẩn Euro 4, phanh ABS tốt, kỳ kiểm định tiếp theo tại trạm 29-03V..."
+                  value={inspectionNotes}
+                  onChange={(e) => setInspectionNotes(e.target.value)}
+                  className="h-9 text-xs"
+                />
               </div>
             </div>
           </div>

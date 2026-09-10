@@ -1,7 +1,7 @@
 import type { Vehicle } from "@/core/types/logistics";
 
 export const MOCK_VEHICLES: Vehicle[] = [
-  // 1. Xe tải trung 5T - Hà Nội
+  // 1. Xe tải trung 5T - Hà Nội (Còn hạn đăng kiểm dài)
   {
     id: "veh-01",
     vehicleCode: "XE-TRK-01",
@@ -16,8 +16,14 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "EN_ROUTE",
     driverId: "drv-01",
     nextMaintenanceDate: "2026-11-15",
+    inspectionCertificateNumber: "KD-7482910",
+    lastInspectionDate: "2026-03-10",
+    inspectionExpiryDate: "2027-03-10",
+    insuranceExpiryDate: "2027-04-15",
+    inspectionCenter: "TTĐK 29-03V (Hà Nội)",
+    inspectionNotes: "Đạt chuẩn khí thải Euro 4, hệ thống phanh ABS hoạt động tốt",
   },
-  // 2. Xe Van 1.25T - Hà Nội
+  // 2. Xe Van 1.25T - Hà Nội (Sắp hết hạn trong 12 ngày!)
   {
     id: "veh-02",
     vehicleCode: "XE-VAN-02",
@@ -32,8 +38,14 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "AVAILABLE",
     driverId: "drv-02",
     nextMaintenanceDate: "2026-12-01",
+    inspectionCertificateNumber: "KD-1928374",
+    lastInspectionDate: "2025-09-22",
+    inspectionExpiryDate: "2026-09-22", // Sắp hết hạn trong 12 ngày!
+    insuranceExpiryDate: "2026-10-01",
+    inspectionCenter: "TTĐK 29-01S (Hà Nội)",
+    inspectionNotes: "Cần đưa xe đi kiểm định định kỳ 12 tháng trước ngày 22/09",
   },
-  // 3. Xe tải nhẹ 2.5T - Hà Nội
+  // 3. Xe tải nhẹ 2.5T - Hà Nội (Còn hạn)
   {
     id: "veh-03",
     vehicleCode: "XE-TRK-03",
@@ -48,8 +60,13 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "EN_ROUTE",
     driverId: "drv-03",
     nextMaintenanceDate: "2026-10-20",
+    inspectionCertificateNumber: "KD-8839201",
+    lastInspectionDate: "2026-04-15",
+    inspectionExpiryDate: "2027-04-15",
+    insuranceExpiryDate: "2027-05-10",
+    inspectionCenter: "TTĐK 29-06V (Hà Nội)",
   },
-  // 4. Xe máy giao hàng nhanh - Hà Nội
+  // 4. Xe máy giao hàng nhanh - Hà Nội (Bảo hiểm TNDS)
   {
     id: "veh-04",
     vehicleCode: "XE-MBIKE-04",
@@ -64,8 +81,13 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "AVAILABLE",
     driverId: "drv-04",
     nextMaintenanceDate: "2026-10-10",
+    inspectionCertificateNumber: "BH-MOTO-9921",
+    lastInspectionDate: "2025-10-10",
+    inspectionExpiryDate: "2026-10-10",
+    insuranceExpiryDate: "2026-10-10",
+    inspectionCenter: "Bảo hiểm Bảo Việt Hà Nội",
   },
-  // 5. Xe tải nặng 10T - TP.HCM
+  // 5. Xe tải nặng 10T - TP.HCM (Sắp hết hạn trong 20 ngày)
   {
     id: "veh-05",
     vehicleCode: "XE-TRK-05",
@@ -80,8 +102,14 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "EN_ROUTE",
     driverId: "drv-05",
     nextMaintenanceDate: "2026-10-05",
+    inspectionCertificateNumber: "KD-5129384",
+    lastInspectionDate: "2026-03-30",
+    inspectionExpiryDate: "2026-09-30", // Sắp hết hạn trong 20 ngày!
+    insuranceExpiryDate: "2026-11-20",
+    inspectionCenter: "TTĐK 50-05V (TP.HCM)",
+    inspectionNotes: "Xe tải nặng chu kỳ 6 tháng. Đã đặt lịch hẹn tại trạm 50-05V.",
   },
-  // 6. Xe Van 1.5T - TP.HCM
+  // 6. Xe Van 1.5T - TP.HCM (Còn hạn)
   {
     id: "veh-06",
     vehicleCode: "XE-VAN-06",
@@ -96,8 +124,13 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "LOADING",
     driverId: "drv-06",
     nextMaintenanceDate: "2026-11-28",
+    inspectionCertificateNumber: "KD-5039481",
+    lastInspectionDate: "2026-01-15",
+    inspectionExpiryDate: "2027-01-15",
+    insuranceExpiryDate: "2027-02-28",
+    inspectionCenter: "TTĐK 50-03S (TP.HCM)",
   },
-  // 7. Xe tải 5T - TP.HCM
+  // 7. Xe tải 5T - TP.HCM (Còn hạn)
   {
     id: "veh-07",
     vehicleCode: "XE-TRK-07",
@@ -112,8 +145,13 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "AVAILABLE",
     driverId: "drv-07",
     nextMaintenanceDate: "2026-12-15",
+    inspectionCertificateNumber: "KD-5192843",
+    lastInspectionDate: "2026-02-10",
+    inspectionExpiryDate: "2027-02-10",
+    insuranceExpiryDate: "2027-03-01",
+    inspectionCenter: "TTĐK 50-04V (TP.HCM)",
   },
-  // 8. Xe bán tải giao mẫu / chứng từ - TP.HCM
+  // 8. Xe bán tải giao mẫu / chứng từ - TP.HCM (Còn hạn)
   {
     id: "veh-08",
     vehicleCode: "XE-CAR-08",
@@ -128,8 +166,13 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "AVAILABLE",
     driverId: "drv-08",
     nextMaintenanceDate: "2027-01-10",
+    inspectionCertificateNumber: "KD-5918234",
+    lastInspectionDate: "2025-07-20",
+    inspectionExpiryDate: "2027-01-20",
+    insuranceExpiryDate: "2027-03-15",
+    inspectionCenter: "TTĐK 50-02S (TP.HCM)",
   },
-  // 9. Xe tải 3.5T - Đà Nẵng
+  // 9. Xe tải 3.5T - Đà Nẵng (Còn hạn)
   {
     id: "veh-09",
     vehicleCode: "XE-TRK-09",
@@ -144,8 +187,13 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "EN_ROUTE",
     driverId: "drv-09",
     nextMaintenanceDate: "2026-11-05",
+    inspectionCertificateNumber: "KD-4318920",
+    lastInspectionDate: "2026-05-12",
+    inspectionExpiryDate: "2027-05-12",
+    insuranceExpiryDate: "2027-06-01",
+    inspectionCenter: "TTĐK 43-01S (Đà Nẵng)",
   },
-  // 10. Xe Van 1.0T - Đà Nẵng
+  // 10. Xe Van 1.0T - Đà Nẵng (Sắp hết hạn trong 5 ngày)
   {
     id: "veh-10",
     vehicleCode: "XE-VAN-10",
@@ -160,6 +208,12 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "AVAILABLE",
     driverId: "drv-10",
     nextMaintenanceDate: "2026-12-20",
+    inspectionCertificateNumber: "KD-4328194",
+    lastInspectionDate: "2025-09-15",
+    inspectionExpiryDate: "2026-09-15", // Sắp hết hạn trong 5 ngày!
+    insuranceExpiryDate: "2026-10-15",
+    inspectionCenter: "TTĐK 43-02S (Đà Nẵng)",
+    inspectionNotes: "Cần ưu tiên gia hạn kiểm định trước ngày 15/09",
   },
   // 11. Xe máy giao hàng nhanh - Đà Nẵng
   {
@@ -176,8 +230,13 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "AVAILABLE",
     driverId: "drv-11",
     nextMaintenanceDate: "2026-10-25",
+    inspectionCertificateNumber: "BH-MOTO-4311",
+    lastInspectionDate: "2025-10-25",
+    inspectionExpiryDate: "2026-10-25",
+    insuranceExpiryDate: "2026-10-25",
+    inspectionCenter: "Bảo hiểm PJICO Đà Nẵng",
   },
-  // 12. Xe tải 5T - Quảng Ngãi
+  // 12. Xe tải 5T - Quảng Ngãi (ĐÃ QUÁ HẠN ĐĂNG KIỂM - CẢNH BÁO NGUY HIỂM)
   {
     id: "veh-12",
     vehicleCode: "XE-TRK-12",
@@ -192,8 +251,14 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "EN_ROUTE",
     driverId: "drv-12",
     nextMaintenanceDate: "2026-10-18",
+    inspectionCertificateNumber: "KD-7619284",
+    lastInspectionDate: "2026-02-28",
+    inspectionExpiryDate: "2026-08-28", // Đã quá hạn 13 ngày!
+    insuranceExpiryDate: "2026-09-01",
+    inspectionCenter: "TTĐK 76-01S (Quảng Ngãi)",
+    inspectionNotes: "CẢNH BÁO: Đã quá hạn đăng kiểm 13 ngày! Cần thu hồi xe về trạm kiểm định ngay lập tức.",
   },
-  // 13. Xe Van đang bảo trì - Quảng Ngãi
+  // 13. Xe Van đang bảo trì - Quảng Ngãi (ĐÃ QUÁ HẠN ĐĂNG KIỂM)
   {
     id: "veh-13",
     vehicleCode: "XE-VAN-13",
@@ -207,8 +272,14 @@ export const MOCK_VEHICLES: Vehicle[] = [
     fuelPercent: 30,
     status: "MAINTENANCE",
     nextMaintenanceDate: "2026-09-12",
+    inspectionCertificateNumber: "KD-7639481",
+    lastInspectionDate: "2025-08-30",
+    inspectionExpiryDate: "2026-08-30", // Đã quá hạn 11 ngày!
+    insuranceExpiryDate: "2026-09-10",
+    inspectionCenter: "TTĐK 76-02D (Quảng Ngãi)",
+    inspectionNotes: "Đang đại tu máy kết hợp đưa đi kiểm định kỳ mới.",
   },
-  // 14. Xe tải 2.5T - Cần Thơ
+  // 14. Xe tải 2.5T - Cần Thơ (Còn hạn)
   {
     id: "veh-14",
     vehicleCode: "XE-TRK-14",
@@ -223,8 +294,13 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "EN_ROUTE",
     driverId: "drv-14",
     nextMaintenanceDate: "2026-11-10",
+    inspectionCertificateNumber: "KD-6518293",
+    lastInspectionDate: "2026-05-20",
+    inspectionExpiryDate: "2027-05-20",
+    insuranceExpiryDate: "2027-06-15",
+    inspectionCenter: "TTĐK 65-01S (Cần Thơ)",
   },
-  // 15. Xe Van 1.25T - Cần Thơ
+  // 15. Xe Van 1.25T - Cần Thơ (Còn hạn)
   {
     id: "veh-15",
     vehicleCode: "XE-VAN-15",
@@ -239,8 +315,13 @@ export const MOCK_VEHICLES: Vehicle[] = [
     status: "AVAILABLE",
     driverId: "drv-15",
     nextMaintenanceDate: "2026-12-05",
+    inspectionCertificateNumber: "KD-6529381",
+    lastInspectionDate: "2026-01-10",
+    inspectionExpiryDate: "2027-01-10",
+    insuranceExpiryDate: "2027-02-01",
+    inspectionCenter: "TTĐK 65-02D (Cần Thơ)",
   },
-  // 16. Xe dừng hoạt động (OFFLINE)
+  // 16. Xe dừng hoạt động (OFFLINE) (Hết hạn)
   {
     id: "veh-16",
     vehicleCode: "XE-TRK-16",
@@ -254,5 +335,11 @@ export const MOCK_VEHICLES: Vehicle[] = [
     fuelPercent: 15,
     status: "OFFLINE",
     nextMaintenanceDate: "2026-09-08",
+    inspectionCertificateNumber: "KD-6591823",
+    lastInspectionDate: "2025-08-15",
+    inspectionExpiryDate: "2026-08-15",
+    insuranceExpiryDate: "2026-08-15",
+    inspectionCenter: "TTĐK 65-01S (Cần Thơ)",
+    inspectionNotes: "Xe tạm dừng khai thác kinh doanh.",
   },
 ];

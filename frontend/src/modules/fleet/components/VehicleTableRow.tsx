@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
-import { VehicleStatusBadge } from "./VehicleStatusBadge";
+import { VehicleStatusBadge, VehicleInspectionBadge } from "./VehicleStatusBadge";
 import type { EnrichedVehicle } from "../hooks/useVehicles";
 import type { VehicleStatus, VehicleType } from "@/core/types/logistics";
 
@@ -143,7 +143,22 @@ export const VehicleTableRow: React.FC<VehicleTableRowProps> = ({
         </div>
       </td>
 
-      {/* 4. Bảo dưỡng tiếp theo */}
+      {/* 4. Đăng kiểm & Pháp lý */}
+      <td className="py-3 px-4">
+        <div className="space-y-1">
+          <VehicleInspectionBadge
+            expiryDate={vehicle.inspectionExpiryDate}
+            showDetails={true}
+          />
+          {vehicle.inspectionCertificateNumber && (
+            <div className="font-mono text-[10px] text-muted-foreground flex items-center gap-1">
+              <span>Tem: {vehicle.inspectionCertificateNumber}</span>
+            </div>
+          )}
+        </div>
+      </td>
+
+      {/* 5. Bảo dưỡng tiếp theo */}
       <td className="py-3 px-4">
         <div className="space-y-0.5 text-xs">
           <div className="font-mono text-muted-foreground">{vehicle.nextMaintenanceDate}</div>

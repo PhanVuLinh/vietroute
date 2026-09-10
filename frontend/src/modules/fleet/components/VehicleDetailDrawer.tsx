@@ -13,10 +13,11 @@ import {
   PowerOff,
   Edit,
   Package,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
-import { VehicleStatusBadge } from "./VehicleStatusBadge";
+import { VehicleStatusBadge, VehicleInspectionBadge } from "./VehicleStatusBadge";
 import type { EnrichedVehicle } from "../hooks/useVehicles";
 import type { VehicleStatus } from "@/core/types/logistics";
 
@@ -171,12 +172,63 @@ export const VehicleDetailDrawer: React.FC<VehicleDetailDrawerProps> = ({
               </div>
             </div>
 
-            {/* 3. Lịch bảo dưỡng & Đăng kiểm */}
+            {/* 3. Hồ sơ Pháp lý & Đăng kiểm */}
+            <div className="p-4 rounded-xl border border-border bg-card space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  Hồ sơ Đăng kiểm & Pháp lý
+                </h4>
+                <VehicleInspectionBadge expiryDate={vehicle.inspectionExpiryDate} showDetails={true} />
+              </div>
+
+              <div className="space-y-2 text-xs bg-muted/20 p-3 rounded-lg border border-border/60">
+                <div className="flex items-center justify-between py-1 border-b border-border/40">
+                  <span className="text-muted-foreground">Số tem kiểm định:</span>
+                  <span className="font-mono font-bold text-foreground">
+                    {vehicle.inspectionCertificateNumber || "Chưa cập nhật"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-border/40">
+                  <span className="text-muted-foreground">Đơn vị kiểm định:</span>
+                  <span className="font-medium text-foreground text-right">
+                    {vehicle.inspectionCenter || "Chưa có thông tin"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-border/40">
+                  <span className="text-muted-foreground">Lần kiểm định gần nhất:</span>
+                  <span className="font-mono text-foreground">
+                    {vehicle.lastInspectionDate || "---"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-border/40">
+                  <span className="text-muted-foreground">Hạn đăng kiểm tiếp theo:</span>
+                  <span className="font-mono font-bold text-foreground">
+                    {vehicle.inspectionExpiryDate || "---"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-muted-foreground">Hạn bảo hiểm TNDS:</span>
+                  <span className="font-mono font-semibold text-primary">
+                    {vehicle.insuranceExpiryDate || "---"}
+                  </span>
+                </div>
+              </div>
+
+              {vehicle.inspectionNotes && (
+                <div className="text-[11px] p-2.5 rounded-lg bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                  <span className="font-bold block mb-0.5">Ghi chú kiểm định:</span>
+                  {vehicle.inspectionNotes}
+                </div>
+              )}
+            </div>
+
+            {/* 4. Kế hoạch bảo dưỡng định kỳ */}
             <div className="p-4 rounded-xl border border-border bg-card space-y-2.5">
               <h4 className="text-xs font-bold text-foreground flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="h-4 w-4 text-amber-500" />
-                  Kế hoạch bảo dưỡng & Đăng kiểm
+                  Kế hoạch bảo dưỡng kỹ thuật
                 </span>
               </h4>
               <div className="space-y-2 text-xs">
@@ -195,7 +247,7 @@ export const VehicleDetailDrawer: React.FC<VehicleDetailDrawerProps> = ({
               </div>
             </div>
 
-            {/* 4. Tài xế phụ trách */}
+            {/* 5. Tài xế phụ trách */}
             <div className="p-4 rounded-xl border border-border bg-card space-y-3">
               <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <User className="h-4 w-4 text-primary" />

@@ -1,4 +1,5 @@
 import type { Driver, Order, Vehicle, Warehouse } from "@/core/types/logistics";
+import { evaluateVehicleInspection } from "@/shared/utils/inspectionUtils";
 
 export interface DriverCandidate {
   driver: Driver;
@@ -111,6 +112,26 @@ export function scoreDriversForOrder(
         loadPercentage: 100,
         maxCapacityDeliveries,
       };
+    }
+
+    // Kiểm tra hiệu lực đăng kiểm phương tiện theo luật GTVT
+    if (vehicle && vehicle.inspectionExpiryDate) {
+      const evalInspection = evaluateVehicleInspection({ inspectionExpiryDate: vehicle.inspectionExpiryDate });
+      if (evalInspection.isExpired) {
+        return {
+          driver,
+          vehicle,
+          distanceKm: 999,
+          estimatedEtaMinutes: 999,
+          matchScore: 0,
+          isBestMatch: false,
+          reasons: [],
+          isEligible: false,
+          ineligibleReason: `Xe ${vehicle.licensePlate} ĐÃ HẾT HẠN ĐĂNG KIỂM (${evalInspection.label}) - Không được phép xuất bến`,
+          loadPercentage: 100,
+          maxCapacityDeliveries,
+        };
+      }
     }
 
     // 2. Tính khoảng cách từ vị trí hiện tại của tài xế đến kho xuất phát (Pickup)

@@ -167,7 +167,12 @@ export type VehicleStatus =
   | "OFFLINE";       // Không khả dụng
 
 /**
- * Hồ sơ phương tiện
+ * Trạng thái hiệu lực Đăng kiểm phương tiện
+ */
+export type VehicleInspectionStatus = "VALID" | "EXPIRING_SOON" | "EXPIRED";
+
+/**
+ * Hồ sơ phương tiện & Giấy tờ pháp lý vận tải
  */
 export interface Vehicle {
   id: string;
@@ -182,7 +187,14 @@ export interface Vehicle {
   fuelPercent: number; // %
   status: VehicleStatus;
   driverId?: string;
-  nextMaintenanceDate: string;
+  nextMaintenanceDate: string; // Ngày bảo dưỡng dự kiến
+  // Nghiệp vụ đăng kiểm & bảo hiểm pháp lý thực tế
+  inspectionCertificateNumber?: string; // Số tem / Sổ kiểm định (VD: "KD-9823412")
+  lastInspectionDate?: string;          // Ngày đăng kiểm gần nhất (VD: "2026-03-15")
+  inspectionExpiryDate?: string;        // Hạn đăng kiểm tiếp theo (VD: "2026-09-25")
+  insuranceExpiryDate?: string;         // Hạn bảo hiểm bắt buộc TNDS (VD: "2027-01-10")
+  inspectionCenter?: string;            // Trung tâm đăng kiểm (VD: "TTĐK 29-03V (Hà Nội)")
+  inspectionNotes?: string;             // Ghi chú cơ sở kiểm định
 }
 
 /**

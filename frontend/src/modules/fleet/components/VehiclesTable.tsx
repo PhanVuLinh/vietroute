@@ -7,6 +7,8 @@ import {
   Truck,
   X,
   RotateCcw,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
@@ -19,7 +21,7 @@ import {
 } from "@/shared/components/ui/select";
 import { VehicleTableRow } from "./VehicleTableRow";
 import type { EnrichedVehicle } from "../hooks/useVehicles";
-import type { VehicleStatus, VehicleType } from "@/core/types/logistics";
+import type { VehicleStatus, VehicleType, VehicleInspectionStatus } from "@/core/types/logistics";
 
 interface VehiclesTableProps {
   vehicles: EnrichedVehicle[];
@@ -29,6 +31,8 @@ interface VehiclesTableProps {
   onStatusChange: (val: VehicleStatus | "ALL") => void;
   selectedType: VehicleType | "ALL";
   onTypeChange: (val: VehicleType | "ALL") => void;
+  selectedInspectionStatus?: VehicleInspectionStatus | "ALL";
+  onInspectionStatusChange?: (val: VehicleInspectionStatus | "ALL") => void;
   onViewDetail: (vehicle: EnrichedVehicle) => void;
   onEdit: (vehicle: EnrichedVehicle) => void;
   onUpdateStatus: (id: string, status: VehicleStatus) => void;
@@ -43,6 +47,8 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
   onStatusChange,
   selectedType,
   onTypeChange,
+  selectedInspectionStatus = "ALL",
+  onInspectionStatusChange,
   onViewDetail,
   onEdit,
   onUpdateStatus,
@@ -53,7 +59,7 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedStatus, selectedType]);
+  }, [searchQuery, selectedStatus, selectedType, selectedInspectionStatus]);
 
   const totalPages = Math.max(1, Math.ceil(vehicles.length / pageSize));
   const paginatedVehicles = vehicles.slice(
@@ -62,19 +68,22 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
   );
 
   const hasActiveFilters =
-    searchQuery !== "" || selectedStatus !== "ALL" || selectedType !== "ALL";
+    searchQuery !== "" ||
+    selectedStatus !== "ALL" ||
+    selectedType !== "ALL" ||
+    selectedInspectionStatus !== "ALL";
 
   return (
     <div className="space-y-3">
       {/* 1. Thanh công cụ tìm kiếm và lọc */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-card p-3 rounded-xl border border-border shadow-2xs">
-        <div className="flex flex-1 items-center gap-2">
+        <div className="flex flex-1 items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* Ô tìm kiếm */}
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Tìm theo biển số, hãng xe, mã hiệu, tài xế..."
+              placeholder="Tìm theo biển số, tem đăng kiểm, hãng xe..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-9 pr-8 h-9 text-xs font-sans"
@@ -91,7 +100,7 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
 
           {/* Lọc theo Loại xe */}
           <Select value={selectedType} onValueChange={onTypeChange}>
-            <SelectTrigger className="h-9 min-w-[150px] w-auto text-xs shrink-0">
+            <SelectTrigger className="h-9 min-w-[130px] w-auto text-xs shrink-0">
               <Truck className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
               <SelectValue placeholder="Loại xe" />
             </SelectTrigger>
@@ -104,9 +113,9 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
             </SelectContent>
           </Select>
 
-          {/* Lọc theo Trạng thái */}
+          {/* Lọc theo Trạng thái vận hành */}
           <Select value={selectedStatus} onValueChange={onStatusChange}>
-            <SelectTrigger className="h-9 min-w-[175px] w-auto text-xs shrink-0">
+            <SelectTrigger className="h-9 min-w-[150px] w-auto text-xs shrink-0">
               <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
               <SelectValue placeholder="Trạng thái" />
             </SelectTrigger>
@@ -119,6 +128,22 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
               <SelectItem value="OFFLINE" className="text-xs">Không khả dụng</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Lọc theo Hạn Đăng kiểm */}
+          {onInspectionStatusChange && (
+            <Select value={selectedInspectionStatus} onValueChange={onInspectionStatusChange}>
+              <SelectTrigger className="h-9 min-w-[160px] w-auto text-xs shrink-0">
+                <ShieldCheck className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                <SelectValue placeholder="Đăng kiểm" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="text-xs">Tất cả đăng kiểm</SelectItem>
+                <SelectItem value="VALID" className="text-xs text-emerald-600 font-medium">Đăng kiểm: Còn hạn</SelectItem>
+                <SelectItem value="EXPIRING_SOON" className="text-xs text-amber-600 font-semibold">Sắp hết hạn (&lt;30 ngày)</SelectItem>
+                <SelectItem value="EXPIRED" className="text-xs text-rose-600 font-bold">ĐÃ QUÁ HẠN</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Nút đặt lại bộ lọc */}
@@ -127,7 +152,7 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
             variant="ghost"
             size="sm"
             onClick={onResetFilters}
-            className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1.5 self-end sm:self-auto cursor-pointer"
+            className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1.5 self-end sm:self-auto cursor-pointer shrink-0"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Đặt lại
@@ -144,6 +169,7 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
                 <th className="py-3 px-4">Biển số & Phân loại</th>
                 <th className="py-3 px-4">Tải trọng / Thể tích</th>
                 <th className="py-3 px-4">Nhiên liệu</th>
+                <th className="py-3 px-4">Đăng kiểm & Pháp lý</th>
                 <th className="py-3 px-4">Bảo dưỡng tiếp theo</th>
                 <th className="py-3 px-4">Tài xế phụ trách</th>
                 <th className="py-3 px-4">Trạng thái</th>
@@ -163,7 +189,7 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center">
+                  <td colSpan={8} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                         <Truck className="h-5 w-5" />

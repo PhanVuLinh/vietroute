@@ -3,7 +3,7 @@ import { Truck, Eye, Edit, Fuel, Calendar, User } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { Card, CardContent } from "@/shared/components/ui/card";
-import { VehicleStatusBadge } from "./VehicleStatusBadge";
+import { VehicleStatusBadge, VehicleInspectionBadge } from "./VehicleStatusBadge";
 import type { EnrichedVehicle } from "../hooks/useVehicles";
 import type { VehicleStatus } from "@/core/types/logistics";
 
@@ -66,8 +66,11 @@ export const VehiclesMobileList: React.FC<VehiclesMobileListProps> = ({
               </div>
             </div>
 
-            {/* Fuel & Maintenance */}
-            <div className="flex items-center justify-between text-xs px-1">
+            {/* Đăng kiểm & Nhiên liệu */}
+            <div className="flex items-center justify-between text-xs px-1 flex-wrap gap-2">
+              <div className="flex items-center gap-1.5">
+                <VehicleInspectionBadge expiryDate={vehicle.inspectionExpiryDate} showDetails={true} />
+              </div>
               <div className="flex items-center gap-1.5">
                 <Fuel className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-muted-foreground">Xăng:</span>
@@ -82,11 +85,6 @@ export const VehiclesMobileList: React.FC<VehiclesMobileListProps> = ({
                 >
                   {vehicle.fuelPercent}%
                 </span>
-              </div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>Bảo dưỡng:</span>
-                <span className="font-mono text-foreground">{vehicle.nextMaintenanceDate}</span>
               </div>
             </div>
 

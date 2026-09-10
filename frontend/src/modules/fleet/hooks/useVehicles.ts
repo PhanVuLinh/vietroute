@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { vehicleService, driverService } from "@/mocks/adapters/serviceFactory";
-import type { Vehicle, VehicleStatus, VehicleType, Driver } from "@/core/types/logistics";
+import type { Vehicle, VehicleStatus, VehicleType, Driver, VehicleInspectionStatus } from "@/core/types/logistics";
+import { evaluateVehicleInspection } from "@/shared/utils/inspectionUtils";
 
 export interface EnrichedVehicle extends Vehicle {
   driver?: Driver;
@@ -12,6 +13,7 @@ export function useVehicles() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<VehicleStatus | "ALL">("ALL");
   const [selectedType, setSelectedType] = useState<VehicleType | "ALL">("ALL");
+  const [selectedInspectionStatus, setSelectedInspectionStatus] = useState<VehicleInspectionStatus | "ALL">("ALL");
 
   // 1. Fetch danh sách xe
   const vehiclesQuery = useQuery<Vehicle[]>({
@@ -59,7 +61,7 @@ export function useVehicles() {
   // Lọc dữ liệu theo tìm kiếm & bộ lọc
   const filteredVehicles = useMemo(() => {
     return enrichedVehicles.filter((vehicle) => {
-      // 1. Lọc theo trạng thái
+      // 1. Lọc theo trạng thái vận hành
       if (selectedStatus !== "ALL" && vehicle.status !== selectedStatus) {
         return false;
       }
@@ -69,7 +71,15 @@ export function useVehicles() {
         return false;
       }
 
-      // 3. Tìm kiếm theo Biển số, Mã xe, Hãng/Model, Tên tài xế
+      // 3. Lọc theo trạng thái đăng kiểm
+      if (selectedInspectionStatus !== "ALL") {
+        const evaluation = evaluateVehicleInspection({ inspectionExpiryDate: vehicle.inspectionExpiryDate });
+        if (evaluation.status !== selectedInspectionStatus) {
+          return false;
+        }
+      }
+
+      // 4. Tìm kiếm theo Biển số, Mã xe, Hãng/Model, Tên tài xế, Số tem đăng kiểm
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const matchPlate = vehicle.licensePlate.toLowerCase().includes(query);
@@ -77,15 +87,16 @@ export function useVehicles() {
         const matchBrand = vehicle.brand.toLowerCase().includes(query);
         const matchModel = vehicle.model.toLowerCase().includes(query);
         const matchDriver = vehicle.driver?.fullName.toLowerCase().includes(query);
+        const matchCert = (vehicle.inspectionCertificateNumber || "").toLowerCase().includes(query);
 
-        if (!matchPlate && !matchCode && !matchBrand && !matchModel && !matchDriver) {
+        if (!matchPlate && !matchCode && !matchBrand && !matchModel && !matchDriver && !matchCert) {
           return false;
         }
       }
 
       return true;
     });
-  }, [enrichedVehicles, selectedStatus, selectedType, searchQuery]);
+  }, [enrichedVehicles, selectedStatus, selectedType, selectedInspectionStatus, searchQuery]);
 
   // Thống kê KPI đội xe
   const stats = useMemo(() => {
@@ -95,6 +106,15 @@ export function useVehicles() {
     const loading = enrichedVehicles.filter((v) => v.status === "LOADING").length;
     const maintenance = enrichedVehicles.filter((v) => v.status === "MAINTENANCE").length;
     const offline = enrichedVehicles.filter((v) => v.status === "OFFLINE").length;
+
+    // Thống kê hạn đăng kiểm
+    const inspectionExpiredCount = enrichedVehicles.filter(
+      (v) => evaluateVehicleInspection({ inspectionExpiryDate: v.inspectionExpiryDate }).isExpired
+    ).length;
+
+    const inspectionExpiringSoonCount = enrichedVehicles.filter(
+      (v) => evaluateVehicleInspection({ inspectionExpiryDate: v.inspectionExpiryDate }).isExpiringSoon
+    ).length;
 
     const avgFuel =
       total > 0
@@ -112,6 +132,8 @@ export function useVehicles() {
       loading,
       maintenance,
       offline,
+      inspectionExpiredCount,
+      inspectionExpiringSoonCount,
       avgFuel,
       totalCapacityTons: Number(totalCapacityTons),
     };
@@ -183,6 +205,8 @@ export function useVehicles() {
     setSelectedStatus,
     selectedType,
     setSelectedType,
+    selectedInspectionStatus,
+    setSelectedInspectionStatus,
     refetchAll: () => {
       vehiclesQuery.refetch();
       driversQuery.refetch();
