@@ -106,6 +106,10 @@ export function useWarehouses() {
     const totalYardParkingCapacity = allWarehouses.reduce((acc, w) => acc + (w.yardParkingCapacity || 0), 0);
     const totalYardParkingOccupied = allWarehouses.reduce((acc, w) => acc + (w.yardParkingOccupied || 0), 0);
 
+    const northCount = allWarehouses.filter((w) => w.region === "NORTH").length;
+    const centralCount = allWarehouses.filter((w) => w.region === "CENTRAL").length;
+    const southCount = allWarehouses.filter((w) => w.region === "SOUTH").length;
+
     return {
       total,
       active,
