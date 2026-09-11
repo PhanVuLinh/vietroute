@@ -68,24 +68,24 @@ export const BreadcrumbNavigation: React.FC<BreadcrumbNavigationProps> = ({
   return (
     <nav
       aria-label="Breadcrumb"
-      className={cn("flex items-center text-xs font-medium text-muted-foreground", className)}
+      className={cn("flex items-center text-xs font-medium text-muted-foreground min-w-0 overflow-hidden", className)}
     >
-      <ol className="flex items-center gap-1.5 flex-wrap">
+      <ol className="flex items-center gap-1.5 flex-nowrap overflow-hidden">
         {items.map((item, index) => {
           const isFirst = index === 0;
 
           return (
-            <li key={`${item.path}-${index}`} className="flex items-center gap-1.5">
+            <li key={`${item.path}-${index}`} className="flex items-center gap-1.5 shrink-0 min-w-0">
               {index > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />}
 
               {item.isLast ? (
-                <span className="font-semibold text-foreground truncate max-w-[200px]">
+                <span className="font-semibold text-foreground truncate max-w-[140px] sm:max-w-[220px] whitespace-nowrap" title={item.label}>
                   {item.label}
                 </span>
               ) : (
                 <Link
                   to={item.path}
-                  className="flex items-center gap-1 hover:text-foreground transition-colors hover:underline underline-offset-4"
+                  className="flex items-center gap-1 hover:text-foreground transition-colors hover:underline underline-offset-4 whitespace-nowrap shrink-0"
                 >
                   {isFirst && <Home className="h-3.5 w-3.5 shrink-0" />}
                   <span>{item.label}</span>

@@ -164,15 +164,15 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-muted/40 border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                <th className="py-3 px-4">Biển số & Phân loại</th>
-                <th className="py-3 px-4">Tải trọng / Thể tích</th>
-                <th className="py-3 px-4">Nhiên liệu</th>
-                <th className="py-3 px-4">Đăng kiểm & Pháp lý</th>
-                <th className="py-3 px-4">Bảo dưỡng tiếp theo</th>
-                <th className="py-3 px-4">Tài xế phụ trách</th>
-                <th className="py-3 px-4">Trạng thái</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
+              <tr className="bg-muted/40 border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap select-none">
+                <th className="py-3 px-4 min-w-[170px]">Biển số & Phân loại</th>
+                <th className="py-3 px-4 min-w-[150px]">Tải trọng / Thể tích</th>
+                <th className="py-3 px-4 min-w-[130px]">Nhiên liệu</th>
+                <th className="py-3 px-4 min-w-[160px]">Đăng kiểm & Pháp lý</th>
+                <th className="py-3 px-4 min-w-[140px]">Bảo dưỡng tiếp theo</th>
+                <th className="py-3 px-4 min-w-[140px]">Tài xế phụ trách</th>
+                <th className="py-3 px-4 min-w-[130px]">Trạng thái</th>
+                <th className="py-3 px-4 text-right min-w-[90px]">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60 text-xs">

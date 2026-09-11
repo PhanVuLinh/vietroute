@@ -56,17 +56,17 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
       <div className="overflow-x-auto min-h-[380px]">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
-              <th className="py-3 px-4">Mã đơn</th>
-              <th className="py-3 px-4">Khách hàng</th>
-              <th className="py-3 px-4">Điểm giao</th>
-              <th className="py-3 px-4">Kho xuất</th>
-              <th className="py-3 px-4">Trọng lượng / COD</th>
-              <th className="py-3 px-4">Tài xế / Xe</th>
-              <th className="py-3 px-4">Ưu tiên</th>
-              <th className="py-3 px-4">Trạng thái</th>
-              <th className="py-3 px-4">Hạn giao / SLA</th>
-              <th className="py-3 px-4 text-right">Thao tác</th>
+            <tr className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none whitespace-nowrap">
+              <th className="py-3 px-4 min-w-[120px]">Mã đơn</th>
+              <th className="py-3 px-4 min-w-[160px]">Khách hàng</th>
+              <th className="py-3 px-4 min-w-[190px]">Điểm giao</th>
+              <th className="py-3 px-4 min-w-[130px]">Kho xuất</th>
+              <th className="py-3 px-4 min-w-[140px]">Trọng lượng / COD</th>
+              <th className="py-3 px-4 min-w-[140px]">Tài xế / Xe</th>
+              <th className="py-3 px-4 min-w-[100px]">Ưu tiên</th>
+              <th className="py-3 px-4 min-w-[130px]">Trạng thái</th>
+              <th className="py-3 px-4 min-w-[130px]">Hạn giao / SLA</th>
+              <th className="py-3 px-4 text-right min-w-[100px]">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">

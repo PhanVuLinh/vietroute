@@ -114,14 +114,14 @@ export const OrdersSummary: React.FC<OrdersSummaryProps> = ({
             key={item.key}
             onClick={() => onSelectFilter(item.key)}
             className={cn(
-              "group transition-all duration-200 cursor-pointer select-none border shadow-2xs hover:shadow-xs",
+              "group transition-all duration-200 cursor-pointer select-none border shadow-2xs hover:shadow-xs h-full flex flex-col justify-between",
               isActive ? item.activeBorder : cn("border-border/70 bg-card", item.border),
               item.isHighlight && "border-amber-500/40 bg-amber-500/[0.02]"
             )}
           >
-            <CardContent className="p-3 flex flex-col justify-between h-full">
+            <CardContent className="p-3 flex flex-col justify-between h-full flex-1 gap-1.5">
               <div className="flex items-center justify-between gap-1">
-                <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors truncate">
+                <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors truncate" title={item.title}>
                   {item.title}
                 </span>
                 <div
@@ -135,27 +135,27 @@ export const OrdersSummary: React.FC<OrdersSummaryProps> = ({
                 </div>
               </div>
 
-              <div className="mt-2 flex items-baseline justify-between">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold tracking-tight text-foreground">
+              <div className="mt-1 flex items-baseline justify-between gap-1">
+                <div className="flex items-baseline gap-1 flex-wrap">
+                  <span className="text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums whitespace-nowrap">
                     {item.count}
                   </span>
-                  <span className="text-[10px] text-muted-foreground font-medium">đơn</span>
+                  <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">đơn</span>
                 </div>
 
                 {item.isHighlight && item.count > 0 && (
-                  <Badge variant="warning" className="text-[9px] px-1 py-0 animate-pulse font-bold">
+                  <Badge variant="warning" className="text-[9px] px-1 py-0 animate-pulse font-bold whitespace-nowrap shrink-0">
                     Cảnh báo
                   </Badge>
                 )}
                 {item.isDestructive && item.count > 0 && (
-                  <Badge variant="destructive" className="text-[9px] px-1 py-0 font-bold">
+                  <Badge variant="destructive" className="text-[9px] px-1 py-0 font-bold whitespace-nowrap shrink-0">
                     Sự cố
                   </Badge>
                 )}
               </div>
 
-              <div className="mt-1.5 pt-1.5 border-t border-border/40 text-[10px] text-muted-foreground truncate">
+              <div className="mt-auto pt-1.5 border-t border-border/40 text-[10px] text-muted-foreground truncate" title={item.hint}>
                 {item.hint}
               </div>
             </CardContent>

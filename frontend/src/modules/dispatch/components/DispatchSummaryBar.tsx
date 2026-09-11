@@ -128,14 +128,14 @@ export const DispatchSummaryBar: React.FC<DispatchSummaryBarProps> = ({
             key={item.key}
             onClick={() => onFilterClick(item.key)}
             className={cn(
-              "group transition-all duration-200 cursor-pointer select-none border shadow-2xs hover:shadow-xs",
+              "group transition-all duration-200 cursor-pointer select-none border shadow-2xs hover:shadow-xs h-full flex flex-col justify-between",
               isActive ? item.activeBorder : cn("border-border/70 bg-card", item.border),
               item.isAlert && "border-rose-500/30"
             )}
           >
-            <CardContent className="p-2.5 sm:p-3 flex flex-col justify-between h-full">
+            <CardContent className="p-2.5 sm:p-3 flex flex-col justify-between h-full flex-1 gap-1.5">
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors truncate">
+                <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors truncate" title={item.label}>
                   {item.label}
                 </span>
                 <div
@@ -149,24 +149,24 @@ export const DispatchSummaryBar: React.FC<DispatchSummaryBarProps> = ({
                 </div>
               </div>
 
-              <div className="mt-1.5 flex items-baseline justify-between">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              <div className="mt-1 flex items-baseline justify-between gap-1">
+                <div className="flex items-baseline gap-1 flex-wrap">
+                  <span className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums whitespace-nowrap">
                     {item.count}
                   </span>
-                  <span className="text-[10px] text-muted-foreground font-medium">
+                  <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
                     {item.unit}
                   </span>
                 </div>
 
                 {item.isAlert && item.count > 0 && (
-                  <Badge variant="destructive" className="text-[9px] px-1 py-0 animate-pulse">
+                  <Badge variant="destructive" className="text-[9px] px-1 py-0 animate-pulse whitespace-nowrap shrink-0">
                     Khẩn
                   </Badge>
                 )}
               </div>
 
-              <div className="mt-1 pt-1 border-t border-border/40 text-[10px] text-muted-foreground truncate">
+              <div className="mt-auto pt-1 border-t border-border/40 text-[10px] text-muted-foreground truncate" title={item.hint}>
                 {item.hint}
               </div>
             </CardContent>

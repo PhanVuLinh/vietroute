@@ -53,7 +53,7 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
       unit: "đơn",
       trend: "+8.5%",
       trendPositive: true,
-      description: "So với cùng giờ hôm qua",
+      description: "So với hôm qua",
       icon: Package,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-500/10 dark:bg-blue-500/15",
@@ -63,12 +63,12 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
     },
     {
       id: "kpi-in-transit",
-      title: "Đang giao",
+      title: "Đang giao hàng",
       value: summary.inTransitOrders,
       unit: "đơn",
       trend: `${Math.round((summary.inTransitOrders / (summary.totalOrdersToday || 1)) * 100)}%`,
       trendPositive: true,
-      description: "Đang trên lộ trình",
+      description: "Đang trên tuyến",
       icon: Truck,
       color: "text-sky-600 dark:text-sky-400",
       bg: "bg-sky-500/10 dark:bg-sky-500/15",
@@ -83,7 +83,7 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
       unit: "đơn",
       trend: `${Math.round((summary.deliveredOrders / (summary.totalOrdersToday || 1)) * 100)}%`,
       trendPositive: true,
-      description: "Đã ký nhận đầy đủ",
+      description: "Đã ký nhận",
       icon: CheckCircle2,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-500/10 dark:bg-emerald-500/15",
@@ -98,7 +98,7 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
       unit: "đơn",
       trend: "Cảnh báo",
       trendPositive: false,
-      description: "Cần hỗ trợ điều phối",
+      description: "Cần điều phối",
       icon: AlertTriangle,
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-500/15 dark:bg-amber-500/20",
@@ -108,12 +108,12 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
     },
     {
       id: "kpi-active-drivers",
-      title: "Tài xế đang hoạt động",
+      title: "Tài xế hoạt động",
       value: summary.activeDrivers,
       unit: "tài xế",
       trend: `${summary.fleetUtilizationRate}%`,
       trendPositive: true,
-      description: "Tỷ lệ khai thác xe",
+      description: "Tỷ lệ khai thác",
       icon: Users,
       color: "text-indigo-600 dark:text-indigo-400",
       bg: "bg-indigo-500/10 dark:bg-indigo-500/15",
@@ -128,7 +128,7 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
       unit: "tài xế",
       trend: "Trực tuyến",
       trendPositive: true,
-      description: "Chờ nhận chuyến mới",
+      description: "Chờ nhận đơn",
       icon: UserCheck,
       color: "text-teal-600 dark:text-teal-400",
       bg: "bg-teal-500/10 dark:bg-teal-500/15",
@@ -139,7 +139,7 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
       {kpis.map((kpi) => {
         const IconComponent = kpi.icon;
         return (
@@ -148,7 +148,7 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
             id={kpi.id}
             onClick={() => navigate(kpi.path)}
             className={cn(
-              "group relative overflow-hidden transition-all duration-200 cursor-pointer select-none",
+              "group relative overflow-hidden transition-all duration-200 cursor-pointer select-none h-full flex flex-col justify-between",
               "border bg-card hover:-translate-y-0.5 hover:shadow-md",
               kpi.isHighlight
                 ? cn(
@@ -159,49 +159,49 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
               kpi.border
             )}
           >
-            <CardContent className="p-3.5 sm:p-4 flex flex-col justify-between h-full">
+            <CardContent className="p-3 sm:p-3.5 flex flex-col justify-between h-full flex-1 gap-2">
               {/* Top row: Title + Icon */}
-              <div className="flex items-start justify-between gap-1.5">
-                <span className="text-xs font-semibold text-muted-foreground leading-snug line-clamp-1 group-hover:text-foreground transition-colors">
+              <div className="flex items-start justify-between gap-1">
+                <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground leading-snug truncate group-hover:text-foreground transition-colors" title={kpi.title}>
                   {kpi.title}
                 </span>
                 <div
                   className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105",
+                    "flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105",
                     kpi.bg,
                     kpi.color
                   )}
                 >
-                  <IconComponent className="h-4 w-4" />
+                  <IconComponent className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </div>
               </div>
 
               {/* Middle row: Big Number */}
-              <div className="mt-2.5 flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <div className="mt-0.5 flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-mono tabular-nums whitespace-nowrap">
                   {kpi.value}
                 </span>
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
                   {kpi.unit}
                 </span>
               </div>
 
               {/* Bottom row: Trend or Description */}
-              <div className="mt-2.5 flex items-center justify-between gap-2 text-[11px] pt-1.5 border-t border-border/40">
-                <span className="text-muted-foreground truncate flex-1 min-w-0">
+              <div className="mt-auto flex items-center justify-between gap-1 text-[10px] sm:text-[11px] pt-1.5 border-t border-border/40">
+                <span className="text-muted-foreground truncate flex-1 min-w-0" title={kpi.description}>
                   {kpi.description}
                 </span>
                 {kpi.isHighlight ? (
                   <Badge
                     variant="warning"
-                    className="h-4.5 px-1.5 text-[10px] font-semibold gap-0.5 tracking-tight animate-pulse shrink-0"
+                    className="h-4.5 px-1.5 text-[9px] sm:text-[10px] font-semibold gap-0.5 tracking-tight animate-pulse shrink-0 whitespace-nowrap"
                   >
                     {kpi.trend}
                   </Badge>
                 ) : (
-                  <span className="flex items-center gap-0.5 font-semibold text-emerald-600 dark:text-emerald-400 shrink-0 whitespace-nowrap">
-                    <TrendingUp className="h-3 w-3" />
-                    {kpi.trend}
+                  <span className="flex items-center gap-0.5 font-semibold text-emerald-600 dark:text-emerald-400 shrink-0 whitespace-nowrap text-[10px] sm:text-[11px]">
+                    <TrendingUp className="h-3 w-3 shrink-0" />
+                    <span>{kpi.trend}</span>
                   </span>
                 )}
               </div>
