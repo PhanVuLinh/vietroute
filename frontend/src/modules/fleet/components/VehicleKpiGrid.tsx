@@ -27,7 +27,6 @@ export const VehicleKpiGrid: React.FC<VehicleKpiGridProps> = ({
 }) => {
   const expiredCount = stats.inspectionExpiredCount || 0;
   const expiringCount = stats.inspectionExpiringSoonCount || 0;
-  const totalInspectionAlerts = expiredCount + expiringCount;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">

@@ -92,7 +92,7 @@ export const VehicleStatusBadge: React.FC<VehicleStatusBadgeProps> = ({
 /* ========================================================================= */
 /* COMPONENT BADGE TRẠNG THÁI ĐĂNG KIỂM PHƯƠNG TIỆN                           */
 /* ========================================================================= */
-import { ShieldCheck, AlertTriangle, ShieldAlert, Calendar } from "lucide-react";
+import { ShieldCheck, AlertTriangle, ShieldAlert } from "lucide-react";
 import { evaluateVehicleInspection } from "@/shared/utils/inspectionUtils";
 
 interface VehicleInspectionBadgeProps {

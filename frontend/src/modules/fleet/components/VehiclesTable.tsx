@@ -8,7 +8,6 @@ import {
   X,
   RotateCcw,
   ShieldCheck,
-  ShieldAlert,
 } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";

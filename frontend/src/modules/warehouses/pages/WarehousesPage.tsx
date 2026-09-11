@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import {
-  Building2,
   Plus,
   RefreshCw,
   AlertCircle,
   Table as TableIcon,
   Map as MapIcon,
   Columns2,
-  Layers,
 } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
@@ -22,7 +20,6 @@ import { WarehouseMap } from "../components/WarehouseMap";
 import { WarehouseDetailDrawer } from "../components/WarehouseDetailDrawer";
 import { CreateWarehouseDialog } from "../components/CreateWarehouseDialog";
 import type { Warehouse, WarehouseStatus } from "@/core/types/logistics";
-import { cn } from "@/shared/utils/cn";
 
 type ViewMode = "TABLE" | "MAP" | "SPLIT";
 

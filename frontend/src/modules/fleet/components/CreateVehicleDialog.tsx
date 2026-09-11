@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Truck, Edit, Save, AlertCircle, Gauge, Calendar, User, ShieldCheck } from "lucide-react";
+import { Truck, Edit, Save, AlertCircle, Gauge, Calendar, ShieldCheck } from "lucide-react";
 import {
   Dialog,
   DialogContent,

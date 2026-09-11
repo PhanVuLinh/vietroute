@@ -9,7 +9,6 @@ import {
   Wrench,
   AlertTriangle,
   Phone,
-  Clock,
   Boxes,
   ThermometerSnowflake,
   Sun,
@@ -75,11 +74,23 @@ export const WarehouseTableRow: React.FC<WarehouseTableRowProps> = ({
   const getStorageIcon = () => {
     switch (warehouse.storageType) {
       case "COLD":
-        return <ThermometerSnowflake className="h-3 w-3 text-cyan-500 inline shrink-0 mr-1" title="Kho lạnh" />;
+        return (
+          <span title="Kho lạnh" className="inline-flex items-center">
+            <ThermometerSnowflake className="h-3 w-3 text-cyan-500 inline shrink-0 mr-1" />
+          </span>
+        );
       case "DRY":
-        return <Sun className="h-3 w-3 text-amber-500 inline shrink-0 mr-1" title="Kho khô tiêu chuẩn" />;
+        return (
+          <span title="Kho khô tiêu chuẩn" className="inline-flex items-center">
+            <Sun className="h-3 w-3 text-amber-500 inline shrink-0 mr-1" />
+          </span>
+        );
       default:
-        return <Shuffle className="h-3 w-3 text-purple-500 inline shrink-0 mr-1" title="Kho hỗn hợp (Khô + Lạnh)" />;
+        return (
+          <span title="Kho hỗn hợp (Khô + Lạnh)" className="inline-flex items-center">
+            <Shuffle className="h-3 w-3 text-purple-500 inline shrink-0 mr-1" />
+          </span>
+        );
     }
   };
 

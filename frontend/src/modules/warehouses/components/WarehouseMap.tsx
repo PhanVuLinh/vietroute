@@ -1,19 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { type Map, Marker, Popup } from "maplibre-gl";
 import {
-  Building2,
-  Boxes,
-  MapPin,
   Compass,
-  Phone,
-  Clock,
-  Layers,
   Globe,
   Map as MapIcon,
 } from "lucide-react";
 import { MapContainer, type MapTileStyle } from "@/shared/components/map/MapContainer";
 import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
 import type { Warehouse } from "@/core/types/logistics";
 
 interface WarehouseMapProps {

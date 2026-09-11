@@ -13,6 +13,9 @@ import type {
   Order,
   OrderStatus,
   Route,
+  RouteStatus,
+  RouteStop,
+  RouteStopStatus,
   Vehicle,
   Warehouse,
 } from "@/core/types/logistics";

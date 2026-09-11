@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Layers,
-  FileSpreadsheet,
   CheckSquare,
   Square,
   ArrowRight,
@@ -754,7 +753,7 @@ export const CreateRouteDialog: React.FC<CreateRouteDialogProps> = ({
                           <SelectItem value="UNASSIGNED">Chưa phân công</SelectItem>
                           {drivers.map((d) => (
                             <SelectItem key={d.id} value={d.id}>
-                              {d.fullName} ({d.phoneNumber})
+                              {d.fullName} ({d.phone})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -775,7 +774,7 @@ export const CreateRouteDialog: React.FC<CreateRouteDialogProps> = ({
                           <SelectItem value="UNASSIGNED">Chưa gán xe</SelectItem>
                           {vehicles.map((v) => (
                             <SelectItem key={v.id} value={v.id}>
-                              {v.licensePlate} ({v.brand} - {v.capacity}T)
+                              {v.licensePlate} ({v.brand} - {v.capacityWeight >= 1000 ? `${v.capacityWeight / 1000} tấn` : `${v.capacityWeight} kg`})
                             </SelectItem>
                           ))}
                         </SelectContent>

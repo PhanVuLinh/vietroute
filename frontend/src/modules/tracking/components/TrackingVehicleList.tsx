@@ -4,9 +4,7 @@ import {
   Truck,
   Fuel,
   Navigation,
-  AlertTriangle,
   Radio,
-  CheckCircle2,
   X,
 } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";

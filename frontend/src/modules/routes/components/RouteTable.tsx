@@ -6,7 +6,6 @@ import {
   ChevronRight,
   ArrowUpDown,
   Route as RouteIcon,
-  Navigation,
   RefreshCw,
   Plus,
 } from "lucide-react";
@@ -363,7 +362,7 @@ export const RouteTable: React.FC<RouteTableProps> = ({
                   <p className="text-xs text-muted-foreground mt-1">
                     Thử thay đổi từ khóa tìm kiếm hoặc làm mới bộ lọc kho bãi, trạng thái.
                   </p>
-                  {hasActiveFilters && (
+                  {hasActiveFilters ? (
                     <Button
                       variant="outline"
                       size="sm"
@@ -372,7 +371,16 @@ export const RouteTable: React.FC<RouteTableProps> = ({
                     >
                       Đặt lại bộ lọc
                     </Button>
-                  )}
+                  ) : onAddNew ? (
+                    <Button
+                      size="sm"
+                      onClick={onAddNew}
+                      className="mt-3 h-8 text-xs gap-1"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Lập tuyến đường mới</span>
+                    </Button>
+                  ) : null}
                 </td>
               </tr>
             )}

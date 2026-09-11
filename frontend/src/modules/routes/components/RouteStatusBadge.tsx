@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   XCircle,
   MapPin,
-  Truck,
 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import type { RouteStatus, RouteStopStatus } from "@/core/types/logistics";

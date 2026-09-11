@@ -1,5 +1,5 @@
 import React from "react";
-import { Truck, Eye, Edit, Fuel, Calendar, User } from "lucide-react";
+import { Truck, Eye, Edit, Fuel } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { Card, CardContent } from "@/shared/components/ui/card";

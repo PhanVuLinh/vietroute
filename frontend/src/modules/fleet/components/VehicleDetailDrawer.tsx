@@ -2,7 +2,6 @@ import React from "react";
 import {
   X,
   Truck,
-  Fuel,
   Gauge,
   Calendar,
   Wrench,
@@ -12,7 +11,6 @@ import {
   Navigation,
   PowerOff,
   Edit,
-  Package,
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";

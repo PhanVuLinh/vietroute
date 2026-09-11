@@ -10,7 +10,6 @@ import {
   Coffee,
   PowerOff,
   ShieldAlert,
-  Gauge,
   Edit,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";

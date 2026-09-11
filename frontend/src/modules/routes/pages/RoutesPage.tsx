@@ -1,16 +1,11 @@
 import React, { useState } from "react";
 import {
-  Route as RouteIcon,
   Plus,
   RefreshCw,
   AlertCircle,
   Table as TableIcon,
   Map as MapIcon,
   Columns2,
-  Navigation,
-  Fuel,
-  Coins,
-  CheckCircle2,
 } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
@@ -24,7 +19,7 @@ import { RouteMobileCards } from "../components/RouteMobileCards";
 import { RouteMap } from "../components/RouteMap";
 import { RouteDetailDrawer } from "../components/RouteDetailDrawer";
 import { CreateRouteDialog } from "../components/CreateRouteDialog";
-import type { Route, RouteStatus, RouteStopStatus } from "@/core/types/logistics";
+import type { Route, RouteStatus, RouteStop, RouteStopStatus } from "@/core/types/logistics";
 
 type ViewMode = "TABLE" | "MAP" | "SPLIT";
 
@@ -33,7 +28,6 @@ export const RoutesPage: React.FC = () => {
 
   const {
     routes,
-    allRoutes,
     selectedRoute,
     selectedRouteId,
     setSelectedRouteId,
@@ -41,7 +35,6 @@ export const RoutesPage: React.FC = () => {
     drivers,
     vehicles,
     warehouses,
-    orders,
     pendingOrders,
     routeTemplates,
     isLoading,
@@ -104,6 +97,11 @@ export const RoutesPage: React.FC = () => {
     } else {
       await createRoute(routeData as Omit<Route, "id">);
     }
+  };
+
+  // Tối ưu hóa thứ tự các chặng dừng
+  const handleOptimizeStops = async (originCoords: [number, number], stops: RouteStop[]) => {
+    return await optimizeStops({ originCoords, stops });
   };
 
   // Cập nhật trạng thái tuyến đường (PLANNED, ACTIVE, COMPLETED, CANCELLED)
@@ -459,7 +457,7 @@ export const RoutesPage: React.FC = () => {
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onSubmit={handleFormSubmit}
-        onOptimizeStops={optimizeStops}
+        onOptimizeStops={handleOptimizeStops}
         initialRoute={editingRoute}
         warehouses={warehouses}
         drivers={drivers}

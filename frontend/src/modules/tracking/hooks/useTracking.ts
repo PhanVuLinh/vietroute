@@ -7,7 +7,6 @@ import {
   driverService,
   warehouseService,
   routeService,
-  deliveryService,
   orderService,
 } from "@/mocks/adapters/serviceFactory";
 import type {
@@ -15,7 +14,6 @@ import type {
   Driver,
   Warehouse,
   Route,
-  Delivery,
   Order,
   VehicleTelemetry,
 } from "@/core/types/logistics";

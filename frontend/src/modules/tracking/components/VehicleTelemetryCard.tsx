@@ -2,17 +2,13 @@ import React from "react";
 import {
   X,
   Truck,
-  User,
   Phone,
   Gauge,
   Fuel,
-  Thermometer,
   Navigation,
   Compass,
   MapPin,
-  Clock,
   AlertTriangle,
-  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";

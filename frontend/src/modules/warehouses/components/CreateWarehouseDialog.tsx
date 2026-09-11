@@ -6,15 +6,8 @@ import {
   AlertCircle,
   MapPin,
   Boxes,
-  Clock,
   User,
-  Phone,
-  Mail,
   ShieldCheck,
-  Flame,
-  FileText,
-  Activity,
-  ParkingSquare,
 } from "lucide-react";
 import {
   Dialog,

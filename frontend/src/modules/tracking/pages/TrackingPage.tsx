@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Radio, Map as MapIcon, List } from "lucide-react";
+import { Map as MapIcon, List } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
-import { Button } from "@/shared/components/ui/button";
 import { useTracking } from "../hooks/useTracking";
 import { TrackingTopBar } from "../components/TrackingTopBar";
 import { TrackingVehicleList } from "../components/TrackingVehicleList";
@@ -39,7 +38,7 @@ export const TrackingPage: React.FC = () => {
     setMobileTab("MAP");
   };
 
-  const handleFocusVehicle = (coords: [number, number]) => {
+  const handleFocusVehicle = (_coords: [number, number]) => {
     // Map will auto-focus or we can trigger flyTo
   };
 

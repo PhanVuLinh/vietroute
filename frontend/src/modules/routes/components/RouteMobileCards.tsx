@@ -1,10 +1,7 @@
 import React from "react";
 import {
-  Route as RouteIcon,
   Navigation,
-  Clock,
   Fuel,
-  Coins,
   Truck,
   User,
   Building2,

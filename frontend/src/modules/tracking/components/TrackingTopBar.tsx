@@ -2,7 +2,6 @@ import React from "react";
 import {
   Play,
   Pause,
-  Zap,
   MapPin,
   Radio,
   Truck,
@@ -10,7 +9,6 @@ import {
   Navigation,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
 import { REGIONS, type RegionKey } from "../hooks/useTracking";
 
 interface TrackingTopBarProps {

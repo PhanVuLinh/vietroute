@@ -1,21 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { type Map, Marker, Popup, LngLatBounds } from "maplibre-gl";
 import {
-  Route as RouteIcon,
-  MapPin,
-  Building2,
-  Truck,
   Compass,
-  Layers,
   Globe,
   Map as MapIcon,
-  CheckCircle2,
-  Clock,
-  Navigation,
 } from "lucide-react";
 import { MapContainer, type MapTileStyle } from "@/shared/components/map/MapContainer";
 import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
 import type { EnrichedRoute } from "../hooks/useRoutes";
 
 interface RouteMapProps {

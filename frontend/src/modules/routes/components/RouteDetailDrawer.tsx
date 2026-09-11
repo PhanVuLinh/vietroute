@@ -16,12 +16,9 @@ import {
   Phone,
   Package,
   Weight,
-  AlertTriangle,
   Play,
   XCircle,
-  Share2,
   Check,
-  ChevronRight,
   ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
@@ -239,13 +236,13 @@ export const RouteDetailDrawer: React.FC<RouteDetailDrawerProps> = ({
                 <p className="font-bold text-foreground">
                   {route.driver?.fullName || "Chưa phân công"}
                 </p>
-                {route.driver?.phoneNumber && (
+                {route.driver?.phone && (
                   <a
-                    href={`tel:${route.driver.phoneNumber}`}
+                    href={`tel:${route.driver.phone}`}
                     className="text-[11px] text-primary font-mono hover:underline flex items-center gap-1"
                   >
                     <Phone className="h-2.5 w-2.5" />
-                    <span>{route.driver.phoneNumber}</span>
+                    <span>{route.driver.phone}</span>
                   </a>
                 )}
               </div>
@@ -259,7 +256,7 @@ export const RouteDetailDrawer: React.FC<RouteDetailDrawerProps> = ({
                   {route.vehicle?.licensePlate || "Chưa gán xe"}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  {route.vehicle?.brand} ({route.vehicle?.capacity} Tấn)
+                  {route.vehicle?.brand} ({route.vehicle?.capacityWeight ? `${route.vehicle.capacityWeight / 1000} Tấn` : "N/A"})
                 </p>
               </div>
             </div>
@@ -533,7 +530,7 @@ export const RouteDetailDrawer: React.FC<RouteDetailDrawerProps> = ({
                       {route.totalWeightKg || 0} <span className="text-xs font-normal">kg</span>
                     </p>
                     <p className="text-[10px] text-muted-foreground">
-                      Tải trọng xe: {route.vehicle ? `${route.vehicle.capacity * 1000} kg` : "N/A"}
+                      Tải trọng xe: {route.vehicle ? `${route.vehicle.capacityWeight} kg` : "N/A"}
                     </p>
                   </div>
 

@@ -7,7 +7,7 @@ import {
   warehouseService,
   orderService,
 } from "@/mocks/adapters/serviceFactory";
-import { MOCK_ROUTE_TEMPLATES, type RouteTemplate } from "@/mocks/data/routeTemplates";
+import { MOCK_ROUTE_TEMPLATES } from "@/mocks/data/routeTemplates";
 import type {
   Route,
   RouteStatus,

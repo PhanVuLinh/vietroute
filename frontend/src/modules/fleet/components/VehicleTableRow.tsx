@@ -3,7 +3,6 @@ import {
   Truck,
   Car,
   Bike,
-  User,
   MoreHorizontal,
   Eye,
   Edit,

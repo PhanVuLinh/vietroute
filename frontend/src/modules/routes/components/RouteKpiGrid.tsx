@@ -4,9 +4,7 @@ import {
   Navigation,
   CheckCircle2,
   Fuel,
-  TrendingUp,
   MapPin,
-  CircleDollarSign,
 } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import type { RouteStatus } from "@/core/types/logistics";

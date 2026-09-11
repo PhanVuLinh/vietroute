@@ -1,4 +1,4 @@
-import type { Route, RouteStatus, RouteStop, RouteStopStatus } from "@/core/types/logistics";
+import type { Route } from "@/core/types/logistics";
 
 export const MOCK_ROUTES: Route[] = [
   // 1. Tuyến Hà Nội 01: Long Biên -> Cầu Giấy -> Nam Từ Liêm -> Hà Đông (Đang chạy ACTIVE)
