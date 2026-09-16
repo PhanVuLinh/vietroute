@@ -1,16 +1,5 @@
 import React, { useState } from "react";
-import {
-  Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Truck,
-  X,
-  RotateCcw,
-  ShieldCheck,
-} from "lucide-react";
-import { Input } from "@/shared/components/ui/input";
-import { Button } from "@/shared/components/ui/button";
+import { Filter, Truck, ShieldCheck } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -19,7 +8,8 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { VehicleTableRow } from "./VehicleTableRow";
-import { TablePagination } from "@/shared/components/common";
+import { TablePagination, TableToolbar } from "@/shared/components/common";
+
 import type { EnrichedVehicle } from "../hooks/useVehicles";
 import type { VehicleStatus, VehicleType, VehicleInspectionStatus } from "@/core/types/logistics";
 
@@ -76,89 +66,66 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
   return (
     <div className="space-y-3">
       {/* 1. Thanh công cụ tìm kiếm và lọc */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-card p-3 rounded-xl border border-border shadow-2xs">
-        <div className="flex flex-1 items-center gap-2 flex-wrap sm:flex-nowrap">
-          {/* Ô tìm kiếm */}
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Tìm theo biển số, tem đăng kiểm, hãng xe..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9 pr-8 h-9 text-xs font-sans"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => onSearchChange("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Lọc theo Loại xe */}
-          <Select value={selectedType} onValueChange={onTypeChange}>
-            <SelectTrigger className="h-9 min-w-[130px] w-auto text-xs shrink-0">
-              <Truck className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
-              <SelectValue placeholder="Loại xe" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="text-xs">Tất cả loại xe</SelectItem>
-              <SelectItem value="TRUCK" className="text-xs">Xe tải</SelectItem>
-              <SelectItem value="VAN" className="text-xs">Xe Van</SelectItem>
-              <SelectItem value="CAR" className="text-xs">Xe bán tải/con</SelectItem>
-              <SelectItem value="MOTORBIKE" className="text-xs">Xe máy</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Lọc theo Trạng thái vận hành */}
-          <Select value={selectedStatus} onValueChange={onStatusChange}>
-            <SelectTrigger className="h-9 min-w-[150px] w-auto text-xs shrink-0">
-              <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
-              <SelectValue placeholder="Trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="text-xs">Tất cả trạng thái</SelectItem>
-              <SelectItem value="AVAILABLE" className="text-xs">Sẵn sàng</SelectItem>
-              <SelectItem value="EN_ROUTE" className="text-xs">Đang chạy tuyến</SelectItem>
-              <SelectItem value="LOADING" className="text-xs">Bốc dỡ hàng</SelectItem>
-              <SelectItem value="MAINTENANCE" className="text-xs">Đang bảo dưỡng</SelectItem>
-              <SelectItem value="OFFLINE" className="text-xs">Không khả dụng</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Lọc theo Hạn Đăng kiểm */}
-          {onInspectionStatusChange && (
-            <Select value={selectedInspectionStatus} onValueChange={onInspectionStatusChange}>
-              <SelectTrigger className="h-9 min-w-[160px] w-auto text-xs shrink-0">
-                <ShieldCheck className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
-                <SelectValue placeholder="Đăng kiểm" />
+      <TableToolbar
+        searchValue={searchQuery}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Tìm theo biển số, tem đăng kiểm, hãng xe..."
+        totalItems={vehicles.length}
+        itemName="phương tiện"
+        hasActiveFilters={hasActiveFilters}
+        onResetFilters={onResetFilters}
+        resetLabel="Đặt lại"
+        filters={
+          <>
+            {/* Lọc theo Loại xe */}
+            <Select value={selectedType} onValueChange={onTypeChange}>
+              <SelectTrigger className="h-9 min-w-[130px] w-auto text-xs shrink-0">
+                <Truck className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                <SelectValue placeholder="Loại xe" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL" className="text-xs">Tất cả đăng kiểm</SelectItem>
-                <SelectItem value="VALID" className="text-xs text-emerald-600 font-medium">Đăng kiểm: Còn hạn</SelectItem>
-                <SelectItem value="EXPIRING_SOON" className="text-xs text-amber-600 font-semibold">Sắp hết hạn (&lt;30 ngày)</SelectItem>
-                <SelectItem value="EXPIRED" className="text-xs text-rose-600 font-bold">ĐÃ QUÁ HẠN</SelectItem>
+                <SelectItem value="ALL" className="text-xs">Tất cả loại xe</SelectItem>
+                <SelectItem value="TRUCK" className="text-xs">Xe tải</SelectItem>
+                <SelectItem value="VAN" className="text-xs">Xe Van</SelectItem>
+                <SelectItem value="CAR" className="text-xs">Xe bán tải/con</SelectItem>
+                <SelectItem value="MOTORBIKE" className="text-xs">Xe máy</SelectItem>
               </SelectContent>
             </Select>
-          )}
-        </div>
 
-        {/* Nút đặt lại bộ lọc */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onResetFilters}
-            className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1.5 self-end sm:self-auto cursor-pointer shrink-0"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Đặt lại
-          </Button>
-        )}
-      </div>
+            {/* Lọc theo Trạng thái vận hành */}
+            <Select value={selectedStatus} onValueChange={onStatusChange}>
+              <SelectTrigger className="h-9 min-w-[150px] w-auto text-xs shrink-0">
+                <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="text-xs">Tất cả trạng thái</SelectItem>
+                <SelectItem value="AVAILABLE" className="text-xs">Sẵn sàng</SelectItem>
+                <SelectItem value="EN_ROUTE" className="text-xs">Đang chạy tuyến</SelectItem>
+                <SelectItem value="LOADING" className="text-xs">Bốc dỡ hàng</SelectItem>
+                <SelectItem value="MAINTENANCE" className="text-xs">Đang bảo dưỡng</SelectItem>
+                <SelectItem value="OFFLINE" className="text-xs">Không khả dụng</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Lọc theo Hạn Đăng kiểm */}
+            {onInspectionStatusChange && (
+              <Select value={selectedInspectionStatus} onValueChange={onInspectionStatusChange}>
+                <SelectTrigger className="h-9 min-w-[160px] w-auto text-xs shrink-0">
+                  <ShieldCheck className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Đăng kiểm" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL" className="text-xs">Tất cả đăng kiểm</SelectItem>
+                  <SelectItem value="VALID" className="text-xs text-emerald-600 font-medium">Đăng kiểm: Còn hạn</SelectItem>
+                  <SelectItem value="EXPIRING_SOON" className="text-xs text-amber-600 font-semibold">Sắp hết hạn (&lt;30 ngày)</SelectItem>
+                  <SelectItem value="EXPIRED" className="text-xs text-rose-600 font-bold">ĐÃ QUÁ HẠN</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </>
+        }
+      />
 
       {/* 2. Bảng dữ liệu Desktop */}
       <div className="rounded-xl border border-border bg-card shadow-2xs overflow-hidden">

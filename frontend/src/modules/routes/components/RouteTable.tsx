@@ -1,15 +1,10 @@
 import React, { useState, useMemo } from "react";
 import {
-  Search,
-  X,
-  ChevronLeft,
-  ChevronRight,
   ArrowUpDown,
   Route as RouteIcon,
   RefreshCw,
   Plus,
 } from "lucide-react";
-import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import {
   Select,
@@ -19,7 +14,8 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { RouteTableRow } from "./RouteTableRow";
-import { TablePagination } from "@/shared/components/common";
+import { TablePagination, TableToolbar } from "@/shared/components/common";
+
 import type { RouteStatus, Warehouse, Driver } from "@/core/types/logistics";
 import type { EnrichedRoute } from "../hooks/useRoutes";
 
@@ -160,131 +156,101 @@ export const RouteTable: React.FC<RouteTableProps> = ({
   return (
     <div className="bg-card rounded-xl border border-border shadow-2xs overflow-hidden flex flex-col">
       {/* 1. Header Toolbar & Filters */}
-      <div className="p-3.5 sm:p-4 border-b border-border/70 space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-          {/* Search bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Tìm theo mã tuyến, tên lộ trình, tài xế, biển số xe, điểm dừng..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
+      <TableToolbar
+        variant="header"
+        filtersPosition="bottom"
+        searchValue={searchQuery}
+        onSearchChange={(val) => {
+          setSearchQuery(val);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Tìm theo mã tuyến, tên lộ trình, tài xế, biển số xe, điểm dừng..."
+        totalItems={sortedRoutes.length}
+        itemName="tuyến đường"
+        hasActiveFilters={hasActiveFilters}
+        onResetFilters={handleResetFilters}
+        resetLabel="Xóa lọc"
+        actions={
+          onRefresh && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isLoading}
+              className="h-8 px-2.5 text-xs gap-1.5 cursor-pointer"
+              title="Tải lại dữ liệu"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Làm mới</span>
+            </Button>
+          )
+        }
+        filters={
+          <>
+            {/* Lọc Trạng thái */}
+            <Select
+              value={selectedStatus}
+              onValueChange={(val) => {
+                setSelectedStatus(val as RouteStatus | "ALL");
                 setCurrentPage(1);
               }}
-              className="pl-9 pr-8 h-8 text-xs"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Quick Actions & Counter */}
-          <div className="flex items-center gap-2 justify-between sm:justify-end shrink-0">
-            {onRefresh && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onRefresh}
-                disabled={isLoading}
-                className="h-8 px-2.5 text-xs gap-1.5"
-                title="Tải lại dữ liệu"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                <span className="hidden sm:inline">Làm mới</span>
-              </Button>
-            )}
-
-            <div className="text-[11px] text-muted-foreground font-mono whitespace-nowrap">
-              Hiển thị <strong>{sortedRoutes.length}</strong> tuyến đường
-            </div>
-          </div>
-        </div>
-
-        {/* Filters Row */}
-        <div className="flex flex-wrap items-center gap-2 pt-0.5">
-          {/* Lọc Trạng thái */}
-          <Select
-            value={selectedStatus}
-            onValueChange={(val) => {
-              setSelectedStatus(val as RouteStatus | "ALL");
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs w-[140px]">
-              <SelectValue placeholder="Trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-              <SelectItem value="ACTIVE">Đang chạy (Active)</SelectItem>
-              <SelectItem value="PLANNED">Đã lập lịch (Planned)</SelectItem>
-              <SelectItem value="COMPLETED">Hoàn thành</SelectItem>
-              <SelectItem value="CANCELLED">Đã hủy</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Lọc Kho xuất phát */}
-          <Select
-            value={selectedWarehouseId}
-            onValueChange={(val) => {
-              setSelectedWarehouseId(val);
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs w-[160px]">
-              <SelectValue placeholder="Kho xuất phát" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Tất cả kho xuất phát</SelectItem>
-              {warehouses.map((w) => (
-                <SelectItem key={w.id} value={w.id}>
-                  {w.name.replace("Tổng kho ", "").replace("Kho Trung chuyển ", "")}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Lọc Tài xế */}
-          <Select
-            value={selectedDriverId}
-            onValueChange={(val) => {
-              setSelectedDriverId(val);
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs w-[150px]">
-              <SelectValue placeholder="Tài xế" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Tất cả tài xế</SelectItem>
-              {drivers.map((d) => (
-                <SelectItem key={d.id} value={d.id}>
-                  {d.fullName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Nút Xóa bộ lọc */}
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleResetFilters}
-              className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
             >
-              <X className="h-3.5 w-3.5" />
-              <span>Xóa lọc</span>
-            </Button>
-          )}
-        </div>
-      </div>
+              <SelectTrigger className="h-8 text-xs w-[140px]">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+                <SelectItem value="ACTIVE">Đang chạy (Active)</SelectItem>
+                <SelectItem value="PLANNED">Đã lập lịch (Planned)</SelectItem>
+                <SelectItem value="COMPLETED">Hoàn thành</SelectItem>
+                <SelectItem value="CANCELLED">Đã hủy</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Lọc Kho xuất phát */}
+            <Select
+              value={selectedWarehouseId}
+              onValueChange={(val) => {
+                setSelectedWarehouseId(val);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs w-[160px]">
+                <SelectValue placeholder="Kho xuất phát" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả kho xuất phát</SelectItem>
+                {warehouses.map((w) => (
+                  <SelectItem key={w.id} value={w.id}>
+                    {w.name.replace("Tổng kho ", "").replace("Kho Trung chuyển ", "")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Lọc Tài xế */}
+            <Select
+              value={selectedDriverId}
+              onValueChange={(val) => {
+                setSelectedDriverId(val);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs w-[150px]">
+                <SelectValue placeholder="Tài xế" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả tài xế</SelectItem>
+                {drivers.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.fullName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
 
       {/* 2. Table Data with Horizontal Scroll protection */}
       <div className="overflow-x-auto w-full">

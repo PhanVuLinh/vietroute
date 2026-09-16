@@ -1,16 +1,7 @@
 import React, { useState, useMemo } from "react";
-import {
-  Search,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  ArrowUpDown,
-  Building2,
-  Boxes,
-  RefreshCw,
-} from "lucide-react";
-import { Input } from "@/shared/components/ui/input";
+import { ArrowUpDown, Building2, Boxes, RefreshCw } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
+
 import {
   Select,
   SelectContent,
@@ -19,7 +10,10 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { WarehouseTableRow } from "./WarehouseTableRow";
-import { TablePagination } from "@/shared/components/common";
+import { TablePagination, TableToolbar } from "@/shared/components/common";
+
+
+
 import type {
   Warehouse,
   WarehouseRegion,
@@ -150,126 +144,96 @@ export const WarehouseTable: React.FC<WarehouseTableProps> = ({
   return (
     <div className="bg-card rounded-xl border border-border shadow-2xs overflow-hidden flex flex-col">
       {/* 1. Header Toolbar & Filters */}
-      <div className="p-3.5 sm:p-4 border-b border-border/70 space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-          {/* Search bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Tìm theo tên kho, mã số, thành phố, địa chỉ, quản lý..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
+      <TableToolbar
+        variant="header"
+        filtersPosition="bottom"
+        searchValue={searchQuery}
+        onSearchChange={(val) => {
+          setSearchQuery(val);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Tìm theo tên kho, mã số, thành phố, địa chỉ, quản lý..."
+        totalItems={sortedWarehouses.length}
+        itemName="kho bãi"
+        hasActiveFilters={hasActiveFilters}
+        onResetFilters={handleResetFilters}
+        resetLabel="Xóa lọc"
+        actions={
+          onRefresh && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isLoading}
+              className="h-8 px-2.5 text-xs gap-1.5 cursor-pointer"
+              title="Tải lại dữ liệu"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Làm mới</span>
+            </Button>
+          )
+        }
+        filters={
+          <>
+            {/* Lọc Khu vực */}
+            <Select
+              value={selectedRegion}
+              onValueChange={(val) => {
+                setSelectedRegion(val as WarehouseRegion | "ALL");
                 setCurrentPage(1);
               }}
-              className="pl-9 pr-8 h-8 text-xs"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Quick Actions & Counter */}
-          <div className="flex items-center gap-2 justify-between sm:justify-end shrink-0">
-            {onRefresh && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onRefresh}
-                disabled={isLoading}
-                className="h-8 px-2.5 text-xs gap-1.5"
-                title="Tải lại dữ liệu"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                <span className="hidden sm:inline">Làm mới</span>
-              </Button>
-            )}
-
-            <div className="text-[11px] text-muted-foreground font-mono whitespace-nowrap">
-              Hiển thị <strong>{sortedWarehouses.length}</strong> kho bãi
-            </div>
-          </div>
-        </div>
-
-        {/* Filters Row */}
-        <div className="flex flex-wrap items-center gap-2 pt-0.5">
-          {/* Lọc Khu vực */}
-          <Select
-            value={selectedRegion}
-            onValueChange={(val) => {
-              setSelectedRegion(val as WarehouseRegion | "ALL");
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs w-[125px]">
-              <SelectValue placeholder="Khu vực" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Tất cả miền</SelectItem>
-              <SelectItem value="NORTH">Miền Bắc</SelectItem>
-              <SelectItem value="CENTRAL">Miền Trung</SelectItem>
-              <SelectItem value="SOUTH">Miền Nam</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Lọc Loại Hub */}
-          <Select
-            value={selectedType}
-            onValueChange={(val) => {
-              setSelectedType(val as WarehouseType | "ALL");
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs w-[145px]">
-              <SelectValue placeholder="Loại hình hub" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Tất cả loại hình</SelectItem>
-              <SelectItem value="CENTRAL_HUB">Tổng kho phân phối</SelectItem>
-              <SelectItem value="TRANSIT_HUB">Kho trung chuyển</SelectItem>
-              <SelectItem value="LAST_MILE_HUB">Hub chặng cuối</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Lọc Trạng thái */}
-          <Select
-            value={selectedStatus}
-            onValueChange={(val) => {
-              setSelectedStatus(val as WarehouseStatus | "ALL");
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs w-[140px]">
-              <SelectValue placeholder="Trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-              <SelectItem value="ACTIVE">Hoạt động</SelectItem>
-              <SelectItem value="MAINTENANCE">Bảo trì bến bãi</SelectItem>
-              <SelectItem value="FULL">Quá tải / Đầy tải</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Nút Xóa bộ lọc */}
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleResetFilters}
-              className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
             >
-              <X className="h-3.5 w-3.5" />
-              <span>Xóa lọc</span>
-            </Button>
-          )}
-        </div>
-      </div>
+              <SelectTrigger className="h-8 text-xs w-[125px]">
+                <SelectValue placeholder="Khu vực" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả miền</SelectItem>
+                <SelectItem value="NORTH">Miền Bắc</SelectItem>
+                <SelectItem value="CENTRAL">Miền Trung</SelectItem>
+                <SelectItem value="SOUTH">Miền Nam</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Lọc Loại Hub */}
+            <Select
+              value={selectedType}
+              onValueChange={(val) => {
+                setSelectedType(val as WarehouseType | "ALL");
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs w-[145px]">
+                <SelectValue placeholder="Loại hình hub" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả loại hình</SelectItem>
+                <SelectItem value="CENTRAL_HUB">Tổng kho phân phối</SelectItem>
+                <SelectItem value="TRANSIT_HUB">Kho trung chuyển</SelectItem>
+                <SelectItem value="LAST_MILE_HUB">Hub chặng cuối</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Lọc Trạng thái */}
+            <Select
+              value={selectedStatus}
+              onValueChange={(val) => {
+                setSelectedStatus(val as WarehouseStatus | "ALL");
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs w-[140px]">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+                <SelectItem value="ACTIVE">Hoạt động</SelectItem>
+                <SelectItem value="MAINTENANCE">Bảo trì bến bãi</SelectItem>
+                <SelectItem value="FULL">Quá tải / Đầy tải</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
 
       {/* 2. Table Data with Horizontal Scroll protection */}
       <div className="overflow-x-auto w-full">

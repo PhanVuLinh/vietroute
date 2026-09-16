@@ -1,15 +1,5 @@
 import React, { useState } from "react";
-import {
-  Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  UserX,
-  X,
-  RotateCcw,
-} from "lucide-react";
-import { Input } from "@/shared/components/ui/input";
-import { Button } from "@/shared/components/ui/button";
+import { Filter, UserX } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,8 +7,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { Button } from "@/shared/components/ui/button";
 import { DriverTableRow } from "./DriverTableRow";
-import { TablePagination } from "@/shared/components/common";
+import { TablePagination, TableToolbar } from "@/shared/components/common";
+
+
+
 import type { EnrichedDriver } from "../hooks/useDrivers";
 import type { DriverStatus } from "@/core/types/logistics";
 
@@ -66,73 +60,50 @@ export const DriversTable: React.FC<DriversTableProps> = ({
   return (
     <div className="space-y-3">
       {/* 1. Thanh công cụ tìm kiếm và lọc */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-card p-3 rounded-xl border border-border shadow-2xs">
-        <div className="flex flex-1 items-center gap-2">
-          {/* Ô tìm kiếm */}
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Tìm tài xế theo tên, mã, SĐT, biển số..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9 pr-8 h-9 text-xs"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => onSearchChange("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
+      <TableToolbar
+        searchValue={searchQuery}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Tìm tài xế theo tên, mã, SĐT, biển số..."
+        totalItems={drivers.length}
+        itemName="tài xế"
+        hasActiveFilters={hasActiveFilters}
+        onResetFilters={onResetFilters}
+        resetLabel="Đặt lại"
+        filters={
+          <>
+            {/* Lọc theo Trạng thái */}
+            <Select value={selectedStatus} onValueChange={onStatusChange}>
+              <SelectTrigger className="h-9 min-w-[175px] w-auto text-xs shrink-0">
+                <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="text-xs">Tất cả trạng thái</SelectItem>
+                <SelectItem value="AVAILABLE" className="text-xs">Sẵn sàng</SelectItem>
+                <SelectItem value="BUSY" className="text-xs">Đang giao hàng</SelectItem>
+                <SelectItem value="ON_BREAK" className="text-xs">Nghỉ ca</SelectItem>
+                <SelectItem value="OFFLINE" className="text-xs">Ngoại tuyến</SelectItem>
+                <SelectItem value="SUSPENDED" className="text-xs">Tạm khóa</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {/* Lọc theo Trạng thái */}
-          <Select value={selectedStatus} onValueChange={onStatusChange}>
-            <SelectTrigger className="h-9 min-w-[175px] w-auto text-xs shrink-0">
-              <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
-              <SelectValue placeholder="Trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="text-xs">Tất cả trạng thái</SelectItem>
-              <SelectItem value="AVAILABLE" className="text-xs">Sẵn sàng</SelectItem>
-              <SelectItem value="BUSY" className="text-xs">Đang giao hàng</SelectItem>
-              <SelectItem value="ON_BREAK" className="text-xs">Nghỉ ca</SelectItem>
-              <SelectItem value="OFFLINE" className="text-xs">Ngoại tuyến</SelectItem>
-              <SelectItem value="SUSPENDED" className="text-xs">Tạm khóa</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Lọc theo Hạng GPLX */}
-          <Select value={selectedLicense} onValueChange={onLicenseChange}>
-            <SelectTrigger className="h-9 min-w-[145px] w-auto text-xs shrink-0">
-              <SelectValue placeholder="Hạng GPLX" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="text-xs">Tất cả hạng bằng</SelectItem>
-              <SelectItem value="B2" className="text-xs">Hạng B2</SelectItem>
-              <SelectItem value="C" className="text-xs">Hạng C</SelectItem>
-              <SelectItem value="D" className="text-xs">Hạng D</SelectItem>
-              <SelectItem value="E" className="text-xs">Hạng E</SelectItem>
-              <SelectItem value="FC" className="text-xs">Hạng FC</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Nút đặt lại bộ lọc */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onResetFilters}
-            className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1.5 self-end sm:self-auto cursor-pointer"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Đặt lại
-          </Button>
-        )}
-      </div>
+            {/* Lọc theo Hạng GPLX */}
+            <Select value={selectedLicense} onValueChange={onLicenseChange}>
+              <SelectTrigger className="h-9 min-w-[145px] w-auto text-xs shrink-0">
+                <SelectValue placeholder="Hạng GPLX" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="text-xs">Tất cả hạng bằng</SelectItem>
+                <SelectItem value="B2" className="text-xs">Hạng B2</SelectItem>
+                <SelectItem value="C" className="text-xs">Hạng C</SelectItem>
+                <SelectItem value="D" className="text-xs">Hạng D</SelectItem>
+                <SelectItem value="E" className="text-xs">Hạng E</SelectItem>
+                <SelectItem value="FC" className="text-xs">Hạng FC</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
 
       {/* 2. Bảng dữ liệu Desktop */}
       <div className="rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
