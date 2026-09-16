@@ -32,15 +32,21 @@ export const TrackingPage: React.FC = () => {
 
   // Mobile toggle tab: "MAP" | "LIST"
   const [mobileTab, setMobileTab] = useState<"MAP" | "LIST">("MAP");
+  const [focusCoords, setFocusCoords] = useState<[number, number] | null>(null);
 
   const handleSelectVehicle = (vehicleId: string) => {
     setSelectedVehicleId(vehicleId);
     setMobileTab("MAP");
+    const found = trackedVehicles.find((v) => v.telemetry.vehicleId === vehicleId);
+    if (found) {
+      setFocusCoords([...found.telemetry.coordinates]);
+    }
   };
 
-  const handleFocusVehicle = (_coords: [number, number]) => {
-    // Map will auto-focus or we can trigger flyTo
+  const handleFocusVehicle = (coords: [number, number]) => {
+    setFocusCoords([...coords]);
   };
+
 
   return (
     <PageContainer
@@ -120,7 +126,9 @@ export const TrackingPage: React.FC = () => {
               onSelectVehicle={handleSelectVehicle}
               warehouses={warehouses}
               selectedRegion={selectedRegion}
+              focusCoords={focusCoords}
             />
+
 
             {/* Thẻ Telemetry chi tiết xe được chọn (Overlay góc dưới) */}
             <VehicleTelemetryCard

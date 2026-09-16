@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Play,
   Pause,
@@ -7,6 +7,8 @@ import {
   Truck,
   AlertTriangle,
   Navigation,
+  Clock,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { REGIONS, type RegionKey } from "../hooks/useTracking";
@@ -36,6 +38,19 @@ export const TrackingTopBar: React.FC<TrackingTopBarProps> = ({
   selectedRegion,
   onSelectRegion,
 }) => {
+  const [currentTime, setCurrentTime] = useState<string>(() =>
+    new Date().toLocaleTimeString("vi-VN")
+  );
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString("vi-VN"));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const movingPercent = stats.total > 0 ? Math.round((stats.moving / stats.total) * 100) : 0;
+
   return (
     <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-card p-3 rounded-xl border border-border shadow-2xs">
       {/* 1. Chỉ số giám sát tức thời */}
@@ -58,11 +73,17 @@ export const TrackingTopBar: React.FC<TrackingTopBarProps> = ({
           </span>
         </div>
 
+        {/* Live Clock Đồng hồ vệ tinh */}
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/30 border border-border/80 text-xs font-mono font-semibold text-foreground">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+          <span>{currentTime}</span>
+        </div>
+
         {/* Thẻ thống kê: Đang di chuyển */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
           <Navigation className="h-3.5 w-3.5" />
-          <span>{stats.moving} xe di chuyển</span>
-          <span className="text-[10px] font-mono text-primary/80">({stats.avgSpeed} km/h)</span>
+          <span>{stats.moving}/{stats.total} xe đang chạy ({movingPercent}%)</span>
+          <span className="text-[10px] font-mono text-primary/80">~{stats.avgSpeed} km/h</span>
         </div>
 
         {/* Thẻ thống kê: Dừng đỗ */}
@@ -75,7 +96,7 @@ export const TrackingTopBar: React.FC<TrackingTopBarProps> = ({
         {stats.alert > 0 && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/25 text-xs font-semibold text-rose-600 dark:text-rose-400 animate-pulse">
             <AlertTriangle className="h-3.5 w-3.5" />
-            <span>{stats.alert} cảnh báo an toàn</span>
+            <span>{stats.alert} cảnh báo</span>
           </div>
         )}
       </div>
