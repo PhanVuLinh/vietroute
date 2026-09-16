@@ -472,11 +472,10 @@ export const SettingsPage: React.FC = () => {
                 ].map((opt) => (
                   <label
                     key={opt.id}
-                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                      settings.routing.optimizationGoal === opt.id
+                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${settings.routing.optimizationGoal === opt.id
                         ? "bg-primary/5 border-primary shadow-xs"
                         : "border-border hover:bg-muted/40"
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
