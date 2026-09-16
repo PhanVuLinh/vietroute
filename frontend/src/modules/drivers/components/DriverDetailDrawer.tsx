@@ -19,11 +19,11 @@ import type { EnrichedDriver } from "../hooks/useDrivers";
 import type { DriverStatus } from "@/core/types/logistics";
 
 interface DriverDetailDrawerProps {
-  driver: EnrichedDriver | null;
+  driver: EnrichedDriver | any | null;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (driver: EnrichedDriver) => void;
-  onUpdateStatus: (id: string, status: DriverStatus) => void;
+  onEdit?: (driver: any) => void;
+  onUpdateStatus?: (id: string, status: DriverStatus) => void;
 }
 
 export const DriverDetailDrawer: React.FC<DriverDetailDrawerProps> = ({
@@ -241,17 +241,19 @@ export const DriverDetailDrawer: React.FC<DriverDetailDrawerProps> = ({
               Gọi {driver.phone}
             </a>
 
-            <Button
-              variant="default"
-              onClick={() => {
-                onClose();
-                onEdit(driver);
-              }}
-              className="flex-1 gap-2 text-xs font-semibold cursor-pointer"
-            >
-              <Edit className="h-4 w-4" />
-              Chỉnh sửa hồ sơ
-            </Button>
+            {onEdit && (
+              <Button
+                variant="default"
+                onClick={() => {
+                  onClose();
+                  onEdit(driver);
+                }}
+                className="flex-1 gap-2 text-xs font-semibold cursor-pointer"
+              >
+                <Edit className="h-4 w-4" />
+                Chỉnh sửa hồ sơ
+              </Button>
+            )}
           </div>
         </div>
       </div>

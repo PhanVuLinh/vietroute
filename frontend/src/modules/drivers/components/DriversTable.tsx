@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { DriverTableRow } from "./DriverTableRow";
+import { TablePagination } from "@/shared/components/common";
 import type { EnrichedDriver } from "../hooks/useDrivers";
 import type { DriverStatus } from "@/core/types/logistics";
 
@@ -188,44 +189,15 @@ export const DriversTable: React.FC<DriversTableProps> = ({
           </table>
         </div>
 
-        {/* 3. Phân trang & Tổng kết */}
-        <div className="p-3 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 bg-muted/15 text-xs text-muted-foreground">
-          <div>
-            Hiển thị{" "}
-            <span className="font-semibold text-foreground font-mono">
-              {drivers.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} -{" "}
-              {Math.min(currentPage * pageSize, drivers.length)}
-            </span>{" "}
-            trong tổng số{" "}
-            <span className="font-semibold text-foreground font-mono">{drivers.length}</span> tài xế
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="h-8 px-2 text-xs gap-1 cursor-pointer"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              Trước
-            </Button>
-            <div className="px-2 font-mono text-xs font-semibold text-foreground">
-              {currentPage} / {totalPages}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="h-8 px-2 text-xs gap-1 cursor-pointer"
-            >
-              Sau
-              <ChevronRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
+        {/* 3. Phân trang dùng chung */}
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={drivers.length}
+          itemName="tài xế"
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+        />
       </div>
     </div>
   );

@@ -15,10 +15,11 @@ import { DispatchSummaryBar } from "../components/DispatchSummaryBar";
 import { OrderQueue } from "../components/OrderQueue";
 import { DispatchMap } from "../components/DispatchMap";
 import { DriverRecommendationPanel } from "../components/DriverRecommendationPanel";
-import { OrderDetailDrawer } from "../components/OrderDetailDrawer";
+import { OrderDetailDrawer } from "@/modules/orders/components/OrderDetailDrawer";
 import { AssignmentConfirmationDialog } from "../components/AssignmentConfirmationDialog";
 import { DispatchAlerts } from "../components/DispatchAlerts";
 import { AiDispatchInsight } from "../components/AiDispatchInsight";
+import { toast } from "@/shared/components/feedback";
 
 export const DispatchPage: React.FC = () => {
   usePageTitle("Điều phối giao hàng");
@@ -56,7 +57,6 @@ export const DispatchPage: React.FC = () => {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [mode, setMode] = useState<"MANUAL" | "AUTO">("MANUAL");
   const [mobileTab, setMobileTab] = useState<"ORDERS" | "MAP" | "DRIVERS">("ORDERS");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeSummaryFilter, setActiveSummaryFilter] = useState<string>("ALL");
 
   // Đồng bộ urlOrderId nếu param thay đổi
@@ -78,16 +78,6 @@ export const DispatchPage: React.FC = () => {
       null
     );
   }, [filteredOrders, selectedOrderId]);
-
-  // Tự động ẩn Toast sau 3.5 giây
-  useEffect(() => {
-    if (toastMessage) {
-      const timer = setTimeout(() => {
-        setToastMessage(null);
-      }, 3500);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMessage]);
 
   // 4. Tính toán số liệu Summary Bar
   const pendingOrdersCount = orders.filter(
@@ -138,8 +128,9 @@ export const DispatchPage: React.FC = () => {
       });
 
       setIsAssignDialogOpen(false);
-      setToastMessage(
-        `Đã phân công đơn ${selectedOrder.orderCode} cho tài xế ${selectedCandidate.driver.fullName} thành công.`
+      toast.success(
+        "Điều phối thành công",
+        `Đã phân công đơn ${selectedOrder.orderCode} cho tài xế ${selectedCandidate.driver.fullName}.`
       );
 
       // Chuyển sang đơn tiếp theo chưa phân công
@@ -148,7 +139,7 @@ export const DispatchPage: React.FC = () => {
       );
       setSelectedOrderId(nextPending ? nextPending.id : null);
     } catch {
-      setToastMessage("Không thể phân công đơn hàng. Vui lòng thử lại.");
+      toast.error("Lỗi điều phối", "Không thể phân công đơn hàng. Vui lòng thử lại.");
     }
   };
 
@@ -318,14 +309,6 @@ export const DispatchPage: React.FC = () => {
         onConfirm={handleConfirmAssignment}
         isSubmitting={assignOrderMutation.isPending}
       />
-
-      {/* 10. Toast Thông báo hoàn tất phân công */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-lg border border-emerald-500/40 bg-emerald-950/90 text-emerald-100 px-4 py-3 shadow-xl backdrop-blur-md animate-in fade-in-50 slide-in-from-bottom-3 select-none">
-          <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-          <span className="text-xs font-semibold">{toastMessage}</span>
-        </div>
-      )}
     </PageContainer>
   );
 };

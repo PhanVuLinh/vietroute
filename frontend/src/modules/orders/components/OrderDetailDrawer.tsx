@@ -19,45 +19,26 @@ import { OrderStatusBadge } from "./OrderStatusBadge";
 import { OrderPriorityBadge } from "./OrderPriorityBadge";
 import { OrderSlaIndicator } from "./OrderSlaIndicator";
 import { OrderStatusTimeline } from "./OrderStatusTimeline";
+import { formatCurrency, formatDateTime } from "@/shared/utils/formatters";
 
 interface OrderDetailDrawerProps {
-  order: EnrichedOrder | null;
+  order: EnrichedOrder | any | null;
   isOpen: boolean;
   onClose: () => void;
+  onAssignDriver?: (order: any) => void;
 }
 
 export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
   order,
   isOpen,
   onClose,
+  onAssignDriver,
 }) => {
   const navigate = useNavigate();
 
   if (!isOpen || !order) return null;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
-  const formatDateTime = (isoString?: string) => {
-    if (!isoString) return "--";
-    try {
-      return new Date(isoString).toLocaleString("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-    } catch {
-      return isoString;
-    }
-  };
-
-  const isPending = order.status === "PENDING";
+  const isPending = order.status === "PENDING" || order.status === "CONFIRMED";
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -304,12 +285,16 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                 type="button"
                 onClick={() => {
                   onClose();
-                  navigate(`/dispatch?orderId=${order.id}`);
+                  if (onAssignDriver) {
+                    onAssignDriver(order);
+                  } else {
+                    navigate(`/dispatch?orderId=${order.id}`);
+                  }
                 }}
-                className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 rounded-xl transition-colors shadow-lg shadow-primary/20"
+                className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 rounded-xl transition-colors shadow-lg shadow-primary/20 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>Chuyển tới Điều phối</span>
+                <span>{onAssignDriver ? "Điều phối đơn hàng" : "Chuyển tới Điều phối"}</span>
               </button>
             )}
           </div>

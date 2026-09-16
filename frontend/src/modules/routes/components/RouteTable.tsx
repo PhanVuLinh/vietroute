@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { RouteTableRow } from "./RouteTableRow";
+import { TablePagination } from "@/shared/components/common";
 import type { RouteStatus, Warehouse, Driver } from "@/core/types/logistics";
 import type { EnrichedRoute } from "../hooks/useRoutes";
 
@@ -389,35 +390,14 @@ export const RouteTable: React.FC<RouteTableProps> = ({
       </div>
 
       {/* 3. Pagination Footer */}
-      <div className="p-3 border-t border-border/70 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
-        <span className="font-mono">
-          Trang {safePage} / {totalPages} (Tổng {sortedRoutes.length} tuyến)
-        </span>
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={safePage <= 1}
-            className="h-8 px-2.5 text-xs gap-1"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Trang trước</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={safePage >= totalPages}
-            className="h-8 px-2.5 text-xs gap-1"
-          >
-            <span className="hidden sm:inline">Trang sau</span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
+      <TablePagination
+        currentPage={safePage}
+        totalPages={totalPages}
+        totalItems={sortedRoutes.length}
+        itemName="tuyến đường"
+        onPageChange={setCurrentPage}
+        pageSize={ITEMS_PER_PAGE}
+      />
     </div>
   );
 };

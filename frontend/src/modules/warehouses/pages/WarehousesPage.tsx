@@ -1,17 +1,12 @@
 import React, { useState } from "react";
-import {
-  Plus,
-  RefreshCw,
-  AlertCircle,
-  Table as TableIcon,
-  Map as MapIcon,
-  Columns2,
-} from "lucide-react";
+import { Plus, RefreshCw, AlertCircle } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { Button } from "@/shared/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/components/ui/alert";
 import { Skeleton } from "@/shared/components/ui/skeleton";
+import { ViewModeToggle, type ViewMode } from "@/shared/components/common";
+import { ConfirmDialog, toast } from "@/shared/components/feedback";
 import { useWarehouses } from "../hooks/useWarehouses";
 import { WarehouseKpiGrid } from "../components/WarehouseKpiGrid";
 import { WarehouseTable } from "../components/WarehouseTable";
@@ -20,8 +15,6 @@ import { WarehouseMap } from "../components/WarehouseMap";
 import { WarehouseDetailDrawer } from "../components/WarehouseDetailDrawer";
 import { CreateWarehouseDialog } from "../components/CreateWarehouseDialog";
 import type { Warehouse, WarehouseStatus } from "@/core/types/logistics";
-
-type ViewMode = "TABLE" | "MAP" | "SPLIT";
 
 export const WarehousesPage: React.FC = () => {
   usePageTitle("Quản lý kho bãi & Hub");
@@ -53,26 +46,29 @@ export const WarehousesPage: React.FC = () => {
   // Chế độ hiển thị: Danh sách / Bản đồ / Chia đôi màn hình
   const [viewMode, setViewMode] = useState<ViewMode>("TABLE");
 
-  // State quản lý Drawer & Dialog
+  // State Drawer & Dialog
   const [activeDrawerWarehouse, setActiveDrawerWarehouse] = useState<Warehouse | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
 
-  // Mở Drawer chi tiết
+  // State modal xác nhận xóa
+  const [deletingWarehouse, setDeletingWarehouse] = useState<Warehouse | null>(null);
+
+  // Xem chi tiết Drawer
   const handleViewDetail = (wh: Warehouse) => {
     setActiveDrawerWarehouse(wh);
     setSelectedWarehouseId(wh.id);
     setIsDrawerOpen(true);
   };
 
-  // Mở Dialog sửa
+  // Mở sửa
   const handleEdit = (wh: Warehouse) => {
     setEditingWarehouse(wh);
     setIsDialogOpen(true);
   };
 
-  // Mở Dialog tạo mới
+  // Mở tạo mới
   const handleOpenCreate = () => {
     setEditingWarehouse(null);
     setIsDialogOpen(true);
@@ -82,30 +78,38 @@ export const WarehousesPage: React.FC = () => {
   const handleFormSubmit = async (whData: Omit<Warehouse, "id">, warehouseId?: string) => {
     if (warehouseId) {
       await updateWarehouse({ id: warehouseId, data: whData });
+      toast.success("Cập nhật thành công", `Đã lưu thông tin kho "${whData.name}"`);
     } else {
       await createWarehouse(whData);
+      toast.success("Thêm kho thành công", `Đã tạo mới kho "${whData.name}"`);
     }
   };
 
   // Đổi trạng thái nhanh
   const handleUpdateStatus = async (id: string, status: WarehouseStatus) => {
     await updateStatus({ id, status });
+    toast.info("Đổi trạng thái", `Kho bãi đã chuyển sang ${status}`);
     if (activeDrawerWarehouse && activeDrawerWarehouse.id === id) {
       setActiveDrawerWarehouse((prev) => (prev ? { ...prev, status } : null));
     }
   };
 
-  // Xóa kho
-  const handleDelete = async (wh: Warehouse) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa kho "${wh.name}" (${wh.code}) khỏi hệ thống?`)) {
-      await deleteWarehouse(wh.id);
-      if (selectedWarehouseId === wh.id) {
-        setSelectedWarehouseId(null);
-      }
-      if (activeDrawerWarehouse?.id === wh.id) {
-        setIsDrawerOpen(false);
-      }
+  // Xóa kho (mở ConfirmDialog)
+  const handleDelete = (wh: Warehouse) => {
+    setDeletingWarehouse(wh);
+  };
+
+  const confirmDeleteWarehouse = async () => {
+    if (!deletingWarehouse) return;
+    await deleteWarehouse(deletingWarehouse.id);
+    toast.success("Xóa kho thành công", `Đã xóa kho "${deletingWarehouse.name}"`);
+    if (selectedWarehouseId === deletingWarehouse.id) {
+      setSelectedWarehouseId(null);
     }
+    if (activeDrawerWarehouse?.id === deletingWarehouse.id) {
+      setIsDrawerOpen(false);
+    }
+    setDeletingWarehouse(null);
   };
 
   // Focus map
@@ -120,46 +124,19 @@ export const WarehousesPage: React.FC = () => {
     <PageContainer
       title="Quản lý Kho bãi & Hub trung chuyển"
       subtitle="Mạng lưới trung tâm phân phối, kho trung chuyển 3 miền và giám sát tỷ lệ lấp đầy (Occupancy Rate)."
+      fullHeight={viewMode !== "TABLE"}
       action={
         <div className="flex items-center gap-2 flex-wrap">
           {/* View Mode Switcher */}
-          <div className="bg-muted/80 p-0.5 rounded-lg border border-border flex items-center">
-            <Button
-              variant={viewMode === "TABLE" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("TABLE")}
-              className="h-8 px-2.5 text-xs gap-1.5"
-            >
-              <TableIcon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Danh sách</span>
-            </Button>
-            <Button
-              variant={viewMode === "SPLIT" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("SPLIT")}
-              className="h-8 px-2.5 text-xs gap-1.5"
-            >
-              <Columns2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Kết hợp</span>
-            </Button>
-            <Button
-              variant={viewMode === "MAP" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("MAP")}
-              className="h-8 px-2.5 text-xs gap-1.5"
-            >
-              <MapIcon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Bản đồ</span>
-            </Button>
-          </div>
+          <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
 
           <Button
             onClick={handleOpenCreate}
             size="sm"
-            className="h-9 px-3 text-xs gap-1.5 font-semibold shadow-xs"
+            className="h-9 px-3 text-xs gap-1.5 font-semibold shadow-xs cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            <span>Thêm kho mới</span>
+            <span>Thêm kho bãi</span>
           </Button>
         </div>
       }
@@ -251,7 +228,7 @@ export const WarehousesPage: React.FC = () => {
 
             {/* VIEW MODE: MAP ONLY */}
             {viewMode === "MAP" && (
-              <div className="h-[calc(100vh-280px)] min-h-[550px] w-full rounded-xl overflow-hidden relative">
+              <div className="h-full min-h-[550px] w-full rounded-xl overflow-hidden relative">
                 <WarehouseMap
                   warehouses={warehouses}
                   selectedWarehouseId={selectedWarehouseId}
@@ -277,7 +254,7 @@ export const WarehousesPage: React.FC = () => {
                         size="sm"
                         variant="ghost"
                         onClick={() => setSelectedWarehouseId(null)}
-                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
                       >
                         ✕
                       </Button>
@@ -300,7 +277,7 @@ export const WarehousesPage: React.FC = () => {
                       <Button
                         size="sm"
                         onClick={() => handleViewDetail(selectedWarehouse)}
-                        className="flex-1 h-8 text-xs font-semibold"
+                        className="flex-1 h-8 text-xs font-semibold cursor-pointer"
                       >
                         Xem chi tiết Hub
                       </Button>
@@ -308,7 +285,7 @@ export const WarehousesPage: React.FC = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleEdit(selectedWarehouse)}
-                        className="h-8 text-xs"
+                        className="h-8 text-xs cursor-pointer"
                       >
                         Chỉnh sửa
                       </Button>
@@ -320,7 +297,7 @@ export const WarehousesPage: React.FC = () => {
 
             {/* VIEW MODE: SPLIT (BẢN ĐỒ + DANH SÁCH SONG SONG) */}
             {viewMode === "SPLIT" && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-280px)] min-h-[600px]">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full min-h-[550px]">
                 {/* Left side: Interactive Map (5 cols) */}
                 <div className="lg:col-span-5 h-[350px] lg:h-full rounded-xl overflow-hidden">
                   <WarehouseMap
@@ -392,6 +369,29 @@ export const WarehousesPage: React.FC = () => {
         onClose={() => setIsDialogOpen(false)}
         editingWarehouse={editingWarehouse}
         onSubmit={handleFormSubmit}
+      />
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingWarehouse)}
+        onClose={() => setDeletingWarehouse(null)}
+        onConfirm={confirmDeleteWarehouse}
+        title="Xác nhận xóa kho bãi"
+        description={
+          deletingWarehouse ? (
+            <span>
+              Bạn có chắc chắn muốn xóa kho bãi{" "}
+              <strong className="text-foreground">"{deletingWarehouse.name}"</strong> (Mã:{" "}
+              <span className="font-mono text-primary font-bold">{deletingWarehouse.code}</span>)
+              khỏi hệ thống? Dữ liệu hàng tồn và luồng phân bổ tại kho này sẽ bị ảnh hưởng.
+            </span>
+          ) : (
+            ""
+          )
+        }
+        confirmText="Xóa kho bãi"
+        cancelText="Hủy bỏ"
+        variant="destructive"
       />
     </PageContainer>
   );

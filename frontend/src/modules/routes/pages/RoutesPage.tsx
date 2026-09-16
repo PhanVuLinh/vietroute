@@ -1,17 +1,12 @@
 import React, { useState } from "react";
-import {
-  Plus,
-  RefreshCw,
-  AlertCircle,
-  Table as TableIcon,
-  Map as MapIcon,
-  Columns2,
-} from "lucide-react";
+import { Plus, RefreshCw, AlertCircle } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { Button } from "@/shared/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/components/ui/alert";
 import { Skeleton } from "@/shared/components/ui/skeleton";
+import { ViewModeToggle, type ViewMode } from "@/shared/components/common";
+import { ConfirmDialog, toast } from "@/shared/components/feedback";
 import { useRoutes, type EnrichedRoute } from "../hooks/useRoutes";
 import { RouteKpiGrid } from "../components/RouteKpiGrid";
 import { RouteTable } from "../components/RouteTable";
@@ -20,8 +15,6 @@ import { RouteMap } from "../components/RouteMap";
 import { RouteDetailDrawer } from "../components/RouteDetailDrawer";
 import { CreateRouteDialog } from "../components/CreateRouteDialog";
 import type { Route, RouteStatus, RouteStop, RouteStopStatus } from "@/core/types/logistics";
-
-type ViewMode = "TABLE" | "MAP" | "SPLIT";
 
 export const RoutesPage: React.FC = () => {
   usePageTitle("Quản lý & Tối ưu Tuyến đường Vận chuyển");
@@ -66,6 +59,9 @@ export const RoutesPage: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
 
+  // State modal xác nhận xóa
+  const [deletingRoute, setDeletingRoute] = useState<EnrichedRoute | null>(null);
+
   // Mở Drawer chi tiết tuyến đường & chặng dừng
   const handleViewDetail = (route: EnrichedRoute) => {
     setActiveDrawerRoute(route);
@@ -82,6 +78,7 @@ export const RoutesPage: React.FC = () => {
   // Nhân bản tuyến đường (Duplicate)
   const handleDuplicate = async (route: EnrichedRoute) => {
     await duplicateRoute(route);
+    toast.success("Nhân bản thành công", `Đã tạo bản sao cho tuyến ${route.routeCode}`);
   };
 
   // Mở Modal lập tuyến mới
@@ -94,8 +91,10 @@ export const RoutesPage: React.FC = () => {
   const handleFormSubmit = async (routeData: Partial<Route>) => {
     if (editingRoute) {
       await updateRoute({ id: editingRoute.id, data: routeData });
+      toast.success("Cập nhật thành công", `Đã lưu thay đổi cho tuyến ${editingRoute.routeCode}`);
     } else {
       await createRoute(routeData as Omit<Route, "id">);
+      toast.success("Lập tuyến mới thành công", "Tuyến đường đã được ghi nhận vào hệ thống");
     }
   };
 
@@ -107,6 +106,7 @@ export const RoutesPage: React.FC = () => {
   // Cập nhật trạng thái tuyến đường (PLANNED, ACTIVE, COMPLETED, CANCELLED)
   const handleUpdateRouteStatus = async (id: string, status: RouteStatus) => {
     await updateRouteStatus({ id, status });
+    toast.info("Đổi trạng thái", `Tuyến đường đã chuyển sang ${status}`);
     if (activeDrawerRoute && activeDrawerRoute.id === id) {
       setActiveDrawerRoute((prev) => (prev ? { ...prev, status } : null));
     }
@@ -143,21 +143,25 @@ export const RoutesPage: React.FC = () => {
     }
   };
 
-  // Xóa tuyến đường
-  const handleDelete = async (route: EnrichedRoute) => {
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa tuyến đường "${route.routeName || route.routeCode}" (${route.routeCode}) khỏi hệ thống?`
-      )
-    ) {
-      await deleteRoute(route.id);
-      if (selectedRouteId === route.id) {
-        setSelectedRouteId(null);
-      }
-      if (activeDrawerRoute?.id === route.id) {
-        setIsDrawerOpen(false);
-      }
+  // Xóa tuyến đường (mở ConfirmDialog)
+  const handleDelete = (route: EnrichedRoute) => {
+    setDeletingRoute(route);
+  };
+
+  const confirmDeleteRoute = async () => {
+    if (!deletingRoute) return;
+    await deleteRoute(deletingRoute.id);
+    toast.success(
+      "Xóa tuyến thành công",
+      `Đã xóa tuyến "${deletingRoute.routeName || deletingRoute.routeCode}"`
+    );
+    if (selectedRouteId === deletingRoute.id) {
+      setSelectedRouteId(null);
     }
+    if (activeDrawerRoute?.id === deletingRoute.id) {
+      setIsDrawerOpen(false);
+    }
+    setDeletingRoute(null);
   };
 
   // Xem trên bản đồ (chuyển sang chế độ kết hợp SPLIT)
@@ -172,43 +176,16 @@ export const RoutesPage: React.FC = () => {
     <PageContainer
       title="Quản lý & Tối ưu Tuyến đường Vận chuyển"
       subtitle="Quy hoạch chặng giao nhận đa điểm dừng, định mức tiêu hao nhiên liệu, phí BOT đường bộ và thuật toán TSP tối ưu."
+      fullHeight={viewMode !== "TABLE"}
       action={
         <div className="flex items-center gap-2 flex-wrap">
           {/* View Mode Switcher */}
-          <div className="bg-muted/80 p-0.5 rounded-lg border border-border flex items-center">
-            <Button
-              variant={viewMode === "TABLE" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("TABLE")}
-              className="h-8 px-2.5 text-xs gap-1.5"
-            >
-              <TableIcon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Danh sách</span>
-            </Button>
-            <Button
-              variant={viewMode === "SPLIT" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("SPLIT")}
-              className="h-8 px-2.5 text-xs gap-1.5"
-            >
-              <Columns2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Kết hợp</span>
-            </Button>
-            <Button
-              variant={viewMode === "MAP" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("MAP")}
-              className="h-8 px-2.5 text-xs gap-1.5"
-            >
-              <MapIcon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Bản đồ</span>
-            </Button>
-          </div>
+          <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
 
           <Button
             onClick={handleOpenCreate}
             size="sm"
-            className="h-9 px-3 text-xs gap-1.5 font-semibold shadow-xs"
+            className="h-9 px-3 text-xs gap-1.5 font-semibold shadow-xs cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             <span>Lập tuyến mới</span>
@@ -307,7 +284,7 @@ export const RoutesPage: React.FC = () => {
 
             {/* VIEW MODE: MAP ONLY */}
             {viewMode === "MAP" && (
-              <div className="h-[calc(100vh-280px)] min-h-[550px] w-full rounded-xl overflow-hidden relative">
+              <div className="h-full min-h-[550px] w-full rounded-xl overflow-hidden relative">
                 <RouteMap
                   routes={routes}
                   selectedRouteId={selectedRouteId}
@@ -337,7 +314,7 @@ export const RoutesPage: React.FC = () => {
                         size="sm"
                         variant="ghost"
                         onClick={() => setSelectedRouteId(null)}
-                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
                       >
                         ✕
                       </Button>
@@ -362,7 +339,7 @@ export const RoutesPage: React.FC = () => {
                       <Button
                         size="sm"
                         onClick={() => handleViewDetail(selectedRoute)}
-                        className="flex-1 h-8 text-xs font-semibold"
+                        className="flex-1 h-8 text-xs font-semibold cursor-pointer"
                       >
                         Xem chi tiết & Chặng
                       </Button>
@@ -370,7 +347,7 @@ export const RoutesPage: React.FC = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleEdit(selectedRoute)}
-                        className="h-8 text-xs"
+                        className="h-8 text-xs cursor-pointer"
                       >
                         Chỉnh sửa
                       </Button>
@@ -382,7 +359,7 @@ export const RoutesPage: React.FC = () => {
 
             {/* VIEW MODE: SPLIT (BẢN ĐỒ + DANH SÁCH SONG SONG) */}
             {viewMode === "SPLIT" && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-280px)] min-h-[600px]">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full min-h-[550px]">
                 {/* Left side: Interactive Map (5 cols) */}
                 <div className="lg:col-span-5 h-[350px] lg:h-full rounded-xl overflow-hidden">
                   <RouteMap
@@ -464,6 +441,31 @@ export const RoutesPage: React.FC = () => {
         vehicles={vehicles}
         pendingOrders={pendingOrders}
         routeTemplates={routeTemplates}
+      />
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingRoute)}
+        onClose={() => setDeletingRoute(null)}
+        onConfirm={confirmDeleteRoute}
+        title="Xác nhận xóa tuyến đường"
+        description={
+          deletingRoute ? (
+            <span>
+              Bạn có chắc chắn muốn xóa tuyến đường{" "}
+              <strong className="text-foreground">
+                "{deletingRoute.routeName || deletingRoute.routeCode}"
+              </strong>{" "}
+              (Mã: <span className="font-mono text-primary font-bold">{deletingRoute.routeCode}</span>)
+              khỏi hệ thống? Hành động này không thể hoàn tác.
+            </span>
+          ) : (
+            ""
+          )
+        }
+        confirmText="Xóa tuyến"
+        cancelText="Hủy bỏ"
+        variant="destructive"
       />
     </PageContainer>
   );

@@ -1,75 +1,105 @@
 import React from "react";
-import { Badge } from "@/shared/components/ui/badge";
+import {
+  Clock,
+  ClipboardList,
+  CheckCircle2,
+  PackageCheck,
+  Truck,
+  MapPin,
+  AlertTriangle,
+  Ban,
+  HelpCircle,
+} from "lucide-react";
+import { StatusBadge, type StatusBadgeVariant } from "@/shared/components/common/StatusBadge";
 import type { OrderStatus } from "@/core/types/logistics";
-import { cn } from "@/shared/utils/cn";
 
 interface OrderStatusBadgeProps {
   status: OrderStatus | string;
   className?: string;
+  size?: "xs" | "sm" | "md";
 }
 
-export const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({ status, className }) => {
-  switch (status) {
-    case "PENDING":
-    case "CONFIRMED":
-      return (
-        <Badge variant="warning" className={cn("text-[10px] px-2 py-0.5 font-semibold", className)}>
-          Chờ phân công
-        </Badge>
-      );
-    case "ASSIGNED":
-      return (
-        <Badge variant="info" className={cn("text-[10px] px-2 py-0.5 font-semibold", className)}>
-          Đã phân công
-        </Badge>
-      );
-    case "ACCEPTED":
-      return (
-        <Badge variant="info" className={cn("text-[10px] px-2 py-0.5 font-semibold", className)}>
-          Đã nhận đơn
-        </Badge>
-      );
-    case "PICKING_UP":
-      return (
-        <Badge variant="info" className={cn("text-[10px] px-2 py-0.5 font-semibold", className)}>
-          Đang lấy hàng
-        </Badge>
-      );
-    case "IN_TRANSIT":
-      return (
-        <Badge variant="info" className={cn("text-[10px] px-2 py-0.5 font-semibold", className)}>
-          Đang giao
-        </Badge>
-      );
-    case "ARRIVED":
-      return (
-        <Badge variant="info" className={cn("text-[10px] px-2 py-0.5 font-semibold", className)}>
-          Đã đến nơi
-        </Badge>
-      );
-    case "DELIVERED":
-      return (
-        <Badge variant="success" className={cn("text-[10px] px-2 py-0.5 font-semibold", className)}>
-          Giao thành công
-        </Badge>
-      );
-    case "FAILED":
-      return (
-        <Badge variant="destructive" className={cn("text-[10px] px-2 py-0.5 font-semibold", className)}>
-          Giao thất bại
-        </Badge>
-      );
-    case "CANCELLED":
-      return (
-        <Badge variant="secondary" className={cn("text-[10px] px-2 py-0.5 text-muted-foreground", className)}>
-          Đã hủy
-        </Badge>
-      );
-    default:
-      return (
-        <Badge variant="secondary" className={cn("text-[10px] px-2 py-0.5", className)}>
-          {status}
-        </Badge>
-      );
-  }
+interface StatusConfig {
+  label: string;
+  variant: StatusBadgeVariant;
+  icon: React.ElementType;
+  pulse?: boolean;
+}
+
+const ORDER_STATUS_CONFIG: Record<string, StatusConfig> = {
+  PENDING: {
+    label: "Chờ phân công",
+    variant: "amber",
+    icon: Clock,
+  },
+  CONFIRMED: {
+    label: "Chờ phân công",
+    variant: "amber",
+    icon: Clock,
+  },
+  ASSIGNED: {
+    label: "Đã phân công",
+    variant: "blue",
+    icon: ClipboardList,
+  },
+  ACCEPTED: {
+    label: "Đã nhận đơn",
+    variant: "blue",
+    icon: CheckCircle2,
+  },
+  PICKING_UP: {
+    label: "Đang lấy hàng",
+    variant: "cyan",
+    icon: PackageCheck,
+  },
+  IN_TRANSIT: {
+    label: "Đang giao",
+    variant: "amber",
+    icon: Truck,
+    pulse: true,
+  },
+  ARRIVED: {
+    label: "Đã đến nơi",
+    variant: "blue",
+    icon: MapPin,
+  },
+  DELIVERED: {
+    label: "Giao thành công",
+    variant: "emerald",
+    icon: CheckCircle2,
+  },
+  FAILED: {
+    label: "Giao thất bại",
+    variant: "rose",
+    icon: AlertTriangle,
+  },
+  CANCELLED: {
+    label: "Đã hủy",
+    variant: "slate",
+    icon: Ban,
+  },
 };
+
+export const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({
+  status,
+  className,
+  size = "xs",
+}) => {
+  const config = ORDER_STATUS_CONFIG[status] || {
+    label: String(status),
+    variant: "slate" as StatusBadgeVariant,
+    icon: HelpCircle,
+  };
+
+  return (
+    <StatusBadge
+      label={config.label}
+      icon={config.icon}
+      variant={config.variant}
+      pulseDot={config.pulse}
+      size={size}
+      className={className}
+    />
+  );
+};
+

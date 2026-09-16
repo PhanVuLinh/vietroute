@@ -38,7 +38,6 @@ export const OrdersPage: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Thống kê nhanh các chỉ số
   const summaryCounts = useMemo(() => {
@@ -70,16 +69,6 @@ export const OrdersPage: React.FC = () => {
     };
   }, [orders]);
 
-  // Tự động tắt Toast thông báo sau 4 giây
-  useEffect(() => {
-    if (toastMessage) {
-      const timer = setTimeout(() => {
-        setToastMessage(null);
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMessage]);
-
   // Handler mở drawer chi tiết
   const handleViewDetail = (order: EnrichedOrder) => {
     setSelectedOrder(order);
@@ -92,36 +81,18 @@ export const OrdersPage: React.FC = () => {
     await refetchAll();
     setTimeout(() => {
       setIsRefreshing(false);
-      setToastMessage("Đã cập nhật dữ liệu đơn hàng mới nhất");
+      toast.success("Cập nhật thành công", "Đã đồng bộ dữ liệu đơn hàng mới nhất");
     }, 400);
   };
 
   // Handler khi tạo đơn hàng thành công
   const handleCreateSuccess = (newOrder: Order) => {
-    setToastMessage(`Đã khởi tạo thành công đơn hàng [${newOrder.orderCode}]!`);
+    toast.success("Khởi tạo thành công", `Đã tạo đơn hàng [${newOrder.orderCode}]`);
   };
 
   return (
     <PageContainer className="space-y-6">
       <div className="space-y-6">
-        {/* Toast thông báo nổi bật */}
-        {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
-            <div className="flex items-center gap-3 pl-4 pr-2 py-2.5 bg-card/95 border border-emerald-500/30 text-foreground rounded-xl shadow-2xl backdrop-blur-md ring-1 ring-emerald-500/10">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 shrink-0">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              </div>
-              <span className="text-xs font-medium pr-2">{toastMessage}</span>
-              <button
-                onClick={() => setToastMessage(null)}
-                className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer shrink-0"
-                title="Đóng"
-              >
-                <span className="text-sm leading-none">×</span>
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* 1. Header tác vụ: Tạo đơn, Điều phối, Làm mới */}
         <OrdersHeader

@@ -6,7 +6,7 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import type { DashboardDriverItem } from "../hooks/useDashboardData";
-import { DriverDetailDrawer } from "./DriverDetailDrawer";
+import { DriverDetailDrawer } from "@/modules/drivers/components/DriverDetailDrawer";
 
 interface ActiveDriversPanelProps {
   drivers: DashboardDriverItem[];

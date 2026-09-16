@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { BreadcrumbNavigation } from "./BreadcrumbNavigation";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/components/ui/sheet";
+import { ToastContainer } from "@/shared/components/feedback/Toast";
 
 export const AppLayout: React.FC = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -41,6 +42,9 @@ export const AppLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Global Toast Notification Container */}
+      <ToastContainer />
     </div>
   );
 };
