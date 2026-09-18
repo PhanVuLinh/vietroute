@@ -48,24 +48,24 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu }) => {
         <div className="flex items-center">
           {isConnected ? (
             <div
-              className="flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 shadow-2xs shadow-emerald-500/10 select-none"
-              title="Dữ liệu GPS và đơn hàng đang đồng bộ thời gian thực"
+              className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2 py-1 xl:px-2.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 shadow-2xs shadow-emerald-500/10 select-none transition-all"
+              title="Dữ liệu GPS và máy chủ đang đồng bộ thời gian thực"
             >
-              <span className="relative flex h-2 w-2">
+              <span className="relative flex h-2 w-2 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 duration-1000" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 ring-2 ring-emerald-500/20" />
               </span>
               <span className="hidden xl:inline tracking-tight font-semibold">Realtime đang kết nối</span>
-              <Wifi className="h-3.5 w-3.5 xl:hidden" />
+              <Wifi className="h-3.5 w-3.5 xl:hidden shrink-0" />
             </div>
           ) : (
             <div
-              className="flex items-center gap-2 rounded-full bg-destructive/10 border border-destructive/25 px-2.5 py-1 text-[11px] font-medium text-destructive shadow-2xs select-none"
+              className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-destructive/10 border border-destructive/25 px-2 py-1 xl:px-2.5 text-[11px] font-medium text-destructive shadow-2xs select-none transition-all"
               title="Mất kết nối máy chủ dữ liệu thời gian thực"
             >
               <span className="h-2 w-2 rounded-full bg-destructive ring-2 ring-destructive/20 shrink-0" />
-              <span className="hidden xl:inline tracking-tight font-semibold">Realtime đã mất kết nối</span>
-              <WifiOff className="h-3.5 w-3.5 xl:hidden" />
+              <span className="hidden xl:inline tracking-tight font-semibold">Realtime mất kết nối</span>
+              <WifiOff className="h-3.5 w-3.5 xl:hidden shrink-0" />
             </div>
           )}
         </div>

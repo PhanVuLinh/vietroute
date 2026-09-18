@@ -51,9 +51,9 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-center">
-          <span className="text-xs text-muted-foreground hidden md:inline">
-            Tìm thấy <b className="text-foreground">{totalResults}</b> đơn hàng
+        <div className="flex items-center gap-2 justify-between sm:justify-end shrink-0 sm:ml-auto">
+          <span className="text-xs text-muted-foreground whitespace-nowrap bg-muted/40 px-2.5 py-1 rounded-md border border-border/50 select-none">
+            Tìm thấy <b className="text-foreground font-mono">{totalResults}</b> đơn hàng
           </span>
 
           {activeFilterCount > 0 && (
@@ -61,7 +61,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
               variant="outline"
               size="sm"
               onClick={onResetFilters}
-              className="h-9 text-xs font-semibold gap-1.5 cursor-pointer hover:border-destructive/40 hover:text-destructive"
+              className="h-8.5 text-xs font-semibold gap-1.5 cursor-pointer hover:border-destructive/40 hover:text-destructive shrink-0"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span>Đặt lại ({activeFilterCount})</span>

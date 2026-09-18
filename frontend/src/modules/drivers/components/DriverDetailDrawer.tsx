@@ -44,7 +44,7 @@ export const DriverDetailDrawer: React.FC<DriverDetailDrawerProps> = ({
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-card border-l border-border shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200">
+        <div className="w-full max-w-md bg-card border-l border-border shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200">
           {/* Header */}
           <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
             <div className="flex items-center gap-3">
@@ -81,7 +81,7 @@ export const DriverDetailDrawer: React.FC<DriverDetailDrawerProps> = ({
                   <Button
                     variant={driver.status === "AVAILABLE" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => onUpdateStatus(driver.id, "AVAILABLE")}
+                    onClick={() => onUpdateStatus?.(driver.id, "AVAILABLE")}
                     className="h-8 text-xs gap-1.5 justify-start cursor-pointer"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
@@ -90,7 +90,7 @@ export const DriverDetailDrawer: React.FC<DriverDetailDrawerProps> = ({
                   <Button
                     variant={driver.status === "ON_BREAK" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => onUpdateStatus(driver.id, "ON_BREAK")}
+                    onClick={() => onUpdateStatus?.(driver.id, "ON_BREAK")}
                     className="h-8 text-xs gap-1.5 justify-start cursor-pointer"
                   >
                     <Coffee className="h-3.5 w-3.5 text-amber-500" />
@@ -99,7 +99,7 @@ export const DriverDetailDrawer: React.FC<DriverDetailDrawerProps> = ({
                   <Button
                     variant={driver.status === "OFFLINE" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => onUpdateStatus(driver.id, "OFFLINE")}
+                    onClick={() => onUpdateStatus?.(driver.id, "OFFLINE")}
                     className="h-8 text-xs gap-1.5 justify-start cursor-pointer"
                   >
                     <PowerOff className="h-3.5 w-3.5 text-muted-foreground" />
@@ -108,7 +108,7 @@ export const DriverDetailDrawer: React.FC<DriverDetailDrawerProps> = ({
                   <Button
                     variant={driver.status === "SUSPENDED" ? "destructive" : "outline"}
                     size="sm"
-                    onClick={() => onUpdateStatus(driver.id, "SUSPENDED")}
+                    onClick={() => onUpdateStatus?.(driver.id, "SUSPENDED")}
                     className="h-8 text-xs gap-1.5 justify-start cursor-pointer"
                   >
                     <ShieldAlert className="h-3.5 w-3.5 text-rose-500" />

@@ -5,7 +5,6 @@ import {
   Box,
   Maximize2,
   Minimize2,
-  Locate,
   Compass,
 } from "lucide-react";
 import { MapContainer, type MapTileStyle } from "@/shared/components/map/MapContainer";

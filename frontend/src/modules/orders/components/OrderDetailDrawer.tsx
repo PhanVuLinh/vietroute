@@ -23,6 +23,7 @@ import { formatCurrency, formatDateTime } from "@/shared/utils/formatters";
 
 interface OrderDetailDrawerProps {
   order: EnrichedOrder | any | null;
+  warehouse?: any;
   isOpen: boolean;
   onClose: () => void;
   onAssignDriver?: (order: any) => void;
@@ -50,7 +51,7 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
 
       {/* Drawer Panel */}
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-xl bg-card border-l border-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+        <div className="w-full max-w-xl bg-card border-l border-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
           {/* 1. Header */}
           <div className="px-6 py-4 border-b border-border bg-card flex items-center justify-between">
             <div>
@@ -150,7 +151,7 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
               {/* Items List */}
               {order.items && order.items.length > 0 ? (
                 <div className="divide-y divide-border/60 border border-border rounded-xl overflow-hidden">
-                  {order.items.map((item, idx) => (
+                  {order.items.map((item: any, idx: number) => (
                     <div key={item.id || idx} className="p-3 bg-muted/20 flex items-center justify-between">
                       <div>
                         <div className="font-medium text-foreground">{item.productName}</div>

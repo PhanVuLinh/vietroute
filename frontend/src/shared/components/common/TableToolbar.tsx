@@ -69,9 +69,9 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
           className
         )}
       >
-        <div className="flex flex-1 items-center gap-2 flex-wrap sm:flex-nowrap">
+        <div className="flex flex-1 items-center gap-2 flex-wrap min-w-0">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <div className="relative flex-1 min-w-[180px] sm:min-w-[220px] max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             <Input
               type="text"
@@ -117,10 +117,10 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
 
         {/* Right Actions & Counter */}
         {(actions || totalItems !== undefined) && (
-          <div className="flex items-center gap-2 justify-between sm:justify-end shrink-0">
+          <div className="flex items-center gap-2 justify-between sm:justify-end shrink-0 ml-auto">
             {totalItems !== undefined && (
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                Tìm thấy <b className="text-foreground">{totalItems}</b> {itemName}
+              <span className="text-xs text-muted-foreground whitespace-nowrap bg-muted/40 px-2.5 py-1 rounded-md border border-border/50 select-none">
+                Tìm thấy <b className="text-foreground font-mono">{totalItems}</b> {itemName}
               </span>
             )}
             {actions}

@@ -7,7 +7,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { StatCard, StatGrid } from "@/shared/components/common";
-import { formatCurrency, formatDistance } from "@/shared/utils/formatters";
+import { formatCurrency } from "@/shared/utils/formatters";
 import type { RouteStatus } from "@/core/types/logistics";
 
 interface RouteKpiGridProps {
@@ -92,10 +92,10 @@ export const RouteKpiGrid: React.FC<RouteKpiGridProps> = ({
       <StatCard
         id="kpi-distance-fuel"
         title="Tổng cự ly & Chi phí"
-        value={stats.totalDistanceKm.toLocaleString("vi-VN")}
+        value={(stats.totalDistanceKm || 0).toLocaleString("vi-VN")}
         unit="km"
         icon={Fuel}
-        description={`${stats.totalFuelEstLiters}L Dầu • ${formatCurrency(stats.totalTollFeeVND)} BOT`}
+        description={`${stats.totalFuelEstLiters || 0}L Dầu • ${formatCurrency(stats.totalTollFeeVND || 0)} BOT`}
         variant="blue"
         isLoading={isLoading}
       />
@@ -104,16 +104,19 @@ export const RouteKpiGrid: React.FC<RouteKpiGridProps> = ({
       <StatCard
         id="kpi-stop-progress"
         title="Tiến độ chặng giao"
-        value={`${stats.stopCompletionRatePercent}%`}
+        value={stats.total === 0 ? "—" : `${stats.stopCompletionRatePercent || 0}%`}
         icon={MapPin}
-        progress={{
-          value: stats.stopCompletionRatePercent,
-          color: "bg-purple-500",
-        }}
-        description={`Đã giao ${stats.completedStops} / ${stats.totalStops} điểm`}
+        progress={
+          stats.total > 0
+            ? {
+                value: stats.stopCompletionRatePercent || 0,
+                color: "bg-purple-500",
+              }
+            : undefined
+        }
+        description={stats.total === 0 ? "Chưa có chặng giao" : `Đã giao ${stats.completedStops || 0} / ${stats.totalStops || 0} điểm`}
         variant="purple"
         isLoading={isLoading}
-        className="col-span-2 sm:col-span-1"
       />
     </StatGrid>
   );

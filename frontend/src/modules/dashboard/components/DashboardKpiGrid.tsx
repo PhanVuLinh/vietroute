@@ -31,8 +31,16 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
         value={summary?.totalOrdersToday ?? 0}
         unit="đơn"
         icon={Package}
-        trend={{ value: "+8.5%", direction: "up" }}
-        description="So với hôm qua"
+        trend={
+          summary && summary.totalOrdersToday > 0
+            ? { value: "+8.5%", direction: "up" }
+            : undefined
+        }
+        description={
+          summary && summary.totalOrdersToday > 0
+            ? "So với hôm qua"
+            : "Chưa phát sinh đơn"
+        }
         actionText="Xem đơn hàng"
         variant="blue"
         isLoading={isLoading}
@@ -62,14 +70,14 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = ({
       <StatCard
         id="kpi-delivered"
         title="Giao thành công"
-        value={summary?.deliveredToday ?? 0}
+        value={summary?.deliveredOrders ?? 0}
         unit="đơn"
         icon={CheckCircle2}
         badge={
           summary && summary.totalOrdersToday > 0
             ? {
                 text: `${Math.round(
-                  (summary.deliveredToday / summary.totalOrdersToday) * 100
+                  (summary.deliveredOrders / summary.totalOrdersToday) * 100
                 )}%`,
                 variant: "success",
               }

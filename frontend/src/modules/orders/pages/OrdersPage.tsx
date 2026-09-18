@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
+import { toast } from "@/shared/components/feedback/Toast";
 import type { Order } from "@/core/types/logistics";
 import { useOrders, type EnrichedOrder } from "../hooks/useOrders";
 import { useOrderFilters } from "../hooks/useOrderFilters";
@@ -92,10 +93,8 @@ export const OrdersPage: React.FC = () => {
 
   return (
     <PageContainer className="space-y-6">
-      <div className="space-y-6">
-
-        {/* 1. Header tác vụ: Tạo đơn, Điều phối, Làm mới */}
-        <OrdersHeader
+      {/* 1. Header tác vụ: Tạo đơn, Điều phối, Làm mới */}
+      <OrdersHeader
           totalOrdersCount={orders.length}
           onOpenCreateOrder={() => setIsCreateOpen(true)}
           onRefresh={handleRefresh}
@@ -210,7 +209,6 @@ export const OrdersPage: React.FC = () => {
           warehouses={warehouses}
           onSuccess={handleCreateSuccess}
         />
-      </div>
     </PageContainer>
   );
 };

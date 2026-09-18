@@ -9,6 +9,7 @@ import {
 } from "@/shared/components/ui/select";
 import { VehicleTableRow } from "./VehicleTableRow";
 import { TablePagination, TableToolbar } from "@/shared/components/common";
+import { Button } from "@/shared/components/ui/button";
 
 import type { EnrichedVehicle } from "../hooks/useVehicles";
 import type { VehicleStatus, VehicleType, VehicleInspectionStatus } from "@/core/types/logistics";
@@ -162,7 +163,7 @@ export const VehiclesTable: React.FC<VehiclesTableProps> = ({
                         <Truck className="h-5 w-5" />
                       </div>
                       <p className="text-sm font-semibold text-foreground">Không tìm thấy phương tiện phù hợp</p>
-                      <p className="text-xs text-muted-foreground max-w-xs">
+                      <p className="text-xs text-muted-foreground max-w-md">
                         Thử điều chỉnh lại từ khóa hoặc xóa các tiêu chí lọc đang chọn.
                       </p>
                       {hasActiveFilters && (

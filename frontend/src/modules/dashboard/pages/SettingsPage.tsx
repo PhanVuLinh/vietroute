@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
-  Sliders,
   Server,
   Route,
   Bell,
@@ -8,10 +7,8 @@ import {
   RotateCcw,
   CheckCircle2,
   AlertTriangle,
-  Radio,
   Gauge,
   Clock,
-  MapPin,
   ShieldCheck,
   RefreshCw,
   Cpu,
@@ -473,8 +470,8 @@ export const SettingsPage: React.FC = () => {
                   <label
                     key={opt.id}
                     className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${settings.routing.optimizationGoal === opt.id
-                        ? "bg-primary/5 border-primary shadow-xs"
-                        : "border-border hover:bg-muted/40"
+                      ? "bg-primary/5 border-primary shadow-xs"
+                      : "border-border hover:bg-muted/40"
                       }`}
                   >
                     <input

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { Alert, AlertTitle, AlertDescription } from "@/shared/components/ui/alert";

@@ -10,7 +10,7 @@ export const AppLayout: React.FC = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
+    <div className="flex h-screen w-full max-w-full overflow-hidden bg-background">
       {/* 1. Sidebar cố định trên Desktop (md trở lên) */}
       <div className="hidden md:flex h-full shrink-0">
         <Sidebar />

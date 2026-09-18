@@ -82,8 +82,8 @@ export const LoginPage: React.FC = () => {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "dieuphoi@vietroute.vn",
-      password: "password123",
+      email: ENV.USE_MOCK ? "dieuphoi@vietroute.vn" : "admin@vietroute.com",
+      password: ENV.USE_MOCK ? "password123" : "123456",
       remember_me: true,
     },
   });
@@ -121,7 +121,7 @@ export const LoginPage: React.FC = () => {
   // Chọn tài khoản dùng thử để kiểm tra phân quyền (RBAC Demo)
   const handleSelectDemoAccount = (account: DemoAccountItem) => {
     setValue("email", account.email);
-    setValue("password", account.defaultPassword);
+    setValue("password", ENV.USE_MOCK ? account.defaultPassword : "123456");
     clearErrors();
     setErrorMessage(null);
   };
@@ -431,16 +431,15 @@ export const LoginPage: React.FC = () => {
             </form>
 
             {/* ========================================================================= */}
-            {/* KHU VỰC TÀI KHOẢN DÙNG THỬ PHỤC VỤ PHÁT TRIỂN (CHỈ HIỂN THỊ KHI MOCK BẬT) */}
+            {/* KHU VỰC TÀI KHOẢN DÙNG THỬ PHỤC VỤ PHÁT TRIỂN / KIỂM THỬ                   */}
             {/* ========================================================================= */}
-            {ENV.USE_MOCK && (
-              <div className="pt-4 border-t border-border/70 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1">
-                    <Zap className="h-3 w-3 text-amber-500" />
-                    Tài khoản dùng thử (Môi trường phát triển)
-                  </span>
-                </div>
+            <div className="pt-4 border-t border-border/70 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1">
+                  <Zap className="h-3 w-3 text-amber-500" />
+                  {ENV.USE_MOCK ? "Tài khoản dùng thử (Mock Data)" : "Tài khoản mẫu PostgreSQL (Pass: 123456)"}
+                </span>
+              </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                   {DEMO_ACCOUNTS.map((account) => (
@@ -462,7 +461,6 @@ export const LoginPage: React.FC = () => {
                   ))}
                 </div>
               </div>
-            )}
           </CardContent>
         </Card>
       </div>

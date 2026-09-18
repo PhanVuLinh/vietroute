@@ -83,24 +83,44 @@ export const VehicleKpiGrid: React.FC<VehicleKpiGridProps> = ({
       <StatCard
         id="kpi-inspection-warning"
         title="Hạn Đăng kiểm"
-        value={expiredCount > 0 ? expiredCount : expiringCount > 0 ? expiringCount : "100%"}
+        value={
+          stats.total === 0
+            ? 0
+            : expiredCount > 0
+            ? expiredCount
+            : expiringCount > 0
+            ? expiringCount
+            : "100%"
+        }
         unit={
-          expiredCount > 0
+          stats.total === 0
+            ? "phương tiện"
+            : expiredCount > 0
             ? `quá hạn (${expiringCount} sắp hết)`
             : expiringCount > 0
             ? "sắp hết hạn"
             : "chuẩn pháp lý"
         }
-        icon={expiredCount > 0 ? ShieldAlert : expiringCount > 0 ? AlertTriangle : CheckCircle2}
+        icon={
+          stats.total === 0
+            ? CheckCircle2
+            : expiredCount > 0
+            ? ShieldAlert
+            : expiringCount > 0
+            ? AlertTriangle
+            : CheckCircle2
+        }
         badge={
-          expiredCount > 0
+          stats.total === 0
+            ? undefined
+            : expiredCount > 0
             ? { text: "NGHIÊM CẤM CHẠY", variant: "destructive" }
             : expiringCount > 0
             ? { text: "CẦN KIỂM ĐỊNH", variant: "warning" }
             : { text: "HỢP LỆ", variant: "success" }
         }
-        description="Lọc xe cần đăng kiểm"
-        variant={expiredCount > 0 ? "rose" : expiringCount > 0 ? "amber" : "emerald"}
+        description={stats.total === 0 ? "Chưa có xe trong hệ thống" : "Lọc xe cần đăng kiểm"}
+        variant={stats.total === 0 ? "default" : expiredCount > 0 ? "rose" : expiringCount > 0 ? "amber" : "emerald"}
         isLoading={isLoading}
         isSelected={
           selectedInspectionStatus === "EXPIRED" || selectedInspectionStatus === "EXPIRING_SOON"
@@ -118,7 +138,6 @@ export const VehicleKpiGrid: React.FC<VehicleKpiGridProps> = ({
         description="Đang sửa chữa định kỳ"
         variant="amber"
         isLoading={isLoading}
-        className="col-span-2 sm:col-span-1"
       />
     </StatGrid>
   );

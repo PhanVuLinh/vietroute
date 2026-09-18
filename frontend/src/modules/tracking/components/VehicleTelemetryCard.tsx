@@ -35,7 +35,6 @@ export const VehicleTelemetryCard: React.FC<VehicleTelemetryCardProps> = ({
   const { telemetry, vehicle, driver, route } = trackedVehicle;
   const isOverspeed = telemetry.speedKmH > 60;
   const isMoving = telemetry.speedKmH > 0;
-  const isAlert = trackedVehicle.status === "ALERT";
 
   // Mô phỏng thông số Telematics cảm biến xe tải thông minh
   const engineRpm = isMoving ? Math.round(1400 + (telemetry.speedKmH * 15)) : 750;

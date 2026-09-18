@@ -7,24 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Định nghĩa các trạng thái của tài khoản
+// ==========================================
+// 1. NGƯỜI DÙNG & PHÂN QUYỀN
+// ==========================================
+
 enum UserStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
 }
 
-// Bảng roles (Phân quyền)
 model Role {
   id          String   @id @default(uuid())
-  name        String   @unique // Các role: ADMIN, MANAGER, DISPATCHER, DRIVER, WAREHOUSE_STAFF
+  name        String   @unique // ADMIN, MANAGER, DISPATCHER, DRIVER, WAREHOUSE_STAFF
   description String?
   users       User[]
 
   @@map("roles")
 }
 
-// Bảng users (Người dùng)
 model User {
   id            String     @id @default(uuid())
   email         String     @unique
@@ -34,9 +35,541 @@ model User {
   role_id       String
   role          Role       @relation(fields: [role_id], references: [id])
   status        UserStatus @default(ACTIVE)
-  
+
+  driver        Driver?
+
   created_at    DateTime   @default(now())
   updated_at    DateTime   @updatedAt
 
   @@map("users")
+}
+
+// ==========================================
+// 2. KHÁCH HÀNG & ĐƠN HÀNG
+// ==========================================
+
+enum CustomerType {
+  INDIVIDUAL
+  ENTERPRISE
+}
+
+model Customer {
+  id         String       @id @default(uuid())
+  name       String
+  phone      String
+  email      String?
+  address    String
+  latitude   Float
+  longitude  Float
+  type       CustomerType @default(INDIVIDUAL)
+  orders     Order[]
+
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+
+  @@map("customers")
+}
+
+enum OrderPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  ASSIGNED
+  PICKING_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+model Order {
+  id                    String        @id @default(uuid())
+  order_code            String        @unique
+  customer_id           String
+  customer              Customer      @relation(fields: [customer_id], references: [id])
+  warehouse_id          String
+  warehouse             Warehouse     @relation(fields: [warehouse_id], references: [id])
+
+  receiver_name         String
+  receiver_phone        String
+  receiver_address      String
+  receiver_latitude     Float
+  receiver_longitude    Float
+
+  total_weight          Float         // kg
+  total_volume          Float         // m³
+  cod_amount            Float         @default(0) // VNĐ
+  priority              OrderPriority @default(NORMAL)
+  delivery_window_start DateTime?
+  delivery_window_end   DateTime?
+  status                OrderStatus   @default(PENDING)
+
+  items                 OrderItem[]
+  deliveries            Delivery[]
+
+  created_at            DateTime      @default(now())
+  updated_at            DateTime      @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id                        String   @id @default(uuid())
+  order_id                  String
+  order                     Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product_name              String
+  quantity                  Int      @default(1)
+  weight                    Float    // kg
+  volume                    Float    // m³
+  is_fragile                Boolean  @default(false)
+  is_liquid                 Boolean  @default(false)
+  requires_special_handling Boolean  @default(false)
+
+  created_at                DateTime @default(now())
+  updated_at                DateTime @updatedAt
+
+  @@map("order_items")
+}
+
+// ==========================================
+// 3. KHO BÃI & TRUNG TÂM TRUNG CHUYỂN
+// ==========================================
+
+enum WarehouseType {
+  CENTRAL_HUB
+  TRANSIT_HUB
+  LAST_MILE_HUB
+}
+
+enum WarehouseRegion {
+  NORTH
+  CENTRAL
+  SOUTH
+}
+
+enum WarehouseStorageType {
+  DRY
+  COLD
+  MIXED
+}
+
+enum WarehouseStatus {
+  ACTIVE
+  MAINTENANCE
+  FULL
+}
+
+model Warehouse {
+  id                    String               @id @default(uuid())
+  code                  String               @unique
+  name                  String
+  type                  WarehouseType        @default(CENTRAL_HUB)
+  region                WarehouseRegion      @default(NORTH)
+  address               String
+  city                  String
+  latitude              Float
+  longitude             Float
+  opening_time          String               @default("06:00")
+  closing_time          String               @default("22:00")
+  capacity              Float                // Tấn
+  used_capacity         Float                @default(0) // Tấn
+  area_sqm              Float?               // m²
+  total_pallets         Int?                 @default(1000)
+  used_pallets          Int?                 @default(0)
+  dock_doors_count      Int?                 @default(4)
+  storage_type          WarehouseStorageType @default(DRY)
+  manager_name          String?
+  manager_phone         String?
+  manager_email         String?
+  status                WarehouseStatus      @default(ACTIVE)
+
+  // Nghiệp vụ thực tế
+  daily_inbound_tons    Float?               @default(0)
+  daily_outbound_tons   Float?               @default(0)
+  yard_parking_capacity Int?                 @default(10)
+  yard_parking_occupied Int?                 @default(0)
+
+  // Pháp lý & An toàn PCCC
+  pccc_certificate_number String?
+  pccc_expiry_date        String?
+  pccc_inspector          String?
+  insurance_policy_number String?
+  insurance_expiry_date   String?
+  insurance_provider      String?
+  rack_inspection_expiry  String?
+
+  zones                 WarehouseZone[]
+  dock_doors            DockDoor[]
+  orders                Order[]
+  routes                Route[]
+
+  created_at            DateTime             @default(now())
+  updated_at            DateTime             @updatedAt
+
+  @@map("warehouses")
+}
+
+enum WarehouseZoneType {
+  CROSS_DOCK
+  PALLET_RACK
+  COLD_STORAGE
+  HAZMAT
+  STAGING
+}
+
+model WarehouseZone {
+  id                  String            @id @default(uuid())
+  warehouse_id        String
+  warehouse           Warehouse         @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
+  code                String
+  name                String
+  type                WarehouseZoneType @default(PALLET_RACK)
+  capacity_pallets    Int               @default(500)
+  used_pallets        Int               @default(0)
+  temperature_celsius Float?
+  humidity_percent    Float?
+
+  created_at          DateTime          @default(now())
+  updated_at          DateTime          @updatedAt
+
+  @@map("warehouse_zones")
+}
+
+enum DockDoorType {
+  INBOUND
+  OUTBOUND
+  BIDIRECTIONAL
+}
+
+enum DockStatus {
+  AVAILABLE
+  LOADING
+  UNLOADING
+  INSPECTING
+  MAINTENANCE
+}
+
+model DockDoor {
+  id                        String       @id @default(uuid())
+  warehouse_id              String
+  warehouse                 Warehouse    @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
+  door_number               String
+  name                      String
+  type                      DockDoorType @default(BIDIRECTIONAL)
+  status                    DockStatus   @default(AVAILABLE)
+  current_vehicle_plate     String?
+  current_driver_name       String?
+  cargo_type                String?
+  started_at                DateTime?
+  estimated_completion_time DateTime?
+  progress_percent          Int?         @default(0)
+
+  created_at                DateTime     @default(now())
+  updated_at                DateTime     @updatedAt
+
+  @@map("dock_doors")
+}
+
+// ==========================================
+// 4. PHƯƠNG TIỆN & ĐỘI XE
+// ==========================================
+
+enum VehicleType {
+  MOTORBIKE
+  CAR
+  VAN
+  TRUCK
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  EN_ROUTE
+  LOADING
+  MAINTENANCE
+  OFFLINE
+}
+
+model Vehicle {
+  id                            String        @id @default(uuid())
+  vehicle_code                  String        @unique
+  license_plate                 String        @unique
+  type                          VehicleType   @default(TRUCK)
+  brand                         String
+  model                         String
+  capacity_weight               Float         // kg
+  capacity_volume               Float         // m³
+  current_mileage               Float         @default(0)
+  fuel_percent                  Float         @default(100)
+  status                        VehicleStatus @default(AVAILABLE)
+
+  driver_id                     String?       @unique
+  driver                        Driver?       @relation("DriverVehicle", fields: [driver_id], references: [id])
+
+  next_maintenance_date         DateTime?
+  // Đăng kiểm & bảo hiểm thực tế
+  inspection_certificate_number String?
+  last_inspection_date          DateTime?
+  inspection_expiry_date        DateTime?
+  insurance_expiry_date         DateTime?
+  inspection_center             String?
+  inspection_notes              String?
+
+  deliveries                    Delivery[]
+  assignments                   DriverAssignment[]
+  routes                        Route[]
+
+  created_at                    DateTime      @default(now())
+  updated_at                    DateTime      @updatedAt
+
+  @@map("vehicles")
+}
+
+// ==========================================
+// 5. TÀI XẾ & BẰNG LÁI
+// ==========================================
+
+enum DriverStatus {
+  AVAILABLE
+  BUSY
+  ON_BREAK
+  OFFLINE
+  SUSPENDED
+}
+
+enum LicenseType {
+  B2
+  C
+  D
+  E
+  FC
+}
+
+model Driver {
+  id                         String             @id @default(uuid())
+  user_id                    String             @unique
+  user                       User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  driver_code                String             @unique
+  full_name                  String
+  phone                      String
+  license_number             String
+  license_type               LicenseType        @default(C)
+  license_expired_at         DateTime
+  status                     DriverStatus       @default(AVAILABLE)
+
+  current_location_lat       Float              @default(21.0285)
+  current_location_lng       Float              @default(105.8544)
+
+  current_vehicle            Vehicle?           @relation("DriverVehicle")
+  current_delivery_count     Int                @default(0)
+  today_completed_deliveries Int                @default(0)
+  on_time_rate               Float              @default(100.0)
+  success_rate               Float              @default(100.0)
+
+  deliveries                 Delivery[]
+  assignments                DriverAssignment[]
+  routes                     Route[]
+
+  created_at                 DateTime           @default(now())
+  updated_at                 DateTime           @updatedAt
+
+  @@map("drivers")
+}
+
+// ==========================================
+// 6. CHUYẾN GIAO & ĐIỀU PHỐI (DISPATCH)
+// ==========================================
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  ACCEPTED
+  PICKING_UP
+  IN_TRANSIT
+  ARRIVED
+  DELIVERED
+  DELIVERY_FAILED
+  RETURNING
+  CANCELLED
+}
+
+model Delivery {
+  id            String                  @id @default(uuid())
+  delivery_code String                  @unique
+  order_id      String
+  order         Order                   @relation(fields: [order_id], references: [id])
+  driver_id     String?
+  driver        Driver?                 @relation(fields: [driver_id], references: [id])
+  vehicle_id    String?
+  vehicle       Vehicle?                @relation(fields: [vehicle_id], references: [id])
+  status        DeliveryStatus          @default(PENDING)
+  started_at    DateTime?
+  completed_at  DateTime?
+  failed_reason String?
+
+  history       DeliveryStatusHistory[]
+  assignments   DriverAssignment[]
+  route_stops   RouteStop[]
+
+  created_at    DateTime                @default(now())
+  updated_at    DateTime                @updatedAt
+
+  @@map("deliveries")
+}
+
+model DeliveryStatusHistory {
+  id          String         @id @default(uuid())
+  delivery_id String
+  delivery    Delivery       @relation(fields: [delivery_id], references: [id], onDelete: Cascade)
+  status      DeliveryStatus
+  timestamp   DateTime       @default(now())
+  description String
+  latitude    Float?
+  longitude   Float?
+  note        String?
+
+  @@map("delivery_status_history")
+}
+
+enum AssignmentType {
+  MANUAL
+  RULE_BASED
+  AI_RECOMMENDED
+}
+
+model DriverAssignment {
+  id               String         @id @default(uuid())
+  delivery_id      String
+  delivery         Delivery       @relation(fields: [delivery_id], references: [id], onDelete: Cascade)
+  driver_id        String
+  driver           Driver         @relation(fields: [driver_id], references: [id])
+  vehicle_id       String
+  vehicle          Vehicle        @relation(fields: [vehicle_id], references: [id])
+  score            Float          @default(90.0)
+  assignment_type  AssignmentType @default(MANUAL)
+  assigned_at      DateTime       @default(now())
+  accepted_at      DateTime?
+  rejected_at      DateTime?
+  rejection_reason String?
+
+  @@map("driver_assignments")
+}
+
+// ==========================================
+// 7. TUYẾN ĐƯỜNG & ĐIỂM DỪNG (ROUTES)
+// ==========================================
+
+enum RouteStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model Route {
+  id                 String      @id @default(uuid())
+  route_code         String      @unique
+  route_name         String?
+  driver_id          String
+  driver             Driver      @relation(fields: [driver_id], references: [id])
+  vehicle_id         String
+  vehicle            Vehicle     @relation(fields: [vehicle_id], references: [id])
+  warehouse_id       String
+  warehouse          Warehouse   @relation(fields: [warehouse_id], references: [id])
+  total_distance     Float       // km
+  estimated_duration Int         // phút
+  status             RouteStatus @default(PLANNED)
+  started_at         DateTime?
+  completed_at       DateTime?
+
+  toll_fee_est_vnd   Float?      @default(0)
+  fuel_est_liters    Float?      @default(0)
+  total_weight_kg    Float?      @default(0)
+  total_volume_m3    Float?      @default(0)
+  polyline           Json?       // Mảng tọa độ [[lng, lat], ...]
+  traffic_alerts     Json?       // Danh sách cảnh báo
+
+  stops              RouteStop[]
+
+  created_at         DateTime    @default(now())
+  updated_at         DateTime    @updatedAt
+
+  @@map("routes")
+}
+
+enum RouteStopStatus {
+  PENDING
+  ARRIVED
+  COMPLETED
+  SKIPPED
+}
+
+model RouteStop {
+  id                String          @id @default(uuid())
+  route_id          String
+  route             Route           @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  delivery_id       String?
+  delivery          Delivery?       @relation(fields: [delivery_id], references: [id])
+  sequence          Int
+  latitude          Float
+  longitude         Float
+  estimated_arrival DateTime?
+  actual_arrival    DateTime?
+  status            RouteStopStatus @default(PENDING)
+
+  customer_name     String?
+  customer_phone    String?
+  address           String?
+  order_code        String?
+  weight_kg         Float?
+  package_count     Int?
+  time_window_start String?
+  time_window_end   String?
+  notes             String?
+
+  created_at        DateTime        @default(now())
+  updated_at        DateTime        @updatedAt
+
+  @@map("route_stops")
+}
+
+// ==========================================
+// 8. THÔNG BÁO HỆ THỐNG
+// ==========================================
+
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_ASSIGNED
+  ORDER_ACCEPTED
+  DELIVERY_SUCCESS
+  DELIVERY_FAILED
+  LATE_WARNING
+  VEHICLE_ALERT
+  GPS_ALERT
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model Notification {
+  id           String               @id @default(uuid())
+  title        String
+  message      String
+  type         NotificationType     @default(ORDER_CREATED)
+  read         Boolean              @default(false)
+  priority     NotificationPriority @default(NORMAL)
+  reference_id String?
+
+  created_at   DateTime             @default(now())
+
+  @@map("notifications")
 }

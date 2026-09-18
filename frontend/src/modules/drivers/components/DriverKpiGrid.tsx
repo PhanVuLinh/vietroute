@@ -71,13 +71,12 @@ export const DriverKpiGrid: React.FC<DriverKpiGridProps> = ({ stats, isLoading =
       <StatCard
         id="kpi-otd-driver"
         title="OTD Trung bình"
-        value={`${stats.avgOnTime}%`}
-        unit="đạt chuẩn"
+        value={stats.total === 0 ? "—" : `${stats.avgOnTime || 0}%`}
+        unit={stats.total === 0 ? "" : "đạt chuẩn"}
         icon={Award}
-        description="Tỷ lệ giao hàng đúng hẹn"
-        variant="violet"
+        description={stats.total === 0 ? "Chưa có chuyến giao" : "Tỷ lệ giao hàng đúng hẹn"}
+        variant={stats.total === 0 ? "default" : "violet"}
         isLoading={isLoading}
-        className="col-span-2 sm:col-span-1"
       />
     </StatGrid>
   );

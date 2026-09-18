@@ -49,9 +49,9 @@ export const WarehouseKpiGrid: React.FC<WarehouseKpiGridProps> = ({
         id="kpi-total-warehouses"
         title="Hệ thống kho & Hub"
         value={stats.total}
-        unit={`kho (${(stats.totalAreaSqM / 1000).toFixed(1)}k m²)`}
+        unit={`kho (${((stats.totalAreaSqM || 0) / 1000).toFixed(1)}k m²)`}
         icon={Building2}
-        description={`Bắc ${stats.northCount} • Trung ${stats.centralCount} • Nam ${stats.southCount}`}
+        description={`Bắc ${stats.northCount || 0} • Trung ${stats.centralCount || 0} • Nam ${stats.southCount || 0}`}
         variant="primary"
         isLoading={isLoading}
         isSelected={selectedStatus === "ALL"}
@@ -62,10 +62,10 @@ export const WarehouseKpiGrid: React.FC<WarehouseKpiGridProps> = ({
       <StatCard
         id="kpi-capacity"
         title="Tổng công suất kho"
-        value={stats.totalCapacityTons.toLocaleString("vi-VN")}
+        value={(stats.totalCapacityTons || 0).toLocaleString("vi-VN")}
         unit="Tấn"
         icon={Boxes}
-        description={`${stats.totalPallets.toLocaleString("vi-VN")} Pallets • ${stats.totalDockDoors} Cửa Dock`}
+        description={`${(stats.totalPallets || 0).toLocaleString("vi-VN")} Pallets • ${stats.totalDockDoors || 0} Cửa Dock`}
         variant="blue"
         isLoading={isLoading}
       />
@@ -74,14 +74,14 @@ export const WarehouseKpiGrid: React.FC<WarehouseKpiGridProps> = ({
       <StatCard
         id="kpi-occupancy"
         title="Lấp đầy bình quân"
-        value={`${stats.avgOccupancyPercent}%`}
+        value={`${stats.avgOccupancyPercent || 0}%`}
         icon={Gauge}
         progress={{
-          value: stats.avgOccupancyPercent,
+          value: stats.avgOccupancyPercent || 0,
           color:
-            stats.avgOccupancyPercent >= 85
+            (stats.avgOccupancyPercent || 0) >= 85
               ? "bg-rose-500"
-              : stats.avgOccupancyPercent >= 70
+              : (stats.avgOccupancyPercent || 0) >= 70
               ? "bg-amber-500"
               : "bg-emerald-500",
         }}
@@ -94,11 +94,11 @@ export const WarehouseKpiGrid: React.FC<WarehouseKpiGridProps> = ({
       <StatCard
         id="kpi-full-warning"
         title="Cảnh báo đầy tải"
-        value={stats.highOccupancyCount}
-        unit={`kho >85% (${stats.full} quá tải)`}
+        value={stats.highOccupancyCount || 0}
+        unit={`kho >85% (${stats.full || 0} quá tải)`}
         icon={AlertTriangle}
         badge={
-          stats.full > 0
+          (stats.full || 0) > 0
             ? { text: "QUÁ TẢI", variant: "destructive" }
             : undefined
         }
@@ -117,10 +117,10 @@ export const WarehouseKpiGrid: React.FC<WarehouseKpiGridProps> = ({
       <StatCard
         id="kpi-maintenance"
         title="Bảo trì mặt bãi"
-        value={stats.maintenance}
+        value={stats.maintenance || 0}
         unit="kho nâng cấp"
         icon={Wrench}
-        description={`${stats.active} kho vận hành tốt`}
+        description={`${stats.active || 0} kho vận hành tốt`}
         variant="amber"
         isLoading={isLoading}
         isSelected={selectedStatus === "MAINTENANCE"}
@@ -129,7 +129,6 @@ export const WarehouseKpiGrid: React.FC<WarehouseKpiGridProps> = ({
             ? () => onSelectStatus(selectedStatus === "MAINTENANCE" ? "ALL" : "MAINTENANCE")
             : undefined
         }
-        className="col-span-2 sm:col-span-1"
       />
     </StatGrid>
   );

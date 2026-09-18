@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Cpu, Zap, Activity } from "lucide-react";
+import { Cpu, Zap } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { Badge } from "@/shared/components/ui/badge";

@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Sparkles,
   ArrowRight,
-  TrendingUp,
   AlertTriangle,
-  CheckCircle2,
   Navigation,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";

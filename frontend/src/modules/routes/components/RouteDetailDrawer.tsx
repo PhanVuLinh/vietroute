@@ -69,7 +69,7 @@ export const RouteDetailDrawer: React.FC<RouteDetailDrawerProps> = ({
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
-        <div className="w-screen max-w-2xl bg-card border-l border-border shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200">
+        <div className="w-full max-w-2xl bg-card border-l border-border shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200">
           {/* 1. Header */}
           <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
             <div className="flex items-center gap-3">

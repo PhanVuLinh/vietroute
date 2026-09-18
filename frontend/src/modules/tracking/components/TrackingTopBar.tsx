@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   Navigation,
   Clock,
-  Activity,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { REGIONS, type RegionKey } from "../hooks/useTracking";

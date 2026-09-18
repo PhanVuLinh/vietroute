@@ -8,6 +8,7 @@ import {
   analyticsService,
 } from "@/mocks/adapters/serviceFactory";
 import { formatCurrency } from "@/shared/utils/formatters";
+import type { Order } from "@/core/types/logistics";
 
 export interface AiChatMessage {
   id: string;
@@ -93,7 +94,7 @@ export const useAiAssistant = () => {
         analyticsService.getDashboardAnalytics(),
       ]);
 
-      const orders = ordersRes.data?.data || ordersRes.data || [];
+      const orders: Order[] = (ordersRes.data as any)?.items || (ordersRes.data as any) || [];
       const drivers = driversRes.data || [];
       const vehicles = vehiclesRes.data || [];
       const warehouses = warehousesRes.data || [];
@@ -108,7 +109,7 @@ export const useAiAssistant = () => {
         const nowTime = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
         if (lowerQuery.includes("sla") || lowerQuery.includes("trễ") || lowerQuery.includes("nguy cơ")) {
-          const urgentOrders = orders.filter((o) => o.priority === "URGENT" || o.status === "PENDING");
+          const urgentOrders = orders.filter((o: Order) => o.priority === "URGENT" || o.status === "PENDING");
           aiReply = {
             id: `ai-${Date.now()}`,
             sender: "AI",
@@ -169,7 +170,7 @@ export const useAiAssistant = () => {
             },
           };
         } else if (lowerQuery.includes("chi phí") || lowerQuery.includes("nhiên liệu") || lowerQuery.includes("bot") || lowerQuery.includes("dầu")) {
-          const totalCost = (analytics?.fuelAndCostTrends || []).reduce((acc, cur) => acc + (cur.totalCostVND || 0), 0);
+          const totalCost = ((analytics as any)?.fuelAndCostTrends || []).reduce((acc: number, cur: any) => acc + (cur.totalCostVND || 0), 0);
           aiReply = {
             id: `ai-${Date.now()}`,
             sender: "AI",

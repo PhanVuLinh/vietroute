@@ -11,7 +11,6 @@ import {
   Truck,
   Radio,
   Search,
-  ExternalLink,
   MessageSquare,
   ShieldCheck,
   Zap,
@@ -19,7 +18,6 @@ import {
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { Input } from "@/shared/components/ui/input";
-import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 
 interface FaqItem {
