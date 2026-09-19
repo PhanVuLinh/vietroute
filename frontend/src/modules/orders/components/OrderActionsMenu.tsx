@@ -115,6 +115,20 @@ export const OrderActionsMenu: React.FC<OrderActionsMenuProps> = ({
             </button>
           )}
 
+          {/* Tra cứu công khai (Dành cho khách hàng) */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+              window.open(`/track/${order.orderCode}`, "_blank");
+            }}
+            className="flex items-center w-full px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
+          >
+            <ExternalLink className="w-4 h-4 mr-2.5" />
+            Tra cứu công khai (Link khách)
+          </button>
+
           {/* Sao chép mã đơn */}
           <button
             type="button"

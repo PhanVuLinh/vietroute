@@ -16,11 +16,29 @@ import { AiAssistantPage } from "@/modules/ai-assistant/pages/AiAssistantPage";
 import { SettingsPage } from "@/modules/dashboard/pages/SettingsPage";
 import { HelpPage } from "@/modules/dashboard/pages/HelpPage";
 import { NotFoundPage } from "@/modules/dashboard/pages/NotFoundPage";
+import { DriverPortalPage } from "@/modules/driver/pages/DriverPortalPage";
+import { PublicTrackingPage } from "@/modules/public-tracking/pages/PublicTrackingPage";
 
 export const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/track",
+    element: <PublicTrackingPage />,
+  },
+  {
+    path: "/track/:orderCode",
+    element: <PublicTrackingPage />,
+  },
+  {
+    path: "/public-tracking",
+    element: <PublicTrackingPage />,
+  },
+  {
+    path: "/public-tracking/:orderCode",
+    element: <PublicTrackingPage />,
   },
   {
     path: "/",
@@ -56,6 +74,10 @@ export const router = createBrowserRouter([
           {
             path: "drivers",
             element: <DriversPage />,
+          },
+          {
+            path: "driver",
+            element: <DriverPortalPage />,
           },
           {
             path: "warehouses",

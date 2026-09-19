@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { socketManager, type SocketStatus } from "@/core/socket/client";
+import type { SocketStatus } from "@/core/socket/client";
 import { ENV } from "@/core/config/env";
 import { mockGpsStreamer } from "@/mocks/services/mockGpsStreamer";
 

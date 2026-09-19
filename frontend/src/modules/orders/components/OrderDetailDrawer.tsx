@@ -13,6 +13,7 @@ import {
   AlertCircle,
   FileText,
   ShieldAlert,
+  ExternalLink,
 } from "lucide-react";
 import type { EnrichedOrder } from "../hooks/useOrders";
 import { OrderStatusBadge } from "./OrderStatusBadge";
@@ -273,13 +274,25 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
 
           {/* Footer Actions */}
           <div className="p-4 border-t border-border bg-card flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-foreground/80 hover:text-foreground bg-muted hover:bg-accent border border-border rounded-xl transition-colors"
-            >
-              Đóng
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => window.open(`/track/${order.orderCode}`, "_blank")}
+                className="px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                title="Mở link tra cứu vận đơn cho khách hàng"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Link tra cứu khách</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-xs font-medium text-foreground/80 hover:text-foreground bg-muted hover:bg-accent border border-border rounded-xl transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
 
             {isPending && (
               <button

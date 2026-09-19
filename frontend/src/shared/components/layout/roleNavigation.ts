@@ -13,6 +13,8 @@ import {
   Settings,
   CircleHelp,
   CircleUser,
+  Smartphone,
+  SearchCheck,
 } from "lucide-react";
 import type { UserRole } from "@/core/types/auth";
 
@@ -58,6 +60,12 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: "/tracking",
         icon: Map,
         allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER", "DRIVER"],
+      },
+      {
+        label: "App Tài xế",
+        path: "/driver",
+        icon: Smartphone,
+        allowedRoles: ["ADMIN", "DISPATCHER", "DRIVER"],
       },
     ],
   },
@@ -118,6 +126,12 @@ export const MAIN_NAV_ITEMS: NavItemConfig[] = NAV_GROUPS.flatMap((g) => g.items
  * Danh sách menu tiện ích dưới chân Sidebar
  */
 export const BOTTOM_NAV_ITEMS: NavItemConfig[] = [
+  {
+    label: "Tra cứu vận đơn",
+    path: "/track",
+    icon: SearchCheck,
+    allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER", "WAREHOUSE_STAFF", "DRIVER"],
+  },
   {
     label: "Cài đặt",
     path: "/settings",
