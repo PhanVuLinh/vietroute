@@ -14,6 +14,9 @@ import { DispatchModule } from './modules/dispatch/dispatch.module.js';
 import { RoutesModule } from './modules/routes/routes.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { AnalyticsModule } from './modules/analytics/analytics.module.js';
+import { CustomersModule } from './modules/customers/customers.module.js';
+import { WmsModule } from './modules/wms/wms.module.js';
+import { IncidentsModule } from './modules/incidents/incidents.module.js';
 
 @Module({
   imports: [
@@ -30,6 +33,9 @@ import { AnalyticsModule } from './modules/analytics/analytics.module.js';
     RoutesModule,
     NotificationsModule,
     AnalyticsModule,
+    CustomersModule,
+    WmsModule,
+    IncidentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

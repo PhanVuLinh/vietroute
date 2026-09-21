@@ -47,4 +47,24 @@ export class AuthService {
       },
     };
   }
+
+  async getProfile(userId: string) {
+    const user = await this.primsa.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Người dùng không tồn tại');
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      phone: user.phone || undefined,
+      role: user.role.name,
+      status: user.status,
+    };
+  }
 }

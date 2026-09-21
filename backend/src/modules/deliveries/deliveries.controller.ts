@@ -20,13 +20,14 @@ export class DeliveriesController {
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('pageSize') pageSize?: number,
     @Query('status') status?: string,
     @Query('driverId') driverId?: string,
     @Query('vehicleId') vehicleId?: string,
   ) {
     return this.deliveriesService.findAll({
       page,
-      limit,
+      limit: pageSize || limit,
       status,
       driverId,
       vehicleId,

@@ -13,9 +13,11 @@ import { RoutesService } from './routes.service.js';
 import { CreateRouteDto } from './dto/create-route.dto.js';
 import { RouteStatus, RouteStopStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../../common/guards/roles.guard.js';
+import { Roles } from '../../common/decorators/roles.decorator.js';
 
 @Controller('routes')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class RoutesController {
   constructor(private readonly routesService: RoutesService) {}
 
@@ -34,16 +36,19 @@ export class RoutesController {
   }
 
   @Post()
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
   create(@Body() dto: CreateRouteDto) {
     return this.routesService.create(dto);
   }
 
   @Patch(':id')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
   update(@Param('id') id: string, @Body() data: any) {
     return this.routesService.update(id, data);
   }
 
   @Patch(':id/status')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
   updateStatus(
     @Param('id') id: string,
     @Body('status') status: RouteStatus,
@@ -52,6 +57,7 @@ export class RoutesController {
   }
 
   @Patch(':routeId/stops/:stopId/status')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER', 'DRIVER')
   updateStopStatus(
     @Param('routeId') routeId: string,
     @Param('stopId') stopId: string,
@@ -61,6 +67,7 @@ export class RoutesController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   remove(@Param('id') id: string) {
     return this.routesService.remove(id);
   }

@@ -22,6 +22,7 @@ export class OrdersController {
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('pageSize') pageSize?: number,
     @Query('status') status?: string,
     @Query('priority') priority?: string,
     @Query('search') search?: string,
@@ -29,7 +30,7 @@ export class OrdersController {
   ) {
     return this.ordersService.findAll({
       page,
-      limit,
+      limit: pageSize || limit,
       status,
       priority,
       search,
