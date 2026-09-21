@@ -18,3 +18,5 @@ export * from "./data/assignments";
 export * from "./data/routes";
 export * from "./data/notifications";
 export * from "./data/analytics";
+export * from "./data/inventory";
+export * from "./data/incidents";

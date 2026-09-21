@@ -18,6 +18,9 @@ import { HelpPage } from "@/modules/dashboard/pages/HelpPage";
 import { NotFoundPage } from "@/modules/dashboard/pages/NotFoundPage";
 import { DriverPortalPage } from "@/modules/driver/pages/DriverPortalPage";
 import { PublicTrackingPage } from "@/modules/public-tracking/pages/PublicTrackingPage";
+import { NotificationsPage } from "@/modules/notifications/pages/NotificationsPage";
+import { CustomersPage } from "@/modules/customers/pages/CustomersPage";
+import { IncidentsPage } from "@/modules/incidents/pages/IncidentsPage";
 
 export const router = createBrowserRouter([
   {
@@ -94,6 +97,18 @@ export const router = createBrowserRouter([
           {
             path: "ai-assistant",
             element: <AiAssistantPage />,
+          },
+          {
+            path: "notifications",
+            element: <NotificationsPage />,
+          },
+          {
+            path: "customers",
+            element: <CustomersPage />,
+          },
+          {
+            path: "incidents",
+            element: <IncidentsPage />,
           },
           {
             path: "settings",

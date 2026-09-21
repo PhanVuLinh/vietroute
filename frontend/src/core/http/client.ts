@@ -18,6 +18,12 @@ export function setStoredToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
 }
 
+let onUnauthorizedCallback: (() => void) | null = null;
+
+export function registerUnauthorizedHandler(handler: () => void): void {
+  onUnauthorizedCallback = handler;
+}
+
 export function removeStoredToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
@@ -70,6 +76,9 @@ axiosInstance.interceptors.response.use(
           case 401:
             friendlyMessage = "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.";
             removeStoredToken();
+            if (onUnauthorizedCallback) {
+              onUnauthorizedCallback();
+            }
             break;
           case 403:
             friendlyMessage = "Bạn không có quyền thực hiện thao tác này.";

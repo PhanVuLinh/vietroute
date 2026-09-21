@@ -32,6 +32,18 @@ import { mockDispatchService } from "../services/mockDispatchService";
 import { mockRouteService, type RouteFilterParams } from "../services/mockRouteService";
 import { mockNotificationService } from "../services/mockNotificationService";
 import { mockAnalyticsService } from "../services/mockAnalyticsService";
+import { mockCustomerService } from "../services/mockCustomerService";
+import { mockInventoryService } from "../services/mockInventoryService";
+import { mockIncidentService } from "../services/mockIncidentService";
+import type { EnrichedCustomer } from "@/modules/customers/types/customer";
+import type {
+  InboundReceipt,
+  OutboundDispatch,
+  InventoryItem,
+  StockTransfer,
+  WarehouseActivity,
+} from "@/modules/warehouses/types/wms";
+import type { Incident, IncidentStatus } from "@/modules/incidents/types/incident";
 
 
 // ==========================================
@@ -117,6 +129,75 @@ const apiAnalyticsService = {
   getDashboardAnalytics: () => httpClient.get<AnalyticsDashboardData>("/analytics/dashboard"),
 };
 
+const apiCustomerService = {
+  getCustomers: (params?: { searchQuery?: string; type?: string }) => httpClient.get<EnrichedCustomer[]>("/customers", { params }),
+  getCustomerById: (id: string) => httpClient.get<EnrichedCustomer>(`/customers/${id}`),
+  createCustomer: (data: Omit<import("@/core/types/logistics").Customer, "id">) => httpClient.post<EnrichedCustomer>("/customers", data),
+  updateCustomer: (id: string, data: Partial<import("@/core/types/logistics").Customer>) => httpClient.patch<EnrichedCustomer>(`/customers/${id}`, data),
+  deleteCustomer: (id: string) => httpClient.delete<boolean>(`/customers/${id}`),
+};
+
+const apiInventoryService = {
+  getInboundReceipts: (params?: { warehouseId?: string }) => httpClient.get<InboundReceipt[]>("/wms/inbounds", { params }),
+  getOutboundDispatches: (params?: { warehouseId?: string }) => httpClient.get<OutboundDispatch[]>("/wms/outbounds", { params }),
+  getInventory: (params?: { warehouseId?: string }) => httpClient.get<InventoryItem[]>("/wms/inventory", { params }),
+  getStockTransfers: (params?: { warehouseId?: string }) => httpClient.get<StockTransfer[]>("/wms/transfers", { params }),
+  getActivityLog: (params?: { warehouseId?: string }) => httpClient.get<WarehouseActivity[]>("/wms/activities", { params }),
+  createInboundReceipt: (data: Omit<InboundReceipt, "id">) =>
+    httpClient.post<InboundReceipt>("/wms/inbounds", {
+      warehouse_id: data.warehouseId,
+      receipt_code: data.receiptCode,
+      supplier_name: data.supplierName,
+      item_count: data.itemCount,
+      total_weight: data.totalWeight,
+      status: data.status,
+      received_by: data.receivedBy,
+      notes: data.notes,
+    }),
+  createOutboundDispatch: (data: Omit<OutboundDispatch, "id">) =>
+    httpClient.post<OutboundDispatch>("/wms/outbounds", {
+      warehouse_id: data.warehouseId,
+      dispatch_code: data.dispatchCode,
+      order_code: data.orderCode,
+      route_code: data.routeCode,
+      item_count: data.itemCount,
+      total_weight: data.totalWeight,
+      status: data.status,
+      picked_by: data.pickedBy,
+      notes: data.notes,
+    }),
+  createStockTransfer: (data: Omit<StockTransfer, "id">) =>
+    httpClient.post<StockTransfer>("/wms/transfers", {
+      from_warehouse_id: data.fromWarehouseId,
+      to_warehouse_id: data.toWarehouseId,
+      transfer_code: data.transferCode,
+      item_count: data.itemCount,
+      total_weight: data.totalWeight,
+      status: data.status,
+      created_by: data.createdBy,
+    }),
+};
+
+const apiIncidentService = {
+  getIncidents: (params?: { status?: IncidentStatus; severity?: string }) => httpClient.get<Incident[]>("/incidents", { params }),
+  getIncidentById: (id: string) => httpClient.get<Incident>(`/incidents/${id}`),
+  createIncident: (data: Omit<Incident, "id" | "incidentCode" | "comments">) =>
+    httpClient.post<Incident>("/incidents", {
+      title: data.title,
+      description: data.description,
+      type: data.type,
+      severity: data.severity,
+      order_code: data.orderCode,
+      driver_name: data.driverName,
+      vehicle_plate: data.vehiclePlate,
+      warehouse_name: data.warehouseName,
+      reported_by: data.reportedBy,
+      assigned_to: data.assignedTo,
+    }),
+  updateIncidentStatus: (id: string, status: IncidentStatus) => httpClient.patch<Incident>(`/incidents/${id}/status`, { status }),
+  addComment: (incidentId: string, user: string, message: string) => httpClient.post<boolean>(`/incidents/${incidentId}/comments`, { user, message }),
+};
+
 // ==========================================
 // 2. SERVICE FACTORY TỰ ĐỘNG CHUYỂN ĐỔI THEO ENV
 // ==========================================
@@ -133,4 +214,7 @@ export const dispatchService = isMock ? mockDispatchService : apiDispatchService
 export const routeService = isMock ? mockRouteService : apiRouteService;
 export const notificationService = isMock ? mockNotificationService : apiNotificationService;
 export const analyticsService = isMock ? mockAnalyticsService : apiAnalyticsService;
+export const customerService = isMock ? mockCustomerService : apiCustomerService;
+export const inventoryService = isMock ? mockInventoryService : apiInventoryService;
+export const incidentService = isMock ? mockIncidentService : apiIncidentService;
 

@@ -21,6 +21,7 @@ import {
   Droplets,
   AlertCircle,
   Share2,
+  ArrowRightLeft,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -30,6 +31,11 @@ import {
   WarehouseTypeBadge,
   WarehouseRegionBadge,
 } from "./WarehouseStatusBadge";
+import { InventoryTable } from "./InventoryTable";
+import { WarehouseActivityLog } from "./WarehouseActivityLog";
+import { InboundReceiptDialog } from "./InboundReceiptDialog";
+import { OutboundDispatchDialog } from "./OutboundDispatchDialog";
+import { StockTransferDialog } from "./StockTransferDialog";
 import type { Warehouse, WarehouseStatus, DockStatus } from "@/core/types/logistics";
 import { cn } from "@/shared/utils/cn";
 
@@ -89,6 +95,10 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
   onFocusMap,
 }) => {
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [isInboundOpen, setIsInboundOpen] = useState(false);
+  const [isOutboundOpen, setIsOutboundOpen] = useState(false);
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
+  const [wmsSubTab, setWmsSubTab] = useState<"inventory" | "activity">("inventory");
 
   if (!isOpen || !warehouse) return null;
 
@@ -221,7 +231,7 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
 
             {/* Main Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-5 w-full h-9 p-1 bg-muted/60 text-xs">
+              <TabsList className="grid grid-cols-6 w-full h-9 p-1 bg-muted/60 text-xs">
                 <TabsTrigger value="overview" className="text-[11px] py-1">
                   Chỉ số
                 </TabsTrigger>
@@ -231,8 +241,11 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
                 <TabsTrigger value="docks" className="text-[11px] py-1">
                   Cổng Dock
                 </TabsTrigger>
+                <TabsTrigger value="wms" className="text-[11px] py-1 font-semibold text-primary">
+                  Xuất Nhập
+                </TabsTrigger>
                 <TabsTrigger value="compliance" className="text-[11px] py-1">
-                  PCCC & Pháp lý
+                  PCCC
                 </TabsTrigger>
                 <TabsTrigger value="divert" className="text-[11px] py-1">
                   Điều hướng
@@ -620,6 +633,66 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
                 </div>
               </TabsContent>
 
+              {/* TAB WMS: XUẤT NHẬP KHO & TỒN KHO */}
+              <TabsContent value="wms" className="space-y-4 pt-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-card border border-border/80 rounded-xl">
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant={wmsSubTab === "inventory" ? "default" : "outline"}
+                      onClick={() => setWmsSubTab("inventory")}
+                      className="h-7 text-xs px-2.5 cursor-pointer"
+                    >
+                      <Boxes className="h-3.5 w-3.5 mr-1" />
+                      Tồn kho SKU
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={wmsSubTab === "activity" ? "default" : "outline"}
+                      onClick={() => setWmsSubTab("activity")}
+                      className="h-7 text-xs px-2.5 cursor-pointer"
+                    >
+                      <Activity className="h-3.5 w-3.5 mr-1" />
+                      Nhật ký xuất nhập
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      onClick={() => setIsInboundOpen(true)}
+                      className="h-7 text-xs px-2 bg-emerald-600 hover:bg-emerald-700 text-white gap-1 cursor-pointer"
+                    >
+                      <ArrowDownToLine className="h-3 w-3" />
+                      <span>Nhập kho</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setIsOutboundOpen(true)}
+                      className="h-7 text-xs px-2 bg-blue-600 hover:bg-blue-700 text-white gap-1 cursor-pointer"
+                    >
+                      <ArrowUpFromLine className="h-3 w-3" />
+                      <span>Xuất kho</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsTransferOpen(true)}
+                      className="h-7 text-xs px-2 gap-1 cursor-pointer"
+                    >
+                      <ArrowRightLeft className="h-3 w-3 text-indigo-500" />
+                      <span>Điều chuyển</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {wmsSubTab === "inventory" ? (
+                  <InventoryTable warehouseId={warehouse.id} />
+                ) : (
+                  <WarehouseActivityLog warehouseId={warehouse.id} />
+                )}
+              </TabsContent>
+
               {/* TAB 4: PHÁP LÝ & AN TOÀN PCCC */}
               <TabsContent value="compliance" className="space-y-3 pt-3">
                 <div className="flex items-center justify-between text-xs">
@@ -791,6 +864,29 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* WMS Dialogs */}
+      <InboundReceiptDialog
+        isOpen={isInboundOpen}
+        onClose={() => setIsInboundOpen(false)}
+        onSuccess={() => {}}
+        warehouseId={warehouse.id}
+        warehouses={allWarehouses}
+      />
+      <OutboundDispatchDialog
+        isOpen={isOutboundOpen}
+        onClose={() => setIsOutboundOpen(false)}
+        onSuccess={() => {}}
+        warehouseId={warehouse.id}
+        warehouses={allWarehouses}
+      />
+      <StockTransferDialog
+        isOpen={isTransferOpen}
+        onClose={() => setIsTransferOpen(false)}
+        onSuccess={() => {}}
+        warehouses={allWarehouses && allWarehouses.length > 0 ? allWarehouses : [warehouse]}
+        currentWarehouseId={warehouse.id}
+      />
     </div>
   );
 };

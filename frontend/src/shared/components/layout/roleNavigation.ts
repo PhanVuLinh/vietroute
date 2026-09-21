@@ -15,6 +15,9 @@ import {
   CircleUser,
   Smartphone,
   SearchCheck,
+  Bell,
+  Users,
+  AlertTriangle,
 } from "lucide-react";
 import type { UserRole } from "@/core/types/auth";
 
@@ -67,11 +70,29 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         icon: Smartphone,
         allowedRoles: ["ADMIN", "DISPATCHER", "DRIVER"],
       },
+      {
+        label: "Thông báo",
+        path: "/notifications",
+        icon: Bell,
+        allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER", "WAREHOUSE_STAFF", "DRIVER"],
+      },
+      {
+        label: "Sự cố & Khiếu nại",
+        path: "/incidents",
+        icon: AlertTriangle,
+        allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER"],
+      },
     ],
   },
   {
     groupTitle: "Nguồn lực & Hạ tầng",
     items: [
+      {
+        label: "Khách hàng",
+        path: "/customers",
+        icon: Users,
+        allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER"],
+      },
       {
         label: "Tài xế",
         path: "/drivers",
@@ -160,7 +181,12 @@ export function canAccessRoute(role: UserRole | undefined, path: string): boolea
   if (role === "ADMIN") return true;
 
   const allItems = [...MAIN_NAV_ITEMS, ...BOTTOM_NAV_ITEMS];
-  const matchedItem = allItems.find((item) => path.startsWith(item.path));
+  // Khớp chính xác hoặc khớp segment đường dẫn (/driver/xxx nhưng KHÔNG trùng với /drivers)
+  // Sắp xếp độ dài giảm dần để ưu tiên các route đặc thù/dài hơn
+  const sortedItems = [...allItems].sort((a, b) => b.path.length - a.path.length);
+  const matchedItem = sortedItems.find(
+    (item) => path === item.path || path.startsWith(item.path + "/")
+  );
 
   if (!matchedItem || !matchedItem.allowedRoles) {
     return true;

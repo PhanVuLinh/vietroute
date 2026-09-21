@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Bell,
   CheckCheck,
@@ -22,6 +23,7 @@ import {
   PopoverTrigger,
 } from "@/shared/components/ui/popover";
 import { cn } from "@/shared/utils/cn";
+import { useAuthStore } from "@/shared/stores/authStore";
 
 const getNotificationMeta = (type: NotificationType) => {
   switch (type) {
@@ -66,11 +68,18 @@ const getNotificationMeta = (type: NotificationType) => {
 };
 
 export const NotificationDropdown: React.FC = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
     let isMounted = true;
     notificationService
       .getNotifications()
@@ -91,7 +100,7 @@ export const NotificationDropdown: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -227,10 +236,13 @@ export const NotificationDropdown: React.FC = () => {
         {/* Footer */}
         <div className="px-3 py-2 border-t border-border/60 bg-muted/20">
           <button
-            onClick={() => setIsOpen(false)}
-            className="text-[11px] text-muted-foreground hover:text-foreground font-semibold flex items-center justify-center gap-1 w-full py-1.5 rounded-md hover:bg-accent/60 transition-colors cursor-pointer"
+            onClick={() => {
+              setIsOpen(false);
+              navigate("/notifications");
+            }}
+            className="text-[11px] text-primary hover:text-primary/80 font-semibold flex items-center justify-center gap-1 w-full py-1.5 rounded-md hover:bg-accent/60 transition-colors cursor-pointer"
           >
-            <span>Đóng thông báo</span>
+            <span>Xem tất cả thông báo</span>
             <ChevronRight className="h-3 w-3" />
           </button>
         </div>

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AuthUser } from "@/core/types/auth";
-import { removeStoredToken, setStoredToken } from "@/core/http/client";
+import { removeStoredToken, setStoredToken, registerUnauthorizedHandler } from "@/core/http/client";
 
 interface AuthState {
   user: AuthUser | null;
@@ -42,3 +42,8 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+// Đồng bộ tự động: khi client nhận lỗi 401 Unauthorized từ bất kỳ API nào, kích hoạt logout
+registerUnauthorizedHandler(() => {
+  useAuthStore.getState().logout();
+});

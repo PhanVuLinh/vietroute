@@ -7,7 +7,6 @@ import { Button } from "@/shared/components/ui/button";
 import { MapContainer } from "@/shared/components/map/MapContainer";
 import { useTrackingStore } from "@/shared/stores/trackingStore";
 import type { Warehouse, Driver, VehicleTelemetry } from "@/core/types/logistics";
-import { MOCK_ORDERS } from "@/mocks/data/orders";
 
 interface RealtimeMapCardProps {
   warehouses: Warehouse[];
