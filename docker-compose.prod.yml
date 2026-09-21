@@ -1,0 +1,99 @@
+version: "3.8"
+
+services:
+  # ==========================================
+  # 1. Cơ sở dữ liệu quan hệ PostgreSQL 15
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: vietroute-prod-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
+      POSTGRES_DB: ${POSTGRES_DB:-vietroute}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-vietroute}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vietroute-net
+
+  # ==========================================
+  # 2. Redis Cache & Queue Server
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: vietroute-prod-redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vietroute-net
+
+  # ==========================================
+  # 3. Backend NestJS REST API
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vietroute-prod-backend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin123}@postgres:5432/${POSTGRES_DB:-vietroute}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      JWT_SECRET: ${JWT_SECRET:-vietroute_prod_secret_key_2026_super_secure}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400s}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost,http://localhost:80,http://localhost:8080,http://localhost:5173,http://localhost:5174}
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - vietroute-net
+
+  # ==========================================
+  # 4. Frontend React SPA (Nginx)
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vietroute-prod-frontend
+    restart: always
+    ports:
+      - "80:80"
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - vietroute-net
+
+networks:
+  vietroute-net:
+    driver: bridge
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
