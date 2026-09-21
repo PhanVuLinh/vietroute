@@ -3,6 +3,7 @@ import {
   Role,
   UserStatus,
   CustomerType,
+  CustomerTier,
   OrderPriority,
   OrderStatus,
   WarehouseType,
@@ -22,6 +23,13 @@ import {
   RouteStopStatus,
   NotificationType,
   NotificationPriority,
+  InboundStatus,
+  OutboundStatus,
+  TransferStatus,
+  WmsActivityType,
+  IncidentSeverity,
+  IncidentStatus,
+  IncidentType,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -31,6 +39,15 @@ async function main() {
   console.log('🚀 Bắt đầu nạp dữ liệu khởi tạo (Seed) cho VietRoute...');
 
   // 0. Xóa dữ liệu cũ nếu có theo thứ tự ràng buộc khóa ngoại
+  await prisma.incidentComment.deleteMany();
+  await prisma.incident.deleteMany();
+  await prisma.warehouseActivity.deleteMany();
+  await prisma.stockTransfer.deleteMany();
+  await prisma.outboundDispatch.deleteMany();
+  await prisma.inboundReceipt.deleteMany();
+  await prisma.inventoryItem.deleteMany();
+  await prisma.customerPricingRule.deleteMany();
+  await prisma.customerAddress.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.routeStop.deleteMany();
   await prisma.route.deleteMany();
@@ -537,7 +554,7 @@ async function main() {
   }
 
   // 6. KHÁCH HÀNG (CUSTOMERS)
-  console.log('🏢 6/8. Tạo danh sách khách hàng doanh nghiệp & cá nhân...');
+  console.log('🏢 6/10. Tạo danh sách khách hàng doanh nghiệp & cá nhân...');
   const customersData = [
     {
       id: 'cus-hn-01',
@@ -548,6 +565,19 @@ async function main() {
       latitude: 20.9984,
       longitude: 105.8642,
       type: CustomerType.ENTERPRISE,
+      tier: CustomerTier.VIP,
+      tax_code: '0102938475',
+      contact_person: 'Nguyễn Tiến Dũng',
+      website: 'https://thanglonglogistics.vn',
+      notes: 'Khách hàng VIP khối vận tải logistics, yêu cầu giao hàng đúng hẹn 100%.',
+      addresses: [
+        { label: 'Kho chính Mai Động', address: 'Số 18 Tam Trinh, Hoàng Mai, Hà Nội', city: 'Hà Nội', latitude: 20.9984, longitude: 105.8642, is_default: true, contact_name: 'Nguyễn Tiến Dũng', contact_phone: '0988.123.456' },
+        { label: 'Chi nhánh Hà Đông', address: 'Khu Đô Thị Văn Quán, Hà Đông, Hà Nội', city: 'Hà Nội', latitude: 20.9780, longitude: 105.7890, is_default: false, contact_name: 'Trần Văn Đức', contact_phone: '0977.223.344' },
+      ],
+      pricing_rules: [
+        { route_type: 'URBAN', price_per_km: 18000, price_per_kg: 2500, discount_percent: 15 },
+        { route_type: 'INTER_PROVINCIAL', price_per_km: 14000, price_per_kg: 2100, discount_percent: 20 },
+      ],
     },
     {
       id: 'cus-hn-02',
@@ -558,6 +588,17 @@ async function main() {
       latitude: 21.0185,
       longitude: 105.8247,
       type: CustomerType.ENTERPRISE,
+      tier: CustomerTier.GOLD,
+      tax_code: '0100108923',
+      contact_person: 'Dược sĩ Hoàng Kim Chi',
+      website: 'https://hapharco.com.vn',
+      notes: 'Hàng dược phẩm y tế, yêu cầu xe kiểm soát nhiệt độ nghiêm ngặt.',
+      addresses: [
+        { label: 'Kho Dược phẩm La Thành', address: 'Số 170 La Thành, Đống Đa, Hà Nội', city: 'Hà Nội', latitude: 21.0185, longitude: 105.8247, is_default: true, contact_name: 'Hoàng Kim Chi', contact_phone: '0912.876.543' },
+      ],
+      pricing_rules: [
+        { route_type: 'URBAN', price_per_km: 22000, price_per_kg: 3200, discount_percent: 10 },
+      ],
     },
     {
       id: 'cus-hn-03',
@@ -568,6 +609,15 @@ async function main() {
       latitude: 21.0128,
       longitude: 105.8194,
       type: CustomerType.ENTERPRISE,
+      tier: CustomerTier.SILVER,
+      tax_code: '0101567890',
+      contact_person: 'Lê Tuấn Hùng',
+      website: 'https://anphatpc.com.vn',
+      notes: 'Thiết bị công nghệ cao, dễ vỡ.',
+      addresses: [
+        { label: 'Showroom Thái Hà', address: 'Số 49 Thái Hà, Đống Đa, Hà Nội', city: 'Hà Nội', latitude: 21.0128, longitude: 105.8194, is_default: true, contact_name: 'Lê Tuấn Hùng', contact_phone: '02439871122' },
+      ],
+      pricing_rules: [],
     },
     {
       id: 'cus-hn-04',
@@ -578,6 +628,12 @@ async function main() {
       latitude: 21.0345,
       longitude: 105.7981,
       type: CustomerType.INDIVIDUAL,
+      tier: CustomerTier.REGULAR,
+      notes: 'Khách hàng cá nhân giao lẻ.',
+      addresses: [
+        { label: 'Nhà riêng', address: 'Số 88 Cầu Giấy, Quan Hoa, Cầu Giấy, Hà Nội', city: 'Hà Nội', latitude: 21.0345, longitude: 105.7981, is_default: true, contact_name: 'Trần Thị Bích Ngọc', contact_phone: '0912445566' },
+      ],
+      pricing_rules: [],
     },
     {
       id: 'cus-sg-01',
@@ -588,6 +644,19 @@ async function main() {
       latitude: 10.7715,
       longitude: 106.7042,
       type: CustomerType.ENTERPRISE,
+      tier: CustomerTier.VIP,
+      tax_code: '0311234567',
+      contact_person: 'Vũ Đức Nam',
+      website: 'https://wincommerce.vn',
+      notes: 'Hệ thống siêu thị chuỗi, sản lượng giao đều đặn theo ngày.',
+      addresses: [
+        { label: 'Văn phòng đại diện', address: 'Tòa nhà Bitexco, Số 2 Hải Triều, Bến Nghé, Quận 1, TP. HCM', city: 'TP. Hồ Chí Minh', latitude: 10.7715, longitude: 106.7042, is_default: true, contact_name: 'Vũ Đức Nam', contact_phone: '02839105566' },
+        { label: 'Kho tổng Cát Lái', address: 'KCN Cát Lái 2, TP Thủ Đức, TP. HCM', city: 'TP. Hồ Chí Minh', latitude: 10.7612, longitude: 106.7934, is_default: false, contact_name: 'Trần Hữu Lộc', contact_phone: '0903.112.334' },
+      ],
+      pricing_rules: [
+        { route_type: 'URBAN', price_per_km: 17000, price_per_kg: 2400, discount_percent: 20 },
+        { route_type: 'LONG_HAUL', price_per_km: 12000, price_per_kg: 1800, discount_percent: 25 },
+      ],
     },
     {
       id: 'cus-dad-01',
@@ -598,13 +667,47 @@ async function main() {
       latitude: 16.0682,
       longitude: 108.2198,
       type: CustomerType.ENTERPRISE,
+      tier: CustomerTier.GOLD,
+      tax_code: '0400987654',
+      contact_person: 'Trương Minh Thuận',
+      website: 'https://dienmayhaichau.vn',
+      notes: 'Phân phối đồ điện gia dụng và âm thanh.',
+      addresses: [
+        { label: 'Tổng kho Hòa Cầm', address: 'KCN Hòa Cầm, Cẩm Lệ, Đà Nẵng', city: 'Đà Nẵng', latitude: 16.0125, longitude: 108.1874, is_default: true, contact_name: 'Trương Minh Thuận', contact_phone: '02363821999' },
+      ],
+      pricing_rules: [
+        { route_type: 'URBAN', price_per_km: 19000, price_per_kg: 2700, discount_percent: 12 },
+      ],
     },
   ];
 
   for (const c of customersData) {
+    const { addresses, pricing_rules, ...customerFields } = c;
     await prisma.customer.create({
-      data: c,
+      data: customerFields,
     });
+
+    if (addresses && addresses.length > 0) {
+      for (const addr of addresses) {
+        await prisma.customerAddress.create({
+          data: {
+            customer_id: c.id,
+            ...addr,
+          },
+        });
+      }
+    }
+
+    if (pricing_rules && pricing_rules.length > 0) {
+      for (const pr of pricing_rules) {
+        await prisma.customerPricingRule.create({
+          data: {
+            customer_id: c.id,
+            ...pr,
+          },
+        });
+      }
+    }
   }
 
   // 7. ĐƠN HÀNG, MẶT HÀNG & CHUYẾN GIAO (ORDERS, ITEMS, DELIVERIES)
@@ -889,6 +992,269 @@ async function main() {
       data: n,
     });
   }
+
+  // 9. QUẢN LÝ XUẤT NHẬP KHO (WMS)
+  console.log('🏭 9/10. Tạo dữ liệu quản lý kho WMS (Tồn kho, Phiếu nhập, Phiếu xuất, Điều chuyển)...');
+  const inventoryData = [
+    {
+      sku: 'SKU-ELEC-001',
+      product_name: 'Tivi Sony Bravia 55 Inch 4K UHD',
+      warehouse_id: 'wh-hn-lb',
+      zone_code: 'ZONE-A-RACK',
+      quantity: 120,
+      reserved_quantity: 15,
+      unit: 'chiếc',
+      weight_per_unit: 18.5,
+      min_stock_level: 20,
+    },
+    {
+      sku: 'SKU-ELEC-002',
+      product_name: 'Tủ lạnh Inverter Panasonic 350L',
+      warehouse_id: 'wh-hn-lb',
+      zone_code: 'ZONE-A-RACK',
+      quantity: 45,
+      reserved_quantity: 5,
+      unit: 'chiếc',
+      weight_per_unit: 62.0,
+      min_stock_level: 10,
+    },
+    {
+      sku: 'SKU-FOOD-001',
+      product_name: 'Dầu ăn Neptune Gold Can 5 Lít (Thùng 4 can)',
+      warehouse_id: 'wh-hn-lb',
+      zone_code: 'ZONE-B-BULK',
+      quantity: 380,
+      reserved_quantity: 40,
+      unit: 'thùng',
+      weight_per_unit: 19.2,
+      min_stock_level: 50,
+    },
+    {
+      sku: 'SKU-MED-001',
+      product_name: 'Găng tay y tế Vglove tiệt trùng (Hộp 50 đôi)',
+      warehouse_id: 'wh-hn-gl',
+      zone_code: 'ZONE-STG-01',
+      quantity: 850,
+      reserved_quantity: 60,
+      unit: 'hộp',
+      weight_per_unit: 0.6,
+      min_stock_level: 100,
+    },
+    {
+      sku: 'SKU-TECH-001',
+      product_name: 'Màn hình Dell UltraSharp 27 inch 4K',
+      warehouse_id: 'wh-hcm-cl',
+      zone_code: 'ZONE-CD-SG1',
+      quantity: 210,
+      reserved_quantity: 25,
+      unit: 'chiếc',
+      weight_per_unit: 8.2,
+      min_stock_level: 30,
+    },
+    {
+      sku: 'SKU-HOME-001',
+      product_name: 'Quạt đứng Mitsubishi Electric LV16',
+      warehouse_id: 'wh-dad-hc',
+      zone_code: 'ZONE-DAD-A',
+      quantity: 160,
+      reserved_quantity: 10,
+      unit: 'cây',
+      weight_per_unit: 7.5,
+      min_stock_level: 25,
+    },
+  ];
+
+  for (const inv of inventoryData) {
+    await prisma.inventoryItem.create({
+      data: inv,
+    });
+  }
+
+  // Phiếu nhập kho
+  await prisma.inboundReceipt.create({
+    data: {
+      receipt_code: 'INB-2026-001',
+      warehouse_id: 'wh-hn-lb',
+      supplier_name: 'Tập đoàn Điện tử Sony Việt Nam',
+      item_count: 50,
+      total_weight: 925.0,
+      status: InboundStatus.COMPLETED,
+      received_by: 'Nguyễn Văn Hùng',
+      notes: 'Lô hàng tivi nguyên đai nguyên kiện, đã nghiệm thu vào cổng Dock #01.',
+      completed_at: new Date(),
+    },
+  });
+
+  await prisma.inboundReceipt.create({
+    data: {
+      receipt_code: 'INB-2026-002',
+      warehouse_id: 'wh-hn-lb',
+      supplier_name: 'Công ty Dầu thực vật Cái Lân',
+      item_count: 100,
+      total_weight: 1920.0,
+      status: InboundStatus.RECEIVING,
+      received_by: 'Trần Văn Cường',
+      notes: 'Đang hạ tải tại khu vực lưu trữ bách hóa tổng hợp.',
+    },
+  });
+
+  // Phiếu xuất kho
+  await prisma.outboundDispatch.create({
+    data: {
+      dispatch_code: 'OUT-2026-001',
+      warehouse_id: 'wh-hn-lb',
+      order_code: 'VR-2026-001',
+      route_code: 'ROUTE-HAN-01',
+      item_count: 21,
+      total_weight: 350.5,
+      status: OutboundStatus.DISPATCHED,
+      picked_by: 'Hoàng Văn Thao',
+      notes: 'Bàn giao cho tài xế Nguyễn Văn An xe 29C-789.12 xuất bến lúc 08:15.',
+    },
+  });
+
+  await prisma.outboundDispatch.create({
+    data: {
+      dispatch_code: 'OUT-2026-002',
+      warehouse_id: 'wh-hcm-cl',
+      order_code: 'VR-2026-005',
+      item_count: 40,
+      total_weight: 328.0,
+      status: OutboundStatus.PICKING,
+      picked_by: 'Lê Quốc Bảo',
+      notes: 'Đang gom hàng màn hình máy tính theo đơn khách hàng WinCommerce.',
+    },
+  });
+
+  // Phiếu điều chuyển kho liên tỉnh
+  await prisma.stockTransfer.create({
+    data: {
+      transfer_code: 'TRF-2026-001',
+      from_warehouse_id: 'wh-hn-lb',
+      to_warehouse_id: 'wh-dad-hc',
+      item_count: 30,
+      total_weight: 555.0,
+      status: TransferStatus.IN_TRANSIT,
+      created_by: 'Phan Vũ Linh (Admin)',
+      created_at: new Date(),
+    },
+  });
+
+  // Nhật ký kho (Warehouse Activity)
+  const activities = [
+    {
+      warehouse_id: 'wh-hn-lb',
+      type: WmsActivityType.INBOUND,
+      description: 'Nhập thành công 50 chiếc Tivi Sony Bravia vào ZONE-A-RACK',
+      user: 'Nguyễn Văn Hùng',
+      reference_code: 'INB-2026-001',
+      quantity: 50,
+    },
+    {
+      warehouse_id: 'wh-hn-lb',
+      type: WmsActivityType.OUTBOUND,
+      description: 'Xuất kho 21 kiện hàng bàn giao xe 29C-789.12 theo đơn VR-2026-001',
+      user: 'Hoàng Văn Thao',
+      reference_code: 'OUT-2026-001',
+      quantity: 21,
+    },
+    {
+      warehouse_id: 'wh-hn-lb',
+      type: WmsActivityType.TRANSFER,
+      description: 'Khởi tạo điều chuyển 30 sản phẩm từ Tổng kho Long Biên tới Kho Đà Nẵng',
+      user: 'Phan Vũ Linh (Admin)',
+      reference_code: 'TRF-2026-001',
+      quantity: 30,
+    },
+  ];
+
+  for (const act of activities) {
+    await prisma.warehouseActivity.create({
+      data: act,
+    });
+  }
+
+  // 10. QUẢN LÝ SỰ CỐ & KHIẾU NẠI (INCIDENTS)
+  console.log('🚨 10/10. Tạo dữ liệu quản lý sự cố vận hành & khiếu nại (Incidents)...');
+  const incident01 = await prisma.incident.create({
+    data: {
+      incident_code: 'INC-2026-001',
+      type: IncidentType.DAMAGED_GOODS,
+      severity: IncidentSeverity.HIGH,
+      status: IncidentStatus.IN_PROGRESS,
+      title: 'Móp méo vỏ bao bì thùng tivi trong quá trình bốc dỡ',
+      description: 'Khi hạ tải tại điểm giao số 18 Tam Trinh, phát hiện 01 góc thùng Tivi Sony 55 inch bị móp. Khách hàng đã lập biên bản ghi nhận.',
+      order_code: 'VR-2026-001',
+      driver_name: 'Nguyễn Văn An',
+      vehicle_plate: '29C-789.12',
+      warehouse_name: 'Tổng kho Miền Bắc (Long Biên)',
+      reported_by: 'Nguyễn Văn An (Tài xế)',
+      assigned_to: 'Phan Vũ Linh (Admin)',
+      comments: {
+        create: [
+          {
+            user: 'Nguyễn Văn An',
+            message: 'Đã chụp ảnh hiện trạng hiện trường gửi phòng điều phối qua Zalo.',
+          },
+          {
+            user: 'Phan Vũ Linh (Admin)',
+            message: 'Đã ghi nhận sự cố. Đang kiểm tra với bộ phận bảo hiểm hàng hóa để hỗ trợ đổi mới vỏ thùng cho khách.',
+          },
+        ],
+      },
+    },
+  });
+
+  const incident02 = await prisma.incident.create({
+    data: {
+      incident_code: 'INC-2026-002',
+      type: IncidentType.VEHICLE_ACCIDENT,
+      severity: IncidentSeverity.CRITICAL,
+      status: IncidentStatus.NEW,
+      title: 'Xe van chết máy trên đường Vành Đai 3 trên cao',
+      description: 'Phương tiện XE-VAN-02 gặp sự cố két làm mát, tạm thời dừng khẩn cấp tại làn cứu nạn gần nút giao Nguyễn Trãi.',
+      vehicle_plate: '29H-123.45',
+      driver_name: 'Trần Minh Hoàng',
+      warehouse_name: 'Kho Vệ Tinh Cầu Giấy',
+      reported_by: 'Trần Minh Hoàng',
+      assigned_to: 'Nguyễn Văn Hùng (Điều phối)',
+      comments: {
+        create: [
+          {
+            user: 'Trần Minh Hoàng',
+            message: 'Đã đặt tam giác phản quang cảnh báo và liên hệ đội cứu hộ cao tốc.',
+          },
+        ],
+      },
+    },
+  });
+
+  const incident03 = await prisma.incident.create({
+    data: {
+      incident_code: 'INC-2026-003',
+      type: IncidentType.LATE_DELIVERY,
+      severity: IncidentSeverity.LOW,
+      status: IncidentStatus.RESOLVED,
+      title: 'Giao trễ 25 phút do triều cường ngập nước khu vực Cát Lái',
+      description: 'Khu vực cầu Mỹ Thủy ngập sâu 40cm khiến xe tải di chuyển chậm hơn dự kiến 25 phút.',
+      order_code: 'VR-2026-005',
+      driver_name: 'Hoàng Đức Thắng',
+      vehicle_plate: '51D-928.34',
+      warehouse_name: 'Tổng kho Miền Nam (Cát Lái)',
+      reported_by: 'Hoàng Đức Thắng',
+      assigned_to: 'Phan Vũ Linh (Admin)',
+      resolution_note: 'Đã thông báo xin lỗi khách hàng WinCommerce và bàn giao đầy đủ chứng từ không phát sinh khiếu nại.',
+      resolved_at: new Date(),
+      comments: {
+        create: [
+          {
+            user: 'Hoàng Đức Thắng',
+            message: 'Khách hàng thông cảm do thời tiết mưa lớn, đã ký nhận đủ hàng.',
+          },
+        ],
+      },
+    },
+  });
 
   console.log('✨ Seed dữ liệu hoàn tất thành công 100%!');
   console.log('====================================================');

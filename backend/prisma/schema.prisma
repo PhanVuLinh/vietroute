@@ -53,21 +53,70 @@ enum CustomerType {
   ENTERPRISE
 }
 
-model Customer {
-  id         String       @id @default(uuid())
-  name       String
-  phone      String
-  email      String?
-  address    String
-  latitude   Float
-  longitude  Float
-  type       CustomerType @default(INDIVIDUAL)
-  orders     Order[]
+enum CustomerTier {
+  REGULAR
+  SILVER
+  GOLD
+  VIP
+}
 
-  created_at DateTime     @default(now())
-  updated_at DateTime     @updatedAt
+model Customer {
+  id             String                @id @default(uuid())
+  name           String
+  phone          String
+  email          String?
+  address        String
+  latitude       Float
+  longitude      Float
+  type           CustomerType          @default(INDIVIDUAL)
+  tier           CustomerTier          @default(REGULAR)
+  tax_code       String?
+  contact_person String?
+  website        String?
+  notes          String?
+
+  orders         Order[]
+  addresses      CustomerAddress[]
+  pricing_rules  CustomerPricingRule[]
+
+  created_at     DateTime              @default(now())
+  updated_at     DateTime              @updatedAt
 
   @@map("customers")
+}
+
+model CustomerAddress {
+  id            String   @id @default(uuid())
+  customer_id   String
+  customer      Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  label         String
+  address       String
+  city          String?
+  latitude      Float
+  longitude     Float
+  is_default    Boolean  @default(false)
+  contact_name  String?
+  contact_phone String?
+
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("customer_addresses")
+}
+
+model CustomerPricingRule {
+  id               String   @id @default(uuid())
+  customer_id      String
+  customer         Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  route_type       String   // URBAN, INTER_PROVINCIAL, LONG_HAUL
+  price_per_km     Float
+  price_per_kg     Float
+  discount_percent Float    @default(0)
+
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@map("customer_pricing_rules")
 }
 
 enum OrderPriority {
@@ -208,6 +257,14 @@ model Warehouse {
   dock_doors            DockDoor[]
   orders                Order[]
   routes                Route[]
+
+  // WMS relations
+  inventory_items       InventoryItem[]
+  inbound_receipts      InboundReceipt[]
+  outbound_dispatches   OutboundDispatch[]
+  transfers_out         StockTransfer[]       @relation("TransferFrom")
+  transfers_in          StockTransfer[]       @relation("TransferTo")
+  activities            WarehouseActivity[]
 
   created_at            DateTime             @default(now())
   updated_at            DateTime             @updatedAt
@@ -572,4 +629,191 @@ model Notification {
   created_at   DateTime             @default(now())
 
   @@map("notifications")
+}
+
+// ==========================================
+// 9. QUẢN LÝ XUẤT NHẬP KHO (WMS)
+// ==========================================
+
+enum InboundStatus {
+  PENDING
+  RECEIVING
+  INSPECTING
+  COMPLETED
+  REJECTED
+}
+
+enum OutboundStatus {
+  PENDING
+  PICKING
+  PACKING
+  DISPATCHED
+  COMPLETED
+}
+
+enum TransferStatus {
+  PENDING
+  IN_TRANSIT
+  RECEIVED
+  CANCELLED
+}
+
+enum WmsActivityType {
+  INBOUND
+  OUTBOUND
+  TRANSFER
+  ADJUSTMENT
+  INSPECTION
+}
+
+model InventoryItem {
+  id                String    @id @default(uuid())
+  sku               String    @unique
+  product_name      String
+  warehouse_id      String
+  warehouse         Warehouse @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
+  zone_code         String
+  quantity          Int       @default(0)
+  reserved_quantity Int       @default(0)
+  unit              String    @default("kiện")
+  weight_per_unit   Float     @default(1.0)
+  min_stock_level   Int       @default(10)
+  last_updated      DateTime  @default(now())
+
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@map("inventory_items")
+}
+
+model InboundReceipt {
+  id            String        @id @default(uuid())
+  receipt_code  String        @unique
+  warehouse_id  String
+  warehouse     Warehouse     @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
+  supplier_name String
+  item_count    Int           @default(1)
+  total_weight  Float         @default(0)
+  status        InboundStatus @default(RECEIVING)
+  received_by   String
+  notes         String?
+  created_at    DateTime      @default(now())
+  completed_at  DateTime?
+
+  @@map("inbound_receipts")
+}
+
+model OutboundDispatch {
+  id            String         @id @default(uuid())
+  dispatch_code String         @unique
+  warehouse_id  String
+  warehouse     Warehouse      @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
+  order_code    String?
+  route_code    String?
+  item_count    Int            @default(1)
+  total_weight  Float          @default(0)
+  status        OutboundStatus @default(PICKING)
+  picked_by     String
+  notes         String?
+  created_at    DateTime       @default(now())
+  completed_at  DateTime?
+
+  @@map("outbound_dispatches")
+}
+
+model StockTransfer {
+  id                  String         @id @default(uuid())
+  transfer_code       String         @unique
+  from_warehouse_id   String
+  from_warehouse      Warehouse      @relation("TransferFrom", fields: [from_warehouse_id], references: [id], onDelete: Cascade)
+  to_warehouse_id     String
+  to_warehouse        Warehouse      @relation("TransferTo", fields: [to_warehouse_id], references: [id], onDelete: Cascade)
+  item_count          Int            @default(1)
+  total_weight        Float          @default(0)
+  status              TransferStatus @default(IN_TRANSIT)
+  created_by          String
+  created_at          DateTime       @default(now())
+  completed_at        DateTime?
+
+  @@map("stock_transfers")
+}
+
+model WarehouseActivity {
+  id             String          @id @default(uuid())
+  warehouse_id   String
+  warehouse      Warehouse       @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
+  type           WmsActivityType @default(INBOUND)
+  description    String
+  user           String
+  reference_code String
+  quantity       Int?            @default(1)
+  created_at     DateTime        @default(now())
+
+  @@map("warehouse_activities")
+}
+
+// ==========================================
+// 10. QUẢN LÝ SỰ CỐ & KHIẾU NẠI (INCIDENTS)
+// ==========================================
+
+enum IncidentSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum IncidentStatus {
+  NEW
+  IN_PROGRESS
+  PENDING_REVIEW
+  RESOLVED
+  CLOSED
+}
+
+enum IncidentType {
+  DAMAGED_GOODS
+  LATE_DELIVERY
+  LOST_PACKAGE
+  WRONG_DELIVERY
+  VEHICLE_ACCIDENT
+  CUSTOMER_COMPLAINT
+  THEFT
+  OTHER
+}
+
+model Incident {
+  id              String            @id @default(uuid())
+  incident_code   String            @unique
+  type            IncidentType      @default(DAMAGED_GOODS)
+  severity        IncidentSeverity  @default(MEDIUM)
+  status          IncidentStatus    @default(NEW)
+  title           String
+  description     String
+  order_code      String?
+  driver_name     String?
+  vehicle_plate   String?
+  warehouse_name  String?
+  reported_by     String
+  assigned_to     String?
+  resolution_note String?
+  resolved_at     DateTime?
+
+  comments        IncidentComment[]
+
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+
+  @@map("incidents")
+}
+
+model IncidentComment {
+  id          String   @id @default(uuid())
+  incident_id String
+  incident    Incident @relation(fields: [incident_id], references: [id], onDelete: Cascade)
+  user        String
+  message     String
+  created_at  DateTime @default(now())
+
+  @@map("incident_comments")
 }
