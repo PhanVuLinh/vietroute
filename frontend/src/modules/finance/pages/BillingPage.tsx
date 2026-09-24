@@ -37,8 +37,9 @@ import {
   TrendingDown,
   TrendingUp,
   Download,
+  Sparkles,
 } from "lucide-react";
-import { useInvoices, useBillingSummary, useAgingReport } from "../hooks/useFinance";
+import { useInvoices, useBillingSummary, useAgingReport, useSeedFinanceMutation } from "../hooks/useFinance";
 import { CreateInvoiceDialog } from "../components/CreateInvoiceDialog";
 import { InvoiceDetailDrawer } from "../components/InvoiceDetailDrawer";
 import { AgingReportChart } from "../components/AgingReportChart";
@@ -74,6 +75,7 @@ export const BillingPage: React.FC = () => {
 
   const { data: summary, isLoading: isSummaryLoading } = useBillingSummary();
   const { data: agingReport, isLoading: isAgingLoading } = useAgingReport();
+  const seedMutation = useSeedFinanceMutation();
   const {
     data: invoices = [],
     isLoading,
@@ -120,7 +122,18 @@ export const BillingPage: React.FC = () => {
       title="Hóa đơn & Quản lý Công nợ B2B"
       subtitle="Theo dõi hóa đơn doanh nghiệp, đối soát công nợ phải thu và kiểm soát tuổi nợ theo thời gian thực."
       action={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => seedMutation.mutate()}
+            disabled={seedMutation.isPending}
+            className="text-xs gap-1.5 cursor-pointer border-blue-500/40 text-blue-600 hover:bg-blue-500/10 dark:text-blue-400 font-semibold"
+            title="Nạp ngay 4 hóa đơn B2B mẫu vào PostgreSQL thật để trải nghiệm"
+          >
+            <Sparkles className={`h-3.5 w-3.5 ${seedMutation.isPending ? "animate-spin" : ""}`} />
+            <span>{seedMutation.isPending ? "Đang nạp mẫu..." : "Nạp dữ liệu mẫu B2B"}</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -316,10 +329,25 @@ export const BillingPage: React.FC = () => {
                     ) : invoices.length === 0 ? (
                       <tr>
                         <td colSpan={8} className="py-12 text-center text-muted-foreground">
-                          <div className="flex flex-col items-center justify-center space-y-2">
-                            <Receipt className="h-10 w-10 text-muted-foreground/40" />
-                            <p className="font-semibold text-foreground">Không tìm thấy hóa đơn nào</p>
-                            <p className="text-xs">Thử thay đổi bộ lọc tìm kiếm hoặc tạo hóa đơn mới.</p>
+                          <div className="flex flex-col items-center justify-center space-y-3 max-w-md mx-auto">
+                            <div className="h-14 w-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 shadow-sm">
+                              <Receipt className="h-7 w-7" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-foreground">Chưa có hóa đơn nào trong cơ sở dữ liệu</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Bạn có thể tạo hóa đơn B2B mới hoặc nạp nhanh bộ 4 hóa đơn mẫu thực tế (Vinamilk, Samsung, VinFast, Shopee) kèm mã VietQR và tuổi nợ.
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => seedMutation.mutate()}
+                              disabled={seedMutation.isPending}
+                              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-md cursor-pointer mt-1"
+                            >
+                              <Sparkles className={`h-4 w-4 ${seedMutation.isPending ? "animate-spin" : ""}`} />
+                              <span>{seedMutation.isPending ? "Đang nạp dữ liệu mẫu..." : "Nạp ngay 4 hóa đơn mẫu B2B & COD"}</span>
+                            </Button>
                           </div>
                         </td>
                       </tr>

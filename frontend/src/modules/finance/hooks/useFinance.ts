@@ -185,3 +185,21 @@ export function useUpdateInvoiceStatusMutation() {
     },
   });
 }
+
+export function useSeedFinanceMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await financeService.seedDemoData();
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["finance"] });
+      toast.success("Nạp dữ liệu mẫu thành công", data?.message || "Đã tạo 4 hóa đơn B2B và 2 phiên COD mẫu vào PostgreSQL!");
+    },
+    onError: (err: any) => {
+      toast.error("Lỗi nạp dữ liệu mẫu", err?.message || "Không thể nạp dữ liệu mẫu");
+    },
+  });
+}

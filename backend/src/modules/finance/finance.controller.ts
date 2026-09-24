@@ -90,4 +90,9 @@ export class FinanceController {
   updateInvoiceStatus(@Param('id') id: string, @Body() dto: UpdateInvoiceStatusDto) {
     return this.financeService.updateInvoiceStatus(id, dto);
   }
+
+  @Post('seed-demo')
+  seedDemoData() {
+    return this.financeService.seedDemoData();
+  }
 }

@@ -221,6 +221,8 @@ const apiFinanceService = {
     httpClient.post<import("@/modules/finance/types/finance").InvoiceItem>("/finance/invoices", data),
   updateInvoiceStatus: (id: string, status: string, paid_amount?: number) =>
     httpClient.patch<import("@/modules/finance/types/finance").InvoiceItem>(`/finance/invoices/${id}/status`, { status, paid_amount }),
+  seedDemoData: () =>
+    httpClient.post<{ success: boolean; message: string }>("/finance/seed-demo"),
 };
 
 // ==========================================

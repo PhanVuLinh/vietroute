@@ -27,8 +27,9 @@ import {
   SlidersHorizontal,
   Wallet,
   Download,
+  Sparkles,
 } from "lucide-react";
-import { useCodReconciliations, useCodSummary } from "../hooks/useFinance";
+import { useCodReconciliations, useCodSummary, useSeedFinanceMutation } from "../hooks/useFinance";
 import { CodSubmissionDialog } from "../components/CodSubmissionDialog";
 import { CodDetailDrawer } from "../components/CodDetailDrawer";
 import type { CodReconciliationItem } from "../types/finance";
@@ -47,6 +48,7 @@ export const CodReconciliationPage: React.FC = () => {
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
 
   const { data: summary, isLoading: isSummaryLoading } = useCodSummary();
+  const seedMutation = useSeedFinanceMutation();
   const {
     data: reconciliations = [],
     isLoading,
@@ -119,7 +121,18 @@ export const CodReconciliationPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => seedMutation.mutate()}
+            disabled={seedMutation.isPending}
+            className="h-9 gap-1.5 text-xs font-semibold cursor-pointer border-blue-500/40 text-blue-600 hover:bg-blue-500/10 dark:text-blue-400"
+            title="Nạp phiên đối soát COD mẫu vào cơ sở dữ liệu thật"
+          >
+            <Sparkles className={`h-3.5 w-3.5 ${seedMutation.isPending ? "animate-spin" : ""}`} />
+            <span>{seedMutation.isPending ? "Đang nạp..." : "Dữ liệu mẫu COD"}</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"

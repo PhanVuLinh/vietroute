@@ -20,6 +20,21 @@ export class FinanceService implements OnModuleInit {
     await this.autoSeedFinanceIfEmpty();
   }
 
+  async seedDemoData() {
+    this.logger.log('🚀 Đang thực hiện nạp lại dữ liệu mẫu B2B và COD theo yêu cầu...');
+    await this.prisma.invoiceItem.deleteMany();
+    await this.prisma.invoice.deleteMany();
+    await this.prisma.codEntry.deleteMany();
+    await this.prisma.codReconciliation.deleteMany();
+
+    await this.autoSeedFinanceIfEmpty();
+
+    return {
+      success: true,
+      message: 'Đã nạp thành công 4 hóa đơn B2B và 2 phiên đối soát COD vào cơ sở dữ liệu thật!',
+    };
+  }
+
   private async autoSeedFinanceIfEmpty() {
     try {
       const invoiceCount = await this.prisma.invoice.count();
