@@ -10,7 +10,14 @@ export function useCustomers() {
     queryKey: ["customers", "list"],
     queryFn: async () => {
       const res = await customerService.getCustomers();
-      return res.data;
+      const raw = res.data as any;
+      if (Array.isArray(raw)) {
+        return raw;
+      }
+      if (raw && Array.isArray(raw.items)) {
+        return raw.items;
+      }
+      return [];
     },
     staleTime: 60 * 1000,
   });
@@ -37,7 +44,12 @@ export function useCustomers() {
 
   // Filter + Sort
   const filteredCustomers = useMemo(() => {
-    let result = customersQuery.data || [];
+    const raw = customersQuery.data;
+    let result: EnrichedCustomer[] = Array.isArray(raw)
+      ? raw
+      : raw && Array.isArray((raw as any).items)
+      ? (raw as any).items
+      : [];
 
     if (filters.searchQuery) {
       const q = filters.searchQuery.toLowerCase();
@@ -83,7 +95,12 @@ export function useCustomers() {
 
   // Stats
   const stats = useMemo(() => {
-    const all = customersQuery.data || [];
+    const raw = customersQuery.data;
+    const all: EnrichedCustomer[] = Array.isArray(raw)
+      ? raw
+      : raw && Array.isArray((raw as any).items)
+      ? (raw as any).items
+      : [];
     let enterprise = 0;
     let individual = 0;
     let vip = 0;

@@ -36,7 +36,8 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
   onOpenChange,
 }) => {
   const createMutation = useCreateInvoiceMutation();
-  const { customers = [] } = useCustomers();
+  const { allCustomers = [], customers = [] } = useCustomers();
+  const customerList = allCustomers.length > 0 ? allCustomers : customers;
 
   const [customerId, setCustomerId] = useState<string>("");
   const [dueDate, setDueDate] = useState<string>(() => {
@@ -126,7 +127,7 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
                     <SelectValue placeholder="Chọn khách hàng..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {customers.map((c) => (
+                    {customerList.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name} {c.taxCode ? `(MST: ${c.taxCode})` : ""}
                       </SelectItem>
