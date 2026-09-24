@@ -91,8 +91,19 @@ export class FinanceController {
     return this.financeService.updateInvoiceStatus(id, dto);
   }
 
+  @Post('invoices/:id/send-reminder')
+  sendSingleInvoiceReminder(@Param('id') id: string) {
+    return this.financeService.sendSingleInvoiceReminder(id);
+  }
+
+  @Post('debt-collection/scan-and-remind')
+  scanAndSendDebtReminders() {
+    return this.financeService.scanAndSendDebtReminders();
+  }
+
   @Post('seed-demo')
   seedDemoData() {
     return this.financeService.seedDemoData();
   }
 }
+

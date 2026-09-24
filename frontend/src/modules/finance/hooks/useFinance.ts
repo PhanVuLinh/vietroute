@@ -203,3 +203,91 @@ export function useSeedFinanceMutation() {
     },
   });
 }
+
+// ==========================================
+// 3. HOOKS THU HỒI CÔNG NỢ & CỔNG THANH TOÁN B2B
+// ==========================================
+
+export function useScanAndSendDebtRemindersMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await financeService.scanAndSendDebtReminders();
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["finance", "billing"] });
+      queryClient.invalidateQueries({ queryKey: ["finance", "aging-report"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success(
+        "Đã hoàn tất quét công nợ tự động",
+        `Đã gửi cảnh báo nhắc nợ tới ${data.remindedCount} hóa đơn quá hạn / sắp đến hạn!`
+      );
+    },
+    onError: (err: any) => {
+      toast.error("Lỗi quét công nợ", err?.message || "Không thể hoàn tất tiến trình nhắc nợ");
+    },
+  });
+}
+
+export function useSendSingleInvoiceReminderMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await financeService.sendSingleInvoiceReminder(id);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("Gửi nhắc nợ thành công", data?.message || "Đã gửi thông báo nhắc thanh toán");
+    },
+    onError: (err: any) => {
+      toast.error("Lỗi gửi nhắc nợ", err?.message || "Không thể gửi thông báo nhắc nợ");
+    },
+  });
+}
+
+export function usePublicInvoice(invoiceCode?: string) {
+  const cleanCode = (invoiceCode || "").trim().toUpperCase();
+
+  return useQuery({
+    queryKey: ["public", "invoice", cleanCode],
+    queryFn: async () => {
+      if (!cleanCode) throw new Error("Chưa có mã hóa đơn");
+      const res = await financeService.getPublicInvoice(cleanCode);
+      return res.data;
+    },
+    enabled: !!cleanCode,
+    staleTime: 5000,
+  });
+}
+
+export function useSimulatePublicInvoicePaymentMutation(invoiceCode: string) {
+  const queryClient = useQueryClient();
+  const cleanCode = (invoiceCode || "").trim().toUpperCase();
+
+  return useMutation({
+    mutationFn: async (data?: { paymentMethod?: string; transactionRef?: string }) => {
+      const res = await financeService.simulatePublicInvoicePayment(cleanCode, data);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["public", "invoice", cleanCode] });
+      queryClient.invalidateQueries({ queryKey: ["finance", "invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["finance", "billing"] });
+      queryClient.invalidateQueries({ queryKey: ["finance", "aging-report"] });
+      toast.success(
+        "Thanh toán thành công!",
+        data?.message || "Hóa đơn đã được gạch nợ thành công."
+      );
+    },
+    onError: (err: any) => {
+      toast.error("Lỗi thanh toán", err?.message || "Không thể thực hiện thanh toán");
+    },
+  });
+}
+

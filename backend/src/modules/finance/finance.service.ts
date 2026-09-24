@@ -754,4 +754,329 @@ export class FinanceService implements OnModuleInit {
       totalInvoices: all.length,
     };
   }
+
+  // ==========================================
+  // 3. CỔNG THANH TOÁN HÓA ĐƠN B2B CÔNG KHAI (PUBLIC PORTAL)
+  // ==========================================
+
+  async getPublicInvoice(invoiceCode: string) {
+    const cleanCode = (invoiceCode || '').trim();
+    if (!cleanCode) {
+      throw new NotFoundException('Vui lòng cung cấp mã hóa đơn hợp lệ.');
+    }
+
+    const inv = await this.prisma.invoice.findFirst({
+      where: {
+        invoice_code: {
+          equals: cleanCode,
+          mode: 'insensitive',
+        },
+      },
+      include: {
+        customer: true,
+        items: true,
+      },
+    });
+
+    if (!inv) {
+      throw new NotFoundException(`Không tìm thấy hóa đơn với mã: ${invoiceCode}`);
+    }
+
+    const remainingAmount = Math.max(0, inv.total_amount - inv.paid_amount);
+    const now = Date.now();
+    const dueTime = new Date(inv.due_date).getTime();
+    const diffDays = Math.floor((now - dueTime) / (1000 * 60 * 60 * 24));
+
+    // Thông tin ngân hàng thụ hưởng VietRoute Napas247
+    const bankDetails = {
+      bankName: 'Ngân hàng TMCP Công Thương Việt Nam (VietinBank)',
+      bankShortName: 'VietinBank',
+      bankBin: '970415',
+      accountNumber: '113002899999',
+      accountName: 'CONG TY CP VIETROUTE LOGISTICS',
+      transferContent: `VIETROUTE ${inv.invoice_code}`,
+      amount: remainingAmount,
+      vietQrUrl: `https://api.vietqr.io/image/970415-113002899999-QdtE4q.jpg?accountName=CONG%20TY%20CP%20VIETROUTE%20LOGISTICS&amount=${remainingAmount}&addInfo=VIETROUTE%20${encodeURIComponent(inv.invoice_code)}`,
+    };
+
+    return {
+      ...this.formatInvoice(inv),
+      isOverdue: diffDays > 0 && inv.status !== InvoiceStatus.PAID,
+      overdueDays: diffDays > 0 ? diffDays : 0,
+      daysUntilDue: diffDays <= 0 ? Math.abs(diffDays) : 0,
+      bankDetails,
+    };
+  }
+
+  /**
+   * Giả lập thanh toán hóa đơn trực tuyến qua cổng VietQR (hoặc nhận Webhook gạch nợ)
+   */
+  async simulatePublicInvoicePayment(
+    invoiceCode: string,
+    paymentDto?: { paymentMethod?: string; transactionRef?: string },
+  ) {
+    const cleanCode = (invoiceCode || '').trim();
+    const inv = await this.prisma.invoice.findFirst({
+      where: {
+        invoice_code: {
+          equals: cleanCode,
+          mode: 'insensitive',
+        },
+      },
+      include: {
+        customer: true,
+        items: true,
+      },
+    });
+
+    if (!inv) {
+      throw new NotFoundException(`Không tìm thấy hóa đơn với mã: ${invoiceCode}`);
+    }
+
+    if (inv.status === InvoiceStatus.PAID) {
+      return {
+        success: true,
+        message: 'Hóa đơn này đã được thanh toán trước đó.',
+        invoice: this.formatInvoice(inv),
+      };
+    }
+
+    // 1. Cập nhật hóa đơn sang PAID
+    const updated = await this.prisma.invoice.update({
+      where: { id: inv.id },
+      data: {
+        status: InvoiceStatus.PAID,
+        paid_amount: inv.total_amount,
+      },
+      include: {
+        customer: true,
+        items: true,
+      },
+    });
+
+    const formatted = this.formatInvoice(updated);
+
+    // 2. Tạo bản ghi Notification hệ thống
+    await this.prisma.notification.create({
+      data: {
+        title: `Thanh toán thành công hóa đơn ${inv.invoice_code}`,
+        message: `Khách hàng ${inv.customer.name} đã thanh toán toàn bộ số tiền ${inv.total_amount.toLocaleString('vi-VN')} đ qua cổng thanh toán trực tuyến VietQR Napas247.`,
+        type: 'LATE_WARNING',
+        priority: 'HIGH',
+        reference_id: inv.id,
+      },
+    });
+
+    // 3. Bắn sự kiện WebSocket realtime
+    this.realtimeGateway.emitInvoicePaid({
+      id: inv.id,
+      invoiceCode: inv.invoice_code,
+      customerName: inv.customer.name,
+      totalAmount: inv.total_amount,
+      paidAmount: inv.total_amount,
+      status: 'PAID',
+    });
+
+    this.realtimeGateway.broadcastAlert({
+      id: `alert-pay-${inv.id}`,
+      title: 'Xác nhận gạch nợ hóa đơn B2B',
+      message: `Hóa đơn ${inv.invoice_code} (${inv.customer.name}) đã được thanh toán: ${inv.total_amount.toLocaleString('vi-VN')} đ`,
+      severity: 'LOW',
+    });
+
+    return {
+      success: true,
+      message: `Gạch nợ thành công hóa đơn ${inv.invoice_code}. Biên lai điện tử đã được phát hành!`,
+      invoice: formatted,
+      receipt: {
+        receiptNumber: `REC-${Date.now().toString().slice(-8)}`,
+        paidAt: new Date().toISOString(),
+        paymentMethod: paymentDto?.paymentMethod || 'VIETQR_NAPAS247',
+        transactionRef: paymentDto?.transactionRef || `VR-TXN-${Date.now().toString().slice(-6)}`,
+        payerName: inv.customer.name,
+        amount: inv.total_amount,
+      },
+    };
+  }
+
+  // ==========================================
+  // 4. BỘ MÁY TỰ ĐỘNG QUÉT & NHẮC NỢ B2B HÀNG LOẠT (AUTOMATED DEBT COLLECTION)
+  // ==========================================
+
+  async scanAndSendDebtReminders() {
+    this.logger.log('⚡ Bắt đầu tiến trình tự động quét công nợ và kích hoạt nhắc nợ đa kênh...');
+
+    // Lấy toàn bộ hóa đơn chưa thanh toán hoặc đang quá hạn
+    const pendingInvoices = await this.prisma.invoice.findMany({
+      where: {
+        status: {
+          in: [InvoiceStatus.PENDING_PAYMENT, InvoiceStatus.OVERDUE],
+        },
+      },
+      include: {
+        customer: true,
+      },
+      orderBy: { due_date: 'asc' },
+    });
+
+    const now = Date.now();
+    const upcoming: any[] = [];
+    const overdueLevel1: any[] = []; // Quá hạn 1 - 7 ngày
+    const overdueLevel2: any[] = []; // Quá hạn > 7 ngày
+
+    let totalOverdueAmount = 0;
+
+    for (const inv of pendingInvoices) {
+      const remaining = inv.total_amount - inv.paid_amount;
+      const dueTime = new Date(inv.due_date).getTime();
+      const diffDays = Math.floor((now - dueTime) / (1000 * 60 * 60 * 24));
+
+      // Tự động chuyển trạng thái OVERDUE nếu ngày đáo hạn đã qua
+      if (diffDays > 0 && inv.status !== InvoiceStatus.OVERDUE) {
+        await this.prisma.invoice.update({
+          where: { id: inv.id },
+          data: { status: InvoiceStatus.OVERDUE },
+        });
+        inv.status = InvoiceStatus.OVERDUE;
+      }
+
+      const itemSummary = {
+        id: inv.id,
+        invoiceCode: inv.invoice_code,
+        customerName: inv.customer.name,
+        customerEmail: inv.customer.email,
+        customerPhone: inv.customer.phone,
+        totalAmount: inv.total_amount,
+        remainingAmount: remaining,
+        dueDate: inv.due_date.toISOString(),
+        diffDays,
+        paymentPortalUrl: `http://localhost:5174/portal/pay/${inv.invoice_code}`,
+      };
+
+      if (diffDays >= 7) {
+        // Quá hạn nghiêm trọng Cấp độ 2
+        totalOverdueAmount += remaining;
+        overdueLevel2.push(itemSummary);
+
+        await this.prisma.notification.create({
+          data: {
+            title: `[CẢNH BÁO CẤP 2] Hóa đơn ${inv.invoice_code} quá hạn ${diffDays} ngày`,
+            message: `Doanh nghiệp ${inv.customer.name} chưa thanh toán ${remaining.toLocaleString('vi-VN')} đ (Hạn chót: ${new Date(inv.due_date).toLocaleDateString('vi-VN')}). Nguy cơ tạm hoãn tiếp nhận đơn hàng mới trong 48h!`,
+            type: 'LATE_WARNING',
+            priority: 'URGENT',
+            reference_id: inv.id,
+          },
+        });
+      } else if (diffDays >= 1) {
+        // Quá hạn Cấp độ 1
+        totalOverdueAmount += remaining;
+        overdueLevel1.push(itemSummary);
+
+        await this.prisma.notification.create({
+          data: {
+            title: `[NHẮC NỢ CẤP 1] Hóa đơn ${inv.invoice_code} đã quá hạn ${diffDays} ngày`,
+            message: `Hóa đơn cước vận tải của ${inv.customer.name} số tiền ${remaining.toLocaleString('vi-VN')} đ đã quá hạn. Đã gửi link VietQR thanh toán nhanh tới đối tác.`,
+            type: 'LATE_WARNING',
+            priority: 'HIGH',
+            reference_id: inv.id,
+          },
+        });
+      } else if (diffDays >= -3) {
+        // Sắp đến hạn trong 3 ngày tới
+        upcoming.push(itemSummary);
+
+        await this.prisma.notification.create({
+          data: {
+            title: `[NHẮC HẸN THANH TOÁN] Hóa đơn ${inv.invoice_code} sắp đến hạn`,
+            message: `Hóa đơn cước vận chuyển của ${inv.customer.name} trị giá ${remaining.toLocaleString('vi-VN')} đ sẽ đến hạn thanh toán trong ${Math.abs(diffDays)} ngày tới.`,
+            type: 'LATE_WARNING',
+            priority: 'NORMAL',
+            reference_id: inv.id,
+          },
+        });
+      }
+    }
+
+    const totalProcessed = upcoming.length + overdueLevel1.length + overdueLevel2.length;
+
+    // Phát sóng sự kiện WebSocket thông báo hoàn tất tiến trình quét nợ
+    this.realtimeGateway.emitDebtRemindersSent({
+      count: totalProcessed,
+      totalOverdueAmount,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.logger.log(`✅ Đã quét xong công nợ: ${totalProcessed} hóa đơn được nhắc nhở. Tổng nợ quá hạn: ${totalOverdueAmount.toLocaleString('vi-VN')} đ`);
+
+    return {
+      success: true,
+      scannedCount: pendingInvoices.length,
+      remindedCount: totalProcessed,
+      totalOverdueAmount,
+      categories: {
+        upcoming: {
+          count: upcoming.length,
+          title: 'Sắp đến hạn (D-3 đến D-0)',
+          items: upcoming,
+        },
+        overdueLevel1: {
+          count: overdueLevel1.length,
+          title: 'Quá hạn Cấp 1 (1 - 7 ngày)',
+          items: overdueLevel1,
+        },
+        overdueLevel2: {
+          count: overdueLevel2.length,
+          title: 'Quá hạn Khẩn cấp Cấp 2 (> 7 ngày)',
+          items: overdueLevel2,
+        },
+      },
+    };
+  }
+
+  /**
+   * Gửi thông báo nhắc nợ riêng cho 1 hóa đơn
+   */
+  async sendSingleInvoiceReminder(invoiceId: string) {
+    const inv = await this.prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      include: { customer: true },
+    });
+
+    if (!inv) {
+      throw new NotFoundException(`Không tìm thấy hóa đơn với ID: ${invoiceId}`);
+    }
+
+    const remaining = inv.total_amount - inv.paid_amount;
+    const now = Date.now();
+    const dueTime = new Date(inv.due_date).getTime();
+    const diffDays = Math.floor((now - dueTime) / (1000 * 60 * 60 * 24));
+
+    let title = `[NHẮC THANH TOÁN] Hóa đơn ${inv.invoice_code}`;
+    let priority: 'NORMAL' | 'HIGH' | 'URGENT' = 'NORMAL';
+
+    if (diffDays > 7) {
+      title = `[CẢNH BÁO QUÁ HẠN] Hóa đơn ${inv.invoice_code} quá hạn ${diffDays} ngày`;
+      priority = 'URGENT';
+    } else if (diffDays > 0) {
+      title = `[NHẮC NỢ] Hóa đơn ${inv.invoice_code} đã quá hạn ${diffDays} ngày`;
+      priority = 'HIGH';
+    }
+
+    await this.prisma.notification.create({
+      data: {
+        title,
+        message: `Đã gửi thông báo nhắc thanh toán ${remaining.toLocaleString('vi-VN')} đ tới khách hàng ${inv.customer.name} qua email và cổng thanh toán trực tuyến.`,
+        type: 'LATE_WARNING',
+        priority,
+        reference_id: inv.id,
+      },
+    });
+
+    return {
+      success: true,
+      message: `Đã gửi thành công nhắc nợ hóa đơn ${inv.invoice_code} tới ${inv.customer.name}!`,
+      portalUrl: `http://localhost:5174/portal/pay/${inv.invoice_code}`,
+    };
+  }
 }
+

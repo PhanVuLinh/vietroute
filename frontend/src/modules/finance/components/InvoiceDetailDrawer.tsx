@@ -20,8 +20,15 @@ import {
   Receipt,
   XCircle,
   Printer,
+  BellRing,
+  ExternalLink,
+  QrCode,
 } from "lucide-react";
-import { useInvoiceDetail, useUpdateInvoiceStatusMutation } from "../hooks/useFinance";
+import {
+  useInvoiceDetail,
+  useUpdateInvoiceStatusMutation,
+  useSendSingleInvoiceReminderMutation,
+} from "../hooks/useFinance";
 import { formatDateTime } from "@/shared/utils/formatters";
 import { InvoicePrintModal } from "./InvoicePrintModal";
 
@@ -54,12 +61,19 @@ export const InvoiceDetailDrawer: React.FC<InvoiceDetailDrawerProps> = ({
 }) => {
   const { data: invoice, isLoading } = useInvoiceDetail(invoiceId);
   const updateStatusMutation = useUpdateInvoiceStatusMutation();
+  const sendReminderMutation = useSendSingleInvoiceReminderMutation();
 
   const [paymentAmount, setPaymentAmount] = useState<number | "">("");
   const [showPaymentInput, setShowPaymentInput] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   if (!open) return null;
+
+  const handleSendReminder = async () => {
+    if (!invoice) return;
+    await sendReminderMutation.mutateAsync(invoice.id);
+  };
+
 
   const handleMarkAsPaid = async (full: boolean = true) => {
     if (!invoice) return;
@@ -291,7 +305,7 @@ export const InvoiceDetailDrawer: React.FC<InvoiceDetailDrawerProps> = ({
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   {invoice.status !== "PAID" && (
                     <Button
                       className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-1.5"
@@ -300,6 +314,18 @@ export const InvoiceDetailDrawer: React.FC<InvoiceDetailDrawerProps> = ({
                     >
                       <CheckCircle2 className="h-4 w-4" />
                       Xác nhận Đã thu đủ ({invoice.totalAmount.toLocaleString("vi-VN")} đ)
+                    </Button>
+                  )}
+
+                  {invoice.status !== "PAID" && (
+                    <Button
+                      variant="outline"
+                      className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20 text-xs gap-1.5 border-amber-500/40"
+                      disabled={sendReminderMutation.isPending}
+                      onClick={handleSendReminder}
+                    >
+                      <BellRing className={`h-3.5 w-3.5 ${sendReminderMutation.isPending ? "animate-bounce" : ""}`} />
+                      <span>{sendReminderMutation.isPending ? "Đang gửi..." : "Gửi thông báo nhắc nợ"}</span>
                     </Button>
                   )}
 
@@ -315,8 +341,23 @@ export const InvoiceDetailDrawer: React.FC<InvoiceDetailDrawerProps> = ({
                     </Button>
                   )}
                 </div>
+
+                {/* Nút mở cổng thanh toán công khai */}
+                <div className="pt-1">
+                  <a
+                    href={`/portal/pay/${invoice.invoiceCode}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-xl border border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition-colors"
+                  >
+                    <QrCode className="h-4 w-4" />
+                    <span>Mở Cổng Thanh Toán VietQR Dành Cho Khách Hàng</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
             )}
+
 
             {/* Modal In Hóa Đơn VAT Điện Tử */}
             <InvoicePrintModal

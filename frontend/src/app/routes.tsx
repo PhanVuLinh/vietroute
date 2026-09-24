@@ -23,6 +23,7 @@ import { CustomersPage } from "@/modules/customers/pages/CustomersPage";
 import { IncidentsPage } from "@/modules/incidents/pages/IncidentsPage";
 import { CodReconciliationPage } from "@/modules/finance/pages/CodReconciliationPage";
 import { BillingPage } from "@/modules/finance/pages/BillingPage";
+import { InvoicePaymentPortalPage } from "@/modules/finance/pages/InvoicePaymentPortalPage";
 
 export const router = createBrowserRouter([
   {
@@ -45,6 +46,15 @@ export const router = createBrowserRouter([
     path: "/public-tracking/:orderCode",
     element: <PublicTrackingPage />,
   },
+  {
+    path: "/portal/pay/:invoiceCode",
+    element: <InvoicePaymentPortalPage />,
+  },
+  {
+    path: "/pay/:invoiceCode",
+    element: <InvoicePaymentPortalPage />,
+  },
+
   {
     path: "/",
     element: <ProtectedRoute />,

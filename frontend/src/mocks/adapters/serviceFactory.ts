@@ -227,7 +227,22 @@ const apiFinanceService = {
     httpClient.patch<import("@/modules/finance/types/finance").InvoiceItem>(`/finance/invoices/${id}/status`, { status, paid_amount }),
   seedDemoData: () =>
     httpClient.post<{ success: boolean; message: string }>("/finance/seed-demo"),
+  scanAndSendDebtReminders: () =>
+    httpClient.post<{
+      success: boolean;
+      scannedCount: number;
+      remindedCount: number;
+      totalOverdueAmount: number;
+      categories: any;
+    }>("/finance/debt-collection/scan-and-remind"),
+  sendSingleInvoiceReminder: (id: string) =>
+    httpClient.post<{ success: boolean; message: string; portalUrl: string }>(`/finance/invoices/${id}/send-reminder`),
+  getPublicInvoice: (invoiceCode: string) =>
+    httpClient.get<any>(`/public/portal/invoices/${encodeURIComponent(invoiceCode)}`),
+  simulatePublicInvoicePayment: (invoiceCode: string, data?: { paymentMethod?: string; transactionRef?: string }) =>
+    httpClient.post<any>(`/public/portal/invoices/${encodeURIComponent(invoiceCode)}/pay`, data),
 };
+
 
 // ==========================================
 // 2. SERVICE FACTORY TỰ ĐỘNG CHUYỂN ĐỔI THEO ENV

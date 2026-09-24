@@ -35,13 +35,22 @@ import {
   Search,
   SlidersHorizontal,
   TrendingDown,
-  TrendingUp,
   Download,
   Sparkles,
+  BellRing,
+  QrCode,
+  ExternalLink,
 } from "lucide-react";
-import { useInvoices, useBillingSummary, useAgingReport, useSeedFinanceMutation } from "../hooks/useFinance";
+import {
+  useInvoices,
+  useBillingSummary,
+  useAgingReport,
+  useSeedFinanceMutation,
+  useScanAndSendDebtRemindersMutation,
+} from "../hooks/useFinance";
 import { CreateInvoiceDialog } from "../components/CreateInvoiceDialog";
 import { InvoiceDetailDrawer } from "../components/InvoiceDetailDrawer";
+import { DebtCollectionModal } from "../components/DebtCollectionModal";
 import { AgingReportChart } from "../components/AgingReportChart";
 import { formatDateTime } from "@/shared/utils/formatters";
 import { exportToCsv } from "@/shared/utils/exportUtils";
@@ -73,9 +82,15 @@ export const BillingPage: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("invoices");
 
+  // State cho Modal thu hồi công nợ tự động
+  const [isDebtCollectionOpen, setIsDebtCollectionOpen] = useState(false);
+  const [debtCollectionResult, setDebtCollectionResult] = useState<any>(null);
+
   const { data: summary, isLoading: isSummaryLoading } = useBillingSummary();
   const { data: agingReport, isLoading: isAgingLoading } = useAgingReport();
   const seedMutation = useSeedFinanceMutation();
+  const scanDebtMutation = useScanAndSendDebtRemindersMutation();
+
   const {
     data: invoices = [],
     isLoading,
@@ -89,6 +104,16 @@ export const BillingPage: React.FC = () => {
   const handleOpenDetail = (id: string) => {
     setSelectedInvoiceId(id);
     setIsDetailOpen(true);
+  };
+
+  const handleScanDebtReminders = async () => {
+    try {
+      const res = await scanDebtMutation.mutateAsync();
+      setDebtCollectionResult(res);
+      setIsDebtCollectionOpen(true);
+    } catch {
+      // Toast xử lý trong hook
+    }
   };
 
   const handleExportInvoices = () => {
@@ -126,6 +151,18 @@ export const BillingPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
+            onClick={handleScanDebtReminders}
+            disabled={scanDebtMutation.isPending}
+            className="text-xs gap-1.5 cursor-pointer border-rose-500/50 text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 font-semibold shadow-xs"
+            title="Tự động phát hiện công nợ quá hạn và kích hoạt nhắc nợ đa kênh kèm link VietQR"
+          >
+            <BellRing className={`h-3.5 w-3.5 ${scanDebtMutation.isPending ? "animate-bounce" : ""}`} />
+            <span>{scanDebtMutation.isPending ? "Đang quét công nợ..." : "⚡ Quét & Thu hồi công nợ"}</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => seedMutation.mutate()}
             disabled={seedMutation.isPending}
             className="text-xs gap-1.5 cursor-pointer border-blue-500/40 text-blue-600 hover:bg-blue-500/10 dark:text-blue-400 font-semibold"
@@ -134,6 +171,7 @@ export const BillingPage: React.FC = () => {
             <Sparkles className={`h-3.5 w-3.5 ${seedMutation.isPending ? "animate-spin" : ""}`} />
             <span>{seedMutation.isPending ? "Đang nạp mẫu..." : "Nạp dữ liệu mẫu B2B"}</span>
           </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -390,18 +428,31 @@ export const BillingPage: React.FC = () => {
                             {getInvoiceStatusBadge(inv.status)}
                           </td>
                           <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs gap-1"
-                              onClick={() => handleOpenDetail(inv.id)}
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              Chi tiết
-                            </Button>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <a
+                                href={`/portal/pay/${inv.invoiceCode}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Mở cổng thanh toán VietQR cho khách hàng"
+                                className="inline-flex items-center justify-center h-7 px-2 text-[11px] rounded-md border border-primary/40 text-primary hover:bg-primary/10 transition-colors font-medium shadow-2xs"
+                              >
+                                <QrCode className="h-3 w-3 mr-1" />
+                                <span>VietQR</span>
+                              </a>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs gap-1 cursor-pointer"
+                                onClick={() => handleOpenDetail(inv.id)}
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                Chi tiết
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
+
                     )}
                   </tbody>
                 </table>
@@ -483,6 +534,14 @@ export const BillingPage: React.FC = () => {
         open={isDetailOpen}
         onOpenChange={setIsDetailOpen}
       />
+
+      {/* Modal báo cáo thu hồi công nợ tự động */}
+      <DebtCollectionModal
+        open={isDebtCollectionOpen}
+        onOpenChange={setIsDebtCollectionOpen}
+        data={debtCollectionResult}
+      />
     </PageContainer>
   );
 };
+

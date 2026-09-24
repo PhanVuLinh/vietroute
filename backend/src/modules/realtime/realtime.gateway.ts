@@ -168,6 +168,33 @@ export class RealtimeGateway
   }
 
   /**
+   * Phát sóng sự kiện hóa đơn B2B đã được thanh toán qua VietQR
+   */
+  emitInvoicePaid(invoice: {
+    id: string;
+    invoiceCode: string;
+    customerName: string;
+    totalAmount: number;
+    paidAmount: number;
+    status: string;
+  }) {
+    if (!this.server) return;
+    this.server.emit('invoice:paid', invoice);
+  }
+
+  /**
+   * Phát sóng sự kiện gửi thông báo nhắc nợ tự động hàng loạt
+   */
+  emitDebtRemindersSent(summary: {
+    count: number;
+    totalOverdueAmount: number;
+    timestamp: string;
+  }) {
+    if (!this.server) return;
+    this.server.emit('finance:debt_reminders_sent', summary);
+  }
+
+  /**
    * Gửi thông báo trực tiếp đến 1 User cụ thể
    */
   emitUserNotification(userId: string, notification: any) {
