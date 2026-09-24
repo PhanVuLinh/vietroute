@@ -19,6 +19,7 @@ import { OrderDetailDrawer } from "@/modules/orders/components/OrderDetailDrawer
 import { AssignmentConfirmationDialog } from "../components/AssignmentConfirmationDialog";
 import { DispatchAlerts } from "../components/DispatchAlerts";
 import { AiDispatchInsight } from "../components/AiDispatchInsight";
+import { AutoDispatchBatchPanel } from "../components/AutoDispatchBatchPanel";
 import { toast } from "@/shared/components/feedback";
 
 export const DispatchPage: React.FC = () => {
@@ -192,100 +193,110 @@ export const DispatchPage: React.FC = () => {
       {/* 4. AI Assisted Dispatch Card */}
       <AiDispatchInsight
         onApplyRecommendation={() => {
-          setFilters({ ...filters, warehouseId: "ALL" });
+          setMode("AUTO");
         }}
       />
 
       {/* 5. Cảnh báo vận hành điều phối tức thời */}
       <DispatchAlerts alerts={alerts} />
 
-      {/* 6. Tabs điều hướng trên màn hình nhỏ (Mobile & Tablet) */}
-      <div className="lg:hidden">
-        <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as typeof mobileTab)}>
-          <TabsList className="grid grid-cols-3 w-full h-9">
-            <TabsTrigger value="ORDERS" className="text-xs font-semibold">
-              Đơn hàng ({filteredOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="MAP" className="text-xs font-semibold">
-              Bản đồ
-            </TabsTrigger>
-            <TabsTrigger value="DRIVERS" className="text-xs font-semibold">
-              Đề xuất ({drivers.length})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+      {/* 6. Chế độ Điều phối Tự động Hàng loạt hoặc Thủ công */}
+      {mode === "AUTO" ? (
+        <AutoDispatchBatchPanel
+          orders={orders}
+          drivers={drivers}
+          vehicles={vehicles}
+          warehouseMap={warehouseMap}
+          onSuccess={() => {
+            refetchAll();
+          }}
+          onSwitchToManual={() => setMode("MANUAL")}
+        />
+      ) : (
+        <>
+          {/* Tabs điều hướng trên màn hình nhỏ (Mobile & Tablet) */}
+          <div className="lg:hidden">
+            <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as typeof mobileTab)}>
+              <TabsList className="grid grid-cols-3 w-full h-9">
+                <TabsTrigger value="ORDERS" className="text-xs font-semibold">
+                  Đơn hàng ({filteredOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="MAP" className="text-xs font-semibold">
+                  Bản đồ
+                </TabsTrigger>
+                <TabsTrigger value="DRIVERS" className="text-xs font-semibold">
+                  Đề xuất ({drivers.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
-      {/* 7. BỐ CỤC CHÍNH COMMAND CENTER 3 CỘT (35% / 40% / 25%) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {/* ============================================================
-            CỘT 1 (35%): DANH SÁCH ĐƠN CẦN ĐIỀU PHỐI (ORDER QUEUE)
-        ============================================================ */}
-        <div
-          className={`lg:col-span-4 ${
-            mobileTab === "ORDERS" ? "block" : "hidden lg:block"
-          }`}
-        >
-          <OrderQueue
-            orders={filteredOrders}
-            warehouses={warehouses}
-            selectedOrderId={selectedOrder?.id || null}
-            onSelectOrder={(order) => {
-              setSelectedOrderId(order.id);
-              setMobileTab("MAP");
-            }}
-            onViewOrderDetail={(order) => setOrderDetailToView(order)}
-            filters={filters}
-            onFilterChange={(f) => setFilters({ ...filters, ...f })}
-            onResetFilters={resetFilters}
-            activeFilterCount={activeFilterCount}
-            isLoading={isLoading}
-          />
-        </div>
+          {/* BỐ CỤC CHÍNH COMMAND CENTER 3 CỘT (35% / 40% / 25%) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            {/* CỘT 1 (35%): DANH SÁCH ĐƠN CẦN ĐIỀU PHỐI (ORDER QUEUE) */}
+            <div
+              className={`lg:col-span-4 ${
+                mobileTab === "ORDERS" ? "block" : "hidden lg:block"
+              }`}
+            >
+              <OrderQueue
+                orders={filteredOrders}
+                warehouses={warehouses}
+                selectedOrderId={selectedOrder?.id || null}
+                onSelectOrder={(order) => {
+                  setSelectedOrderId(order.id);
+                  setMobileTab("MAP");
+                }}
+                onViewOrderDetail={(order) => setOrderDetailToView(order)}
+                filters={filters}
+                onFilterChange={(f) => setFilters({ ...filters, ...f })}
+                onResetFilters={resetFilters}
+                activeFilterCount={activeFilterCount}
+                isLoading={isLoading}
+              />
+            </div>
 
-        {/* ============================================================
-            CỘT 2 (40%): BẢN ĐỒ LỘ TRÌNH REALTIME (DISPATCH MAP)
-        ============================================================ */}
-        <div
-          className={`lg:col-span-5 ${
-            mobileTab === "MAP" ? "block" : "hidden lg:block"
-          }`}
-        >
-          <DispatchMap
-            selectedOrder={selectedOrder}
-            selectedWarehouse={
-              selectedOrder ? warehouseMap.get(selectedOrder.warehouseId) : undefined
-            }
-            recommendedDriver={selectedCandidate}
-            warehouses={warehouses}
-            drivers={drivers}
-            onSelectDriverMarker={(driverId) => {
-              const driver = drivers.find((d) => d.id === driverId);
-              if (driver && selectedOrder) {
-                // Tự động highlight tài xế
-              }
-            }}
-          />
-        </div>
+            {/* CỘT 2 (40%): BẢN ĐỒ LỘ TRÌNH REALTIME (DISPATCH MAP) */}
+            <div
+              className={`lg:col-span-5 ${
+                mobileTab === "MAP" ? "block" : "hidden lg:block"
+              }`}
+            >
+              <DispatchMap
+                selectedOrder={selectedOrder}
+                selectedWarehouse={
+                  selectedOrder ? warehouseMap.get(selectedOrder.warehouseId) : undefined
+                }
+                recommendedDriver={selectedCandidate}
+                warehouses={warehouses}
+                drivers={drivers}
+                onSelectDriverMarker={(driverId) => {
+                  const driver = drivers.find((d) => d.id === driverId);
+                  if (driver && selectedOrder) {
+                    // Tự động highlight tài xế
+                  }
+                }}
+              />
+            </div>
 
-        {/* ============================================================
-            CỘT 3 (25%): BẢNG ĐỀ XUẤT TÀI XẾ (DRIVER RECOMMENDATION)
-        ============================================================ */}
-        <div
-          className={`lg:col-span-3 ${
-            mobileTab === "DRIVERS" ? "block" : "hidden lg:block"
-          }`}
-        >
-          <DriverRecommendationPanel
-            selectedOrder={selectedOrder}
-            drivers={drivers}
-            vehicles={vehicles}
-            warehouses={warehouses}
-            onAssignDriver={handleStartAssign}
-            isLoading={isLoading}
-          />
-        </div>
-      </div>
+            {/* CỘT 3 (25%): BẢNG ĐỀ XUẤT TÀI XẾ (DRIVER RECOMMENDATION) */}
+            <div
+              className={`lg:col-span-3 ${
+                mobileTab === "DRIVERS" ? "block" : "hidden lg:block"
+              }`}
+            >
+              <DriverRecommendationPanel
+                selectedOrder={selectedOrder}
+                drivers={drivers}
+                vehicles={vehicles}
+                warehouses={warehouses}
+                onAssignDriver={handleStartAssign}
+                isLoading={isLoading}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* 8. Order Detail Drawer (Sheet) */}
       <OrderDetailDrawer

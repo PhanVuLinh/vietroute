@@ -108,6 +108,8 @@ const apiDispatchService = {
   getAssignments: () => httpClient.get<DriverAssignment[]>("/dispatch/assignments"),
   assignDelivery: (deliveryId: string, driverId: string, vehicleId: string, assignmentType?: AssignmentType) =>
     httpClient.post<DriverAssignment>("/dispatch/assign", { deliveryId, driverId, vehicleId, assignmentType }),
+  autoDispatchBatch: () =>
+    httpClient.post<{ assignedCount: number; assignments: any[]; message: string }>("/dispatch/auto-batch"),
 };
 
 const apiRouteService = {

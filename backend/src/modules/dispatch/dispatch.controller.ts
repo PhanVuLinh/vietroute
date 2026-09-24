@@ -17,4 +17,9 @@ export class DispatchController {
   assignDelivery(@Body() dto: AssignDeliveryDto) {
     return this.dispatchService.assignDelivery(dto);
   }
+
+  @Post('auto-batch')
+  autoDispatchBatch() {
+    return this.dispatchService.autoDispatchBatch();
+  }
 }

@@ -60,4 +60,19 @@ export const mockDispatchService = {
       data: newAssignment,
     };
   },
+
+  /** Phân bổ tự động hàng loạt */
+  async autoDispatchBatch(options?: MockServiceOptions): Promise<ApiResponse<{ assignedCount: number; assignments: any[]; message: string }>> {
+    await simulateLatency(options);
+    return {
+      success: true,
+      statusCode: 200,
+      message: "Đã phân bổ tự động thành công",
+      data: {
+        assignedCount: 3,
+        assignments: [],
+        message: "Đã phân công tự động 3 đơn hàng",
+      },
+    };
+  },
 };
