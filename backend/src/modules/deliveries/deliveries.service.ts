@@ -145,4 +145,58 @@ export class DeliveriesService {
 
     return mapDelivery(updated);
   }
+
+  async completePod(id: string, podDto: any) {
+    const delivery = await this.findOne(id);
+    if (!delivery) {
+      throw new NotFoundException(`Không tìm thấy chuyến giao với ID: ${id}`);
+    }
+
+    const updated = await this.prisma.delivery.update({
+      where: { id },
+      data: {
+        status: DeliveryStatus.DELIVERED,
+        completed_at: new Date(),
+      },
+      include: {
+        order: true,
+        driver: true,
+        vehicle: true,
+      },
+    });
+
+    const noteJson = JSON.stringify({
+      signatureUrl: podDto.signatureUrl,
+      photoUrl: podDto.photoUrl,
+      receiverName: podDto.receiverName || delivery.receiverName,
+      receiverPhone: podDto.receiverPhone || delivery.receiverPhone,
+      receiverRelation: podDto.receiverRelation || 'SELF',
+      codCollected: podDto.codCollected ?? false,
+      codAmount: podDto.codAmount ?? 0,
+      codPaymentMethod: podDto.codPaymentMethod || 'CASH',
+      notes: podDto.notes,
+      completedAt: podDto.completedAt || new Date().toISOString(),
+      gpsCoords: podDto.gpsCoords,
+    });
+
+    await this.prisma.deliveryStatusHistory.create({
+      data: {
+        delivery_id: id,
+        status: DeliveryStatus.DELIVERED,
+        description: `Xác nhận giao hàng thành công (e-POD). Người nhận: ${podDto.receiverName || delivery.receiverName}`,
+        latitude: podDto.gpsCoords?.lat ?? null,
+        longitude: podDto.gpsCoords?.lng ?? null,
+        note: noteJson,
+      },
+    });
+
+    if (delivery.orderId) {
+      await this.prisma.order.update({
+        where: { id: delivery.orderId },
+        data: { status: OrderStatus.DELIVERED },
+      });
+    }
+
+    return mapDelivery(updated);
+  }
 }

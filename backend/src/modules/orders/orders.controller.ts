@@ -55,4 +55,12 @@ export class OrdersController {
   ) {
     return this.ordersService.updateStatus(id, status);
   }
+
+  @Post(':id/pod')
+  completePod(
+    @Param('id') id: string,
+    @Body() podDto: any,
+  ) {
+    return this.ordersService.completePod(id, podDto);
+  }
 }

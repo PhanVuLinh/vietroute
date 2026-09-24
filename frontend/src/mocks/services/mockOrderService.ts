@@ -170,4 +170,33 @@ export const mockOrderService = {
       data: newOrder,
     };
   },
+
+  /** Ký nhận e-POD */
+  async submitPod(
+    id: string,
+    podData: any,
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<Order | null>> {
+    await simulateLatency(options);
+    const order = MOCK_ORDERS.find((o) => o.id === id);
+    if (!order) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: "Không tìm thấy đơn hàng",
+        data: null,
+      };
+    }
+
+    order.status = "DELIVERED";
+    order.updatedAt = new Date().toISOString();
+    (order as any).pod = podData;
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: "Hoàn tất e-POD thành công",
+      data: { ...order },
+    };
+  },
 };

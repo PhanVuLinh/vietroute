@@ -228,6 +228,7 @@ export const OrdersPage: React.FC = () => {
             setIsDrawerOpen(false);
             setSelectedOrder(null);
           }}
+          onOrderUpdated={() => refetchAll()}
         />
 
         {/* 8. Dialog tạo đơn hàng mới */}

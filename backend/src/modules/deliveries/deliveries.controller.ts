@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -51,5 +52,13 @@ export class DeliveriesController {
     @Body('note') note?: string,
   ) {
     return this.deliveriesService.updateStatus(id, status, note);
+  }
+
+  @Post(':id/pod')
+  completePod(
+    @Param('id') id: string,
+    @Body() podDto: any,
+  ) {
+    return this.deliveriesService.completePod(id, podDto);
   }
 }

@@ -92,6 +92,7 @@ const apiOrderService = {
   getOrderById: (id: string) => httpClient.get<Order>(`/orders/${id}`),
   updateOrderStatus: (id: string, status: OrderStatus) => httpClient.patch<Order>(`/orders/${id}/status`, { status }),
   createOrder: (data: unknown) => httpClient.post<Order>("/orders", data),
+  submitPod: (id: string, podData: any) => httpClient.post<Order>(`/orders/${id}/pod`, podData),
 };
 
 const apiDeliveryService = {
@@ -100,6 +101,7 @@ const apiDeliveryService = {
   getDeliveryById: (id: string) => httpClient.get<Delivery>(`/deliveries/${id}`),
   getDeliveryHistory: (id: string) => httpClient.get<DeliveryStatusHistoryItem[]>(`/deliveries/${id}/history`),
   updateDeliveryStatus: (id: string, status: DeliveryStatus, note?: string) => httpClient.patch<Delivery>(`/deliveries/${id}/status`, { status, note }),
+  submitPod: (id: string, podData: any) => httpClient.post<Delivery>(`/deliveries/${id}/pod`, podData),
 };
 
 const apiDispatchService = {

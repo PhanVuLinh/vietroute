@@ -57,6 +57,15 @@ export class OrdersService {
           customer: true,
           warehouse: true,
           items: true,
+          deliveries: {
+            include: {
+              driver: true,
+              vehicle: true,
+              history: {
+                orderBy: { timestamp: 'desc' },
+              },
+            },
+          },
         },
         orderBy: { created_at: 'desc' },
       }),
@@ -82,6 +91,9 @@ export class OrdersService {
           include: {
             driver: true,
             vehicle: true,
+            history: {
+              orderBy: { timestamp: 'desc' },
+            },
           },
         },
       },
@@ -208,5 +220,150 @@ export class OrdersService {
     });
 
     return mapOrder(updated);
+  }
+
+  async completePod(id: string, podDto: any) {
+    const order = await this.findOne(id);
+    if (!order) {
+      throw new NotFoundException(`Không tìm thấy đơn hàng với ID: ${id}`);
+    }
+
+    // 1. Cập nhật Order status -> DELIVERED
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: {
+        status: OrderStatus.DELIVERED,
+      },
+      include: {
+        customer: true,
+        warehouse: true,
+        items: true,
+      },
+    });
+
+    // 2. Tìm hoặc tạo delivery tương ứng
+    let delivery = await this.prisma.delivery.findFirst({
+      where: { order_id: id },
+    });
+
+    if (!delivery) {
+      delivery = await this.prisma.delivery.create({
+        data: {
+          delivery_code: `DEL-${order.orderCode}`,
+          order_id: id,
+          status: DeliveryStatus.DELIVERED,
+          completed_at: new Date(),
+        },
+      });
+    } else {
+      delivery = await this.prisma.delivery.update({
+        where: { id: delivery.id },
+        data: {
+          status: DeliveryStatus.DELIVERED,
+          completed_at: new Date(),
+        },
+      });
+    }
+
+    // 3. Tạo bản ghi DeliveryStatusHistory chứa toàn bộ thông tin e-POD
+    const noteJson = JSON.stringify({
+      signatureUrl: podDto.signatureUrl,
+      photoUrl: podDto.photoUrl,
+      receiverName: podDto.receiverName || order.receiverName,
+      receiverPhone: podDto.receiverPhone || order.receiverPhone,
+      receiverRelation: podDto.receiverRelation || 'SELF',
+      codCollected: podDto.codCollected ?? (order.codAmount > 0),
+      codAmount: podDto.codAmount ?? order.codAmount,
+      codPaymentMethod: podDto.codPaymentMethod || 'CASH',
+      notes: podDto.notes,
+      completedAt: podDto.completedAt || new Date().toISOString(),
+      gpsCoords: {
+        lat: podDto.gpsCoords?.lat ?? order.receiverLatitude,
+        lng: podDto.gpsCoords?.lng ?? order.receiverLongitude,
+      },
+    });
+
+    await this.prisma.deliveryStatusHistory.create({
+      data: {
+        delivery_id: delivery.id,
+        status: DeliveryStatus.DELIVERED,
+        description: `Xác nhận giao hàng thành công (e-POD). Người nhận: ${podDto.receiverName || order.receiverName}`,
+        latitude: podDto.gpsCoords?.lat ?? podDto.latitude ?? order.receiverLatitude,
+        longitude: podDto.gpsCoords?.lng ?? podDto.longitude ?? order.receiverLongitude,
+        note: noteJson,
+      },
+    });
+
+    // 4. Nếu có thu tiền COD và có driver, tự động tạo / cập nhật CodEntry
+    if (order.codAmount > 0 && delivery.driver_id) {
+      let reconciliation = await this.prisma.codReconciliation.findFirst({
+        where: {
+          driver_id: delivery.driver_id,
+          status: 'PENDING',
+        },
+      });
+
+      if (!reconciliation) {
+        const recCount = await this.prisma.codReconciliation.count();
+        reconciliation = await this.prisma.codReconciliation.create({
+          data: {
+            reconciliation_code: `COD-${new Date().getFullYear()}-${(recCount + 1).toString().padStart(3, '0')}`,
+            driver_id: delivery.driver_id,
+            total_orders: 1,
+            total_cod_amount: order.codAmount,
+            collected_amount: order.codAmount,
+            submitted_amount: 0,
+            discrepancy: order.codAmount,
+            status: 'PENDING',
+            notes: 'Phiên đối soát tự động tạo từ e-POD',
+          },
+        });
+      } else {
+        await this.prisma.codReconciliation.update({
+          where: { id: reconciliation.id },
+          data: {
+            total_orders: { increment: 1 },
+            total_cod_amount: { increment: order.codAmount },
+            collected_amount: { increment: order.codAmount },
+            discrepancy: { increment: order.codAmount },
+          },
+        });
+      }
+
+      const existingEntry = await this.prisma.codEntry.findFirst({
+        where: { order_id: id },
+      });
+      if (!existingEntry) {
+        await this.prisma.codEntry.create({
+          data: {
+            reconciliation_id: reconciliation.id,
+            order_id: id,
+            expected_cod: order.codAmount,
+            actual_collected: order.codAmount,
+            payment_method: podDto.codPaymentMethod === 'BANK_TRANSFER' ? 'BANK_TRANSFER' : 'CASH',
+          },
+        });
+      }
+
+      this.realtimeGateway.emitCodSubmitted({
+        reconciliationId: reconciliation.id,
+        driverId: delivery.driver_id,
+        amount: order.codAmount,
+        orderCode: order.orderCode,
+        message: `Đã thu COD ${order.codAmount.toLocaleString('vi-VN')} đ cho đơn hàng ${order.orderCode} (e-POD)`,
+      });
+    }
+
+    // 5. Phát WebSocket event
+    this.realtimeGateway.emitOrderStatusChanged({
+      orderId: updatedOrder.id,
+      orderCode: updatedOrder.order_code,
+      status: updatedOrder.status,
+      updatedAt: updatedOrder.updated_at.toISOString(),
+      message: `Đơn hàng ${updatedOrder.order_code} đã giao thành công và hoàn tất ký nhận e-POD!`,
+    });
+
+    // 6. Trả về Order đã hoàn tất
+    return this.findOne(id);
   }
 }

@@ -12,11 +12,15 @@ import {
   Smartphone,
   Maximize2,
   RefreshCw,
+  Database,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { ProofOfDeliveryModal } from "../components/ProofOfDeliveryModal";
 import type { DriverShift, DriverStop, PodData } from "../types/driverPortal";
+import { orderService } from "@/mocks/adapters/serviceFactory";
+import { toast } from "@/shared/components/feedback/Toast";
 
 // Dữ liệu ca chạy mẫu ban đầu
 const INITIAL_SHIFT: DriverShift = {
@@ -164,11 +168,23 @@ export const DriverPortalPage: React.FC = () => {
   };
 
   // Xác nhận e-POD từ Modal
-  const handleConfirmPod = (stopId: string, pod: PodData) => {
-    setShift((prev) => {
-      const targetStop = prev.stops.find((s) => s.id === stopId);
-      const addedCod = targetStop?.codAmount || 0;
+  const handleConfirmPod = async (stopId: string, pod: PodData) => {
+    const targetStop = shift.stops.find((s) => s.id === stopId);
+    const addedCod = targetStop?.codAmount || 0;
 
+    // Đồng bộ lên backend DB nếu có orderId thật
+    if (targetStop?.orderId) {
+      try {
+        await (orderService as any).submitPod(targetStop.orderId, pod);
+        toast.success(`Đã lưu e-POD lên hệ thống cho đơn ${targetStop.orderCode}!`);
+      } catch (err: any) {
+        toast.info("Đã lưu e-POD cục bộ ca chạy (lỗi đồng bộ API: " + (err?.message || "offline") + ")");
+      }
+    } else {
+      toast.success("Đã ghi nhận e-POD thành công!");
+    }
+
+    setShift((prev) => {
       const newStops = prev.stops.map((s) =>
         s.id === stopId ? { ...s, status: "DELIVERED" as const, pod } : s
       );
@@ -185,11 +201,60 @@ export const DriverPortalPage: React.FC = () => {
     });
   };
 
+  // Nạp đơn hàng thực tế từ DB PostgreSQL
+  const handleSyncRealOrders = async () => {
+    try {
+      const res = await orderService.getOrders({ pageSize: 10 });
+      const items = res?.data?.items || [];
+      if (items.length > 0) {
+        const stops: DriverStop[] = items.slice(0, 6).map((ord: any, idx: number) => ({
+          id: ord.id,
+          sequence: idx + 1,
+          orderId: ord.id,
+          orderCode: ord.orderCode,
+          customerName: ord.receiverName || "Khách nhận hàng",
+          customerPhone: ord.receiverPhone || "0912.345.678",
+          address: ord.receiverAddress || "Hà Nội",
+          lat: ord.receiverLatitude || 21.0285 + idx * 0.005,
+          lng: ord.receiverLongitude || 105.8544 + idx * 0.005,
+          weightKg: ord.totalWeight || 20,
+          packagesCount: ord.items?.length || 1,
+          codAmount: ord.codAmount || 0,
+          priority: (ord.priority as any) || "NORMAL",
+          status: ord.status === "DELIVERED" ? "DELIVERED" : ord.status === "IN_TRANSIT" ? "DELIVERING" : "PENDING",
+          estimatedArrival: `${9 + idx}:30`,
+          timeWindow: "08:30 - 17:30",
+          itemsSummary: ord.items?.map((it: any) => `${it.productName} (x${it.quantity})`).join(", ") || `Bưu phẩm ${ord.totalWeight} kg`,
+          pod: (ord as any).pod,
+        }));
+        const completed = stops.filter((s) => s.status === "DELIVERED").length;
+        const totalCod = stops.reduce((acc, s) => acc + s.codAmount, 0);
+        const collectedCod = stops.filter((s) => s.status === "DELIVERED").reduce((acc, s) => acc + s.codAmount, 0);
+
+        setShift((prev) => ({
+          ...prev,
+          totalStops: stops.length,
+          completedStops: completed,
+          pendingStops: stops.length - completed,
+          totalCodExpected: totalCod,
+          totalCodCollected: collectedCod,
+          stops,
+        }));
+        toast.success(`Đã nạp ${stops.length} đơn hàng thực từ CSDL vào ca chạy!`);
+      } else {
+        toast.info("Chưa tìm thấy đơn hàng trong CSDL");
+      }
+    } catch (err: any) {
+      toast.error("Không thể lấy dữ liệu đơn hàng: " + (err?.message || "Lỗi kết nối"));
+    }
+  };
+
   // Reset ca chạy về ban đầu
   const handleResetShift = () => {
     if (window.confirm("Bạn có muốn đặt lại ca chạy mẫu để trải nghiệm lại từ đầu?")) {
       setShift(INITIAL_SHIFT);
       localStorage.removeItem("vietroute_driver_shift");
+      toast.info("Đã khôi phục ca chạy ban đầu");
     }
   };
 
@@ -222,13 +287,23 @@ export const DriverPortalPage: React.FC = () => {
 
         <div className="flex items-center gap-2 shrink-0">
           <Button
+            size="sm"
+            onClick={handleSyncRealOrders}
+            className="h-8 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs"
+            title="Tải đơn hàng thực tế từ cơ sở dữ liệu PostgreSQL"
+          >
+            <Database className="h-3.5 w-3.5" />
+            <span>Nạp đơn từ DB</span>
+          </Button>
+
+          <Button
             variant="outline"
             size="sm"
             onClick={() => setIsPhoneFrame(!isPhoneFrame)}
             className="h-8 text-xs gap-1.5 cursor-pointer"
           >
             {isPhoneFrame ? <Maximize2 className="h-3.5 w-3.5" /> : <Smartphone className="h-3.5 w-3.5" />}
-            <span>{isPhoneFrame ? "Toàn màn hình" : "Mô phỏng Mobile (390px)"}</span>
+            <span>{isPhoneFrame ? "Toàn màn hình" : "Mô phỏng Mobile"}</span>
           </Button>
 
           <Button

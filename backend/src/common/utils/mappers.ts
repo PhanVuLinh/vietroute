@@ -127,6 +127,19 @@ export function mapWarehouse(w: any) {
 
 export function mapOrder(o: any) {
   if (!o) return null;
+  const primaryDelivery = o.deliveries?.[0];
+  const lastHistoryWithPod = primaryDelivery?.history?.find(
+    (h: any) => h.status === 'DELIVERED' && h.note && (h.note.startsWith('{') || h.note.includes('"signatureUrl"'))
+  );
+  let pod = null;
+  if (lastHistoryWithPod?.note) {
+    try {
+      pod = JSON.parse(lastHistoryWithPod.note);
+    } catch {
+      pod = { notes: lastHistoryWithPod.note };
+    }
+  }
+
   return {
     id: o.id,
     orderCode: o.order_code,
@@ -134,6 +147,7 @@ export function mapOrder(o: any) {
     customerName: o.customer?.name,
     warehouseId: o.warehouse_id,
     warehouseName: o.warehouse?.name,
+    warehouse: o.warehouse ? mapWarehouse(o.warehouse) : undefined,
     receiverName: o.receiver_name,
     receiverPhone: o.receiver_phone,
     receiverAddress: o.receiver_address,
@@ -150,6 +164,10 @@ export function mapOrder(o: any) {
       ? new Date(o.delivery_window_end).toISOString()
       : undefined,
     status: o.status,
+    driver: primaryDelivery?.driver ? mapDriver(primaryDelivery.driver) : undefined,
+    vehicle: primaryDelivery?.vehicle ? mapVehicle(primaryDelivery.vehicle) : undefined,
+    delivery: primaryDelivery ? mapDelivery(primaryDelivery) : undefined,
+    pod: pod,
     createdAt: o.created_at ? new Date(o.created_at).toISOString() : undefined,
     updatedAt: o.updated_at ? new Date(o.updated_at).toISOString() : undefined,
     items: o.items?.map((it: any) => ({
