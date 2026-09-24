@@ -198,6 +198,31 @@ const apiIncidentService = {
   addComment: (incidentId: string, user: string, message: string) => httpClient.post<boolean>(`/incidents/${incidentId}/comments`, { user, message }),
 };
 
+const apiFinanceService = {
+  getCodReconciliations: (params?: { driverId?: string; status?: string; search?: string }) =>
+    httpClient.get<import("@/modules/finance/types/finance").CodReconciliationItem[]>("/finance/cod", { params }),
+  getCodSummary: () =>
+    httpClient.get<import("@/modules/finance/types/finance").CodSummary>("/finance/cod/summary"),
+  getCodReconciliationById: (id: string) =>
+    httpClient.get<import("@/modules/finance/types/finance").CodReconciliationItem>(`/finance/cod/${id}`),
+  createCodReconciliation: (data: any) =>
+    httpClient.post<import("@/modules/finance/types/finance").CodReconciliationItem>("/finance/cod", data),
+  submitCod: (id: string, data: { submitted_amount: number; cashier_name?: string; notes?: string }) =>
+    httpClient.post<import("@/modules/finance/types/finance").CodReconciliationItem>(`/finance/cod/${id}/submit`, data),
+  getInvoices: (params?: { customerId?: string; status?: string; search?: string }) =>
+    httpClient.get<import("@/modules/finance/types/finance").InvoiceItem[]>("/finance/invoices", { params }),
+  getBillingSummary: () =>
+    httpClient.get<import("@/modules/finance/types/finance").BillingSummary>("/finance/invoices/summary"),
+  getAgingReport: () =>
+    httpClient.get<import("@/modules/finance/types/finance").AgingReport>("/finance/invoices/aging-report"),
+  getInvoiceById: (id: string) =>
+    httpClient.get<import("@/modules/finance/types/finance").InvoiceItem>(`/finance/invoices/${id}`),
+  createInvoice: (data: any) =>
+    httpClient.post<import("@/modules/finance/types/finance").InvoiceItem>("/finance/invoices", data),
+  updateInvoiceStatus: (id: string, status: string, paid_amount?: number) =>
+    httpClient.patch<import("@/modules/finance/types/finance").InvoiceItem>(`/finance/invoices/${id}/status`, { status, paid_amount }),
+};
+
 // ==========================================
 // 2. SERVICE FACTORY TỰ ĐỘNG CHUYỂN ĐỔI THEO ENV
 // ==========================================
@@ -217,4 +242,5 @@ export const analyticsService = isMock ? mockAnalyticsService : apiAnalyticsServ
 export const customerService = isMock ? mockCustomerService : apiCustomerService;
 export const inventoryService = isMock ? mockInventoryService : apiInventoryService;
 export const incidentService = isMock ? mockIncidentService : apiIncidentService;
+export const financeService = apiFinanceService;
 

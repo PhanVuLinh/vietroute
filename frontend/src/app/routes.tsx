@@ -21,6 +21,8 @@ import { PublicTrackingPage } from "@/modules/public-tracking/pages/PublicTracki
 import { NotificationsPage } from "@/modules/notifications/pages/NotificationsPage";
 import { CustomersPage } from "@/modules/customers/pages/CustomersPage";
 import { IncidentsPage } from "@/modules/incidents/pages/IncidentsPage";
+import { CodReconciliationPage } from "@/modules/finance/pages/CodReconciliationPage";
+import { BillingPage } from "@/modules/finance/pages/BillingPage";
 
 export const router = createBrowserRouter([
   {
@@ -109,6 +111,14 @@ export const router = createBrowserRouter([
           {
             path: "incidents",
             element: <IncidentsPage />,
+          },
+          {
+            path: "finance/cod",
+            element: <CodReconciliationPage />,
+          },
+          {
+            path: "finance/billing",
+            element: <BillingPage />,
           },
           {
             path: "settings",

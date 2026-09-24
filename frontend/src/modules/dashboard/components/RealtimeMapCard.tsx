@@ -11,6 +11,14 @@ import type { Warehouse, Driver, VehicleTelemetry } from "@/core/types/logistics
 interface RealtimeMapCardProps {
   warehouses: Warehouse[];
   drivers: Driver[];
+  orders?: Array<{
+    id?: string;
+    orderCode: string;
+    receiverAddress: string;
+    receiverName: string;
+    receiverLatitude: number;
+    receiverLongitude: number;
+  }>;
   onSelectDriver?: (driverId: string) => void;
   className?: string;
 }
@@ -18,6 +26,7 @@ interface RealtimeMapCardProps {
 export const RealtimeMapCard: React.FC<RealtimeMapCardProps> = ({
   warehouses,
   drivers,
+  orders = [],
   onSelectDriver,
   className,
 }) => {
@@ -192,8 +201,8 @@ export const RealtimeMapCard: React.FC<RealtimeMapCardProps> = ({
         warehouseMarkersRef.current.push(m);
       });
 
-      // 2. Vẽ một số điểm giao hàng tiêu biểu (Hà Nội)
-      const hanoiDeliveries = MOCK_ORDERS.slice(0, 4);
+      // 2. Vẽ một số điểm giao hàng tiêu biểu
+      const hanoiDeliveries = orders.filter((o) => o.receiverLongitude && o.receiverLatitude).slice(0, 4);
       hanoiDeliveries.forEach((order) => {
         const el = document.createElement("div");
         el.className = "flex items-center justify-center w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] font-bold shadow ring-2 ring-violet-300/60 cursor-pointer";

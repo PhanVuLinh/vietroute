@@ -18,6 +18,8 @@ import {
   Bell,
   Users,
   AlertTriangle,
+  Wallet,
+  Receipt,
 } from "lucide-react";
 import type { UserRole } from "@/core/types/auth";
 
@@ -116,6 +118,23 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: "/routes",
         icon: Route,
         allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER"],
+      },
+    ],
+  },
+  {
+    groupTitle: "Tài chính & Kế toán",
+    items: [
+      {
+        label: "Đối soát COD",
+        path: "/finance/cod",
+        icon: Wallet,
+        allowedRoles: ["ADMIN", "MANAGER"],
+      },
+      {
+        label: "Hóa đơn & Công nợ",
+        path: "/finance/billing",
+        icon: Receipt,
+        allowedRoles: ["ADMIN", "MANAGER"],
       },
     ],
   },
