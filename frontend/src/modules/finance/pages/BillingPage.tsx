@@ -35,6 +35,7 @@ import {
   Search,
   SlidersHorizontal,
   TrendingDown,
+  TrendingUp,
   Download,
   Sparkles,
   BellRing,
