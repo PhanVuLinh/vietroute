@@ -4,6 +4,7 @@ import { CreateIncidentDto } from './dto/create-incident.dto.js';
 import { UpdateIncidentStatusDto } from './dto/update-incident-status.dto.js';
 import { AddIncidentCommentDto } from './dto/add-comment.dto.js';
 import { IncidentSeverity, IncidentStatus, IncidentType } from '@prisma/client';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 export interface IncidentFilterParams {
   status?: IncidentStatus;
@@ -14,7 +15,10 @@ export interface IncidentFilterParams {
 
 @Injectable()
 export class IncidentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {}
 
   async findAll(params?: IncidentFilterParams) {
     const where: any = {};
@@ -139,7 +143,7 @@ export class IncidentsService {
       },
     });
 
-    return {
+    const result = {
       id: incident.id,
       incidentCode: incident.incident_code,
       type: incident.type,
@@ -156,6 +160,19 @@ export class IncidentsService {
       comments: [],
       createdAt: incident.created_at.toISOString(),
     };
+
+    // Phát sóng sự kiện sự cố khẩn cấp qua Socket.IO
+    this.realtimeGateway.emitIncidentCreated({
+      id: result.id,
+      incidentCode: result.incidentCode,
+      title: result.title,
+      severity: result.severity,
+      type: result.type,
+      createdAt: result.createdAt,
+      driverName: result.driverName,
+    });
+
+    return result;
   }
 
   async updateStatus(id: string, dto: UpdateIncidentStatusDto) {

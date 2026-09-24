@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTrackingStore } from "@/shared/stores/trackingStore";
 import { mockGpsStreamer } from "@/mocks/services/mockGpsStreamer";
+import { ENV } from "@/core/config/env";
+import { httpClient } from "@/core/http/client";
 import {
   vehicleService,
   driverService,
@@ -48,16 +50,30 @@ export function useTracking() {
   const [filterStatus, setFilterStatus] = useState<TrackingFilterStatus>("ALL");
   const [selectedRegion, setSelectedRegion] = useState<RegionKey>("HN");
 
-  // 1. Tự động kích hoạt luồng GPS Streamer khi mở trang
+  // 1. Quản lý trạng thái luồng phát GPS
   useEffect(() => {
-    mockGpsStreamer.setSpeed(speedMultiplier);
-    const stopStream = mockGpsStreamer.start(2000);
-    setIsStreaming(true);
+    if (ENV.USE_MOCK) {
+      mockGpsStreamer.setSpeed(speedMultiplier);
+      const stopStream = mockGpsStreamer.start(2000);
+      setIsStreaming(true);
 
-    return () => {
-      stopStream();
-      setIsStreaming(false);
-    };
+      return () => {
+        stopStream();
+        setIsStreaming(false);
+      };
+    } else {
+      // Đọc trạng thái chạy GPS Simulator từ máy chủ Backend
+      httpClient
+        .get<{ isRunning: boolean }>("/realtime/status")
+        .then((res) => {
+          if (res?.data) {
+            setIsStreaming(res.data.isRunning);
+          }
+        })
+        .catch(() => {
+          // Bỏ qua lỗi ngầm
+        });
+    }
   }, []);
 
   // 2. Fetch danh mục xe, tài xế, kho, tuyến đường
@@ -230,18 +246,33 @@ export function useTracking() {
 
   // Điều khiển Simulation
   const toggleStreaming = useCallback(() => {
-    if (isStreaming) {
-      mockGpsStreamer.stop();
-      setIsStreaming(false);
+    if (ENV.USE_MOCK) {
+      if (isStreaming) {
+        mockGpsStreamer.stop();
+        setIsStreaming(false);
+      } else {
+        mockGpsStreamer.start(2000);
+        setIsStreaming(true);
+      }
     } else {
-      mockGpsStreamer.start(2000);
-      setIsStreaming(true);
+      httpClient
+        .post<{ isRunning: boolean }>("/realtime/simulation/toggle")
+        .then((res) => {
+          if (res?.data) {
+            setIsStreaming(res.data.isRunning);
+          }
+        })
+        .catch(() => {
+          setIsStreaming((prev) => !prev);
+        });
     }
   }, [isStreaming]);
 
   const changeSpeed = useCallback((multiplier: number) => {
     setSpeedMultiplier(multiplier);
-    mockGpsStreamer.setSpeed(multiplier);
+    if (ENV.USE_MOCK) {
+      mockGpsStreamer.setSpeed(multiplier);
+    }
   }, []);
 
   return {

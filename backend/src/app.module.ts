@@ -18,11 +18,13 @@ import { CustomersModule } from './modules/customers/customers.module.js';
 import { WmsModule } from './modules/wms/wms.module.js';
 import { IncidentsModule } from './modules/incidents/incidents.module.js';
 import { FinanceModule } from './modules/finance/finance.module.js';
+import { RealtimeModule } from './modules/realtime/realtime.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    RealtimeModule,
     AuthModule,
     UsersModule,
     VehiclesModule,

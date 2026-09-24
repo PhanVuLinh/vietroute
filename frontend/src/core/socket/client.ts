@@ -5,10 +5,61 @@ import type { VehicleTelemetry } from "@/core/types/logistics";
 
 export type SocketStatus = "DISCONNECTED" | "CONNECTING" | "CONNECTED" | "ERROR";
 
+export interface TelemetryPayload {
+  vehicleId: string;
+  plateNumber?: string;
+  driverId?: string;
+  driverName?: string;
+  latitude: number;
+  longitude: number;
+  speed: number;
+  heading: number;
+  fuelLevel?: number;
+  batteryLevel?: number;
+  engineStatus: string;
+  timestamp: string;
+}
+
 export interface SocketServerEvents {
-  "telemetry:update": (data: VehicleTelemetry) => void;
-  "order:status_changed": (data: { orderId: string; status: string; updatedAt: string }) => void;
-  "alert:emergency": (data: { id: string; title: string; message: string; severity: "HIGH" | "MEDIUM" | "LOW" }) => void;
+  "telemetry:update": (data: TelemetryPayload) => void;
+  "order:status_changed": (data: {
+    orderId: string;
+    orderCode?: string;
+    status: string;
+    updatedAt: string;
+    message?: string;
+  }) => void;
+  "incident:created": (data: {
+    id: string;
+    incidentCode: string;
+    title: string;
+    severity: string;
+    type: string;
+    createdAt: string;
+    driverName?: string;
+  }) => void;
+  "alert:emergency": (data: {
+    id: string;
+    title: string;
+    message: string;
+    severity: "HIGH" | "MEDIUM" | "LOW";
+  }) => void;
+  "cod:submitted": (data: {
+    id: string;
+    reconciliationCode: string;
+    driverName: string;
+    submittedAmount: number;
+    discrepancy: number;
+    status: string;
+  }) => void;
+  "notification:new": (data: any) => void;
+  "connection:ack": (data: {
+    status: string;
+    serverTime: string;
+    clientId: string;
+    authenticated: boolean;
+    user?: { email: string; role: string } | null;
+  }) => void;
 }
 
 class SocketManager {
@@ -30,7 +81,7 @@ class SocketManager {
     this.socket = io(ENV.SOCKET_URL, {
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 2000,
       auth: {
         token: token ? `Bearer ${token}` : "",
@@ -40,6 +91,10 @@ class SocketManager {
 
     this.socket.on("connect", () => {
       this.setStatus("CONNECTED");
+      // Mặc định tự động đăng ký vào room theo dõi xe
+      this.socket?.emit("join:room", "tracking:fleet");
+      this.socket?.emit("join:room", "incidents:feed");
+      this.socket?.emit("join:room", "role:staff");
     });
 
     this.socket.on("disconnect", () => {
@@ -54,6 +109,17 @@ class SocketManager {
   }
 
   /**
+   * Tái kết nối với token xác thực mới (ví dụ sau khi Login)
+   */
+  public reconnectWithAuth(): void {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+    this.connect();
+  }
+
+  /**
    * Ngắt kết nối socket khi đăng xuất hoặc rời màn hình
    */
   public disconnect(): void {
@@ -62,6 +128,14 @@ class SocketManager {
       this.socket = null;
       this.setStatus("DISCONNECTED");
     }
+  }
+
+  /**
+   * Phát sự kiện từ Client lên Máy chủ
+   */
+  public emit(event: string, data?: any): void {
+    const s = this.socket || this.connect();
+    s.emit(event, data);
   }
 
   /**

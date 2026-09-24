@@ -5,10 +5,14 @@ import { SubmitCodDto } from './dto/submit-cod.dto.js';
 import { CreateInvoiceDto } from './dto/create-invoice.dto.js';
 import { UpdateInvoiceStatusDto } from './dto/update-invoice-status.dto.js';
 import { CodReconciliationStatus, InvoiceStatus, PaymentMethod } from '@prisma/client';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 @Injectable()
 export class FinanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {}
 
   private formatCodReconciliation(r: any) {
     return {
@@ -231,7 +235,19 @@ export class FinanceService {
       },
     });
 
-    return this.formatCodReconciliation(updated);
+    const formatted = this.formatCodReconciliation(updated);
+
+    // Phát sóng sự kiện nộp tiền COD qua Socket.IO
+    this.realtimeGateway.emitCodSubmitted({
+      id: formatted.id,
+      reconciliationCode: formatted.reconciliationCode,
+      driverName: formatted.driverName,
+      submittedAmount: formatted.submittedAmount,
+      discrepancy: formatted.discrepancy,
+      status: formatted.status,
+    });
+
+    return formatted;
   }
 
   async getCodSummary() {

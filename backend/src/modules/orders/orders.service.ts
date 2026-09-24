@@ -3,10 +3,14 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { DeliveryStatus, OrderPriority, OrderStatus } from '@prisma/client';
 import { mapOrder } from '../../common/utils/mappers.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {}
 
   async findAll(query?: {
     page?: number;
@@ -193,6 +197,15 @@ export class OrdersService {
         data: { status: DeliveryStatus.CANCELLED },
       });
     }
+
+    // Phát sóng sự kiện Realtime Socket.IO
+    this.realtimeGateway.emitOrderStatusChanged({
+      orderId: updated.id,
+      orderCode: updated.order_code,
+      status: updated.status,
+      updatedAt: updated.updated_at.toISOString(),
+      message: `Đơn hàng ${updated.order_code} đã chuyển sang trạng thái: ${updated.status}`,
+    });
 
     return mapOrder(updated);
   }
