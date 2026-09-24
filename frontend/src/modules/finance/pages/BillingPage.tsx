@@ -36,12 +36,15 @@ import {
   SlidersHorizontal,
   TrendingDown,
   TrendingUp,
+  Download,
 } from "lucide-react";
 import { useInvoices, useBillingSummary, useAgingReport } from "../hooks/useFinance";
 import { CreateInvoiceDialog } from "../components/CreateInvoiceDialog";
 import { InvoiceDetailDrawer } from "../components/InvoiceDetailDrawer";
 import { AgingReportChart } from "../components/AgingReportChart";
 import { formatDateTime } from "@/shared/utils/formatters";
+import { exportToCsv } from "@/shared/utils/exportUtils";
+import { toast } from "@/shared/components/feedback/Toast";
 
 const getInvoiceStatusBadge = (status: string) => {
   switch (status) {
@@ -86,12 +89,48 @@ export const BillingPage: React.FC = () => {
     setIsDetailOpen(true);
   };
 
+  const handleExportInvoices = () => {
+    if (invoices.length === 0) {
+      toast.warning("Không có dữ liệu", "Không có hóa đơn nào để xuất file");
+      return;
+    }
+    exportToCsv(
+      "Danh_sach_hoa_don_B2B",
+      [
+        { key: "invoiceCode", label: "Mã hóa đơn" },
+        { key: "customerName", label: "Khách hàng" },
+        { key: "customerTaxCode", label: "Mã số thuế" },
+        { key: "issueDate", label: "Ngày phát hành", formatter: (v) => formatDateTime(v) },
+        { key: "dueDate", label: "Hạn thanh toán", formatter: (v) => formatDateTime(v) },
+        { key: "subtotal", label: "Tiền hàng (VNĐ)", formatter: (v) => (v || 0).toLocaleString("vi-VN") },
+        { key: "vatAmount", label: "Thuế VAT 8% (VNĐ)", formatter: (v) => (v || 0).toLocaleString("vi-VN") },
+        { key: "discountAmount", label: "Chiết khấu (VNĐ)", formatter: (v) => (v || 0).toLocaleString("vi-VN") },
+        { key: "totalAmount", label: "Tổng tiền thanh toán (VNĐ)", formatter: (v) => (v || 0).toLocaleString("vi-VN") },
+        { key: "paidAmount", label: "Đã thanh toán (VNĐ)", formatter: (v) => (v || 0).toLocaleString("vi-VN") },
+        { key: "remainingAmount", label: "Còn nợ (VNĐ)", formatter: (v) => (v || 0).toLocaleString("vi-VN") },
+        { key: "status", label: "Trạng thái" },
+      ],
+      invoices
+    );
+    toast.success("Xuất file thành công", `Đã tải về danh sách ${invoices.length} hóa đơn B2B`);
+  };
+
   return (
     <PageContainer
       title="Hóa đơn & Quản lý Công nợ B2B"
       subtitle="Theo dõi hóa đơn doanh nghiệp, đối soát công nợ phải thu và kiểm soát tuổi nợ theo thời gian thực."
       action={
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportInvoices}
+            className="text-xs gap-1.5 cursor-pointer border-border hover:bg-accent"
+            title="Xuất bảng tính Excel danh sách hóa đơn"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Xuất Excel</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"

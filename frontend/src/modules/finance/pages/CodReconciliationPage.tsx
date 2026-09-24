@@ -26,12 +26,15 @@ import {
   Search,
   SlidersHorizontal,
   Wallet,
+  Download,
 } from "lucide-react";
 import { useCodReconciliations, useCodSummary } from "../hooks/useFinance";
 import { CodSubmissionDialog } from "../components/CodSubmissionDialog";
 import { CodDetailDrawer } from "../components/CodDetailDrawer";
 import type { CodReconciliationItem } from "../types/finance";
 import { formatDateTime } from "@/shared/utils/formatters";
+import { exportToCsv } from "@/shared/utils/exportUtils";
+import { toast } from "@/shared/components/feedback/Toast";
 
 export const CodReconciliationPage: React.FC = () => {
   usePageTitle("Đối soát COD");
@@ -78,6 +81,30 @@ export const CodReconciliationPage: React.FC = () => {
     }
   };
 
+  const handleExportCod = () => {
+    if (reconciliations.length === 0) {
+      toast.warning("Không có dữ liệu", "Không có biên bản đối soát nào để xuất file");
+      return;
+    }
+    exportToCsv(
+      "Doi_soat_tien_thu_ho_COD",
+      [
+        { key: "reconciliationCode", label: "Mã đối soát" },
+        { key: "driverName", label: "Tài xế" },
+        { key: "driverPhone", label: "Số điện thoại" },
+        { key: "driverCode", label: "Mã tài xế" },
+        { key: "shiftDate", label: "Ngày ca", formatter: (v) => formatDateTime(v) },
+        { key: "totalCollected", label: "Tổng COD thu hộ (VNĐ)", formatter: (v) => (v || 0).toLocaleString("vi-VN") },
+        { key: "submittedAmount", label: "Đã nộp quỹ (VNĐ)", formatter: (v) => (v || 0).toLocaleString("vi-VN") },
+        { key: "discrepancy", label: "Chênh lệch (VNĐ)", formatter: (v) => (v || 0).toLocaleString("vi-VN") },
+        { key: "status", label: "Trạng thái" },
+        { key: "cashierName", label: "Thủ quỹ tiếp nhận" },
+      ],
+      reconciliations
+    );
+    toast.success("Xuất file thành công", `Đã tải về danh sách ${reconciliations.length} phiên đối soát COD`);
+  };
+
   return (
     <PageContainer className="space-y-5 pb-10">
       {/* Header */}
@@ -93,6 +120,16 @@ export const CodReconciliationPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCod}
+            className="h-9 gap-1.5 text-xs font-semibold cursor-pointer border-border hover:bg-accent"
+            title="Xuất bảng tính Excel danh sách đối soát COD"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Xuất Excel</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"

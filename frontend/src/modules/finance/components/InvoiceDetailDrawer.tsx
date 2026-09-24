@@ -19,9 +19,11 @@ import {
   Percent,
   Receipt,
   XCircle,
+  Printer,
 } from "lucide-react";
 import { useInvoiceDetail, useUpdateInvoiceStatusMutation } from "../hooks/useFinance";
 import { formatDateTime } from "@/shared/utils/formatters";
+import { InvoicePrintModal } from "./InvoicePrintModal";
 
 interface InvoiceDetailDrawerProps {
   invoiceId: string | null;
@@ -55,6 +57,7 @@ export const InvoiceDetailDrawer: React.FC<InvoiceDetailDrawerProps> = ({
 
   const [paymentAmount, setPaymentAmount] = useState<number | "">("");
   const [showPaymentInput, setShowPaymentInput] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   if (!open) return null;
 
@@ -94,7 +97,18 @@ export const InvoiceDetailDrawer: React.FC<InvoiceDetailDrawerProps> = ({
             <SheetHeader className="text-left space-y-1">
               <div className="flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-primary">{invoice.invoiceCode}</span>
-                {getInvoiceStatusBadge(invoice.status)}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsPrintModalOpen(true)}
+                    className="h-7 text-xs gap-1 border-primary/40 text-primary hover:bg-primary/10 cursor-pointer"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    <span>In Hóa đơn VAT</span>
+                  </Button>
+                  {getInvoiceStatusBadge(invoice.status)}
+                </div>
               </div>
               <SheetTitle className="text-xl font-bold flex items-center gap-2">
                 <Receipt className="h-5 w-5 text-primary" />
@@ -303,6 +317,13 @@ export const InvoiceDetailDrawer: React.FC<InvoiceDetailDrawerProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Modal In Hóa Đơn VAT Điện Tử */}
+            <InvoicePrintModal
+              invoice={invoice}
+              open={isPrintModalOpen}
+              onOpenChange={setIsPrintModalOpen}
+            />
           </>
         )}
       </SheetContent>

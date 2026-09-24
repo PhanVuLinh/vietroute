@@ -14,6 +14,7 @@ import {
   FileText,
   ShieldAlert,
   ExternalLink,
+  Printer,
 } from "lucide-react";
 import type { EnrichedOrder } from "../hooks/useOrders";
 import { OrderStatusBadge } from "./OrderStatusBadge";
@@ -21,6 +22,7 @@ import { OrderPriorityBadge } from "./OrderPriorityBadge";
 import { OrderSlaIndicator } from "./OrderSlaIndicator";
 import { OrderStatusTimeline } from "./OrderStatusTimeline";
 import { formatCurrency, formatDateTime } from "@/shared/utils/formatters";
+import { WaybillPrintModal } from "./WaybillPrintModal";
 
 interface OrderDetailDrawerProps {
   order: EnrichedOrder | any | null;
@@ -37,6 +39,7 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
   onAssignDriver,
 }) => {
   const navigate = useNavigate();
+  const [isWaybillOpen, setIsWaybillOpen] = useState(false);
 
   if (!isOpen || !order) return null;
 
@@ -273,8 +276,18 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="p-4 border-t border-border bg-card flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+          <div className="p-4 border-t border-border bg-card flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsWaybillOpen(true)}
+                className="px-3 py-2 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                title="In Phiếu gửi hàng / Vận đơn dán kiện A5"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>In Phiếu Gửi (A5)</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => window.open(`/track/${order.orderCode}`, "_blank")}
@@ -312,6 +325,13 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
               </button>
             )}
           </div>
+
+          {/* Modal In Vận Đơn Dán Kiện Hàng */}
+          <WaybillPrintModal
+            order={order}
+            open={isWaybillOpen}
+            onOpenChange={setIsWaybillOpen}
+          />
         </div>
       </div>
     </div>

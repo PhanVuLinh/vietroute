@@ -1,12 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Send, RefreshCw } from "lucide-react";
+import { Plus, Send, RefreshCw, Download } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 
 interface OrdersHeaderProps {
   onCreateOrder?: () => void;
   onOpenCreateOrder?: () => void;
   onRefresh?: () => void;
+  onExportExcel?: () => void;
   isRefreshing?: boolean;
   totalOrdersCount?: number;
 }
@@ -15,6 +16,7 @@ export const OrdersHeader: React.FC<OrdersHeaderProps> = ({
   onCreateOrder,
   onOpenCreateOrder,
   onRefresh,
+  onExportExcel,
   isRefreshing,
 }) => {
   const navigate = useNavigate();
@@ -44,6 +46,19 @@ export const OrdersHeader: React.FC<OrdersHeaderProps> = ({
             title="Tải lại danh sách"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+          </Button>
+        )}
+
+        {onExportExcel && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExportExcel}
+            className="h-9 gap-1.5 text-xs font-semibold cursor-pointer border-border hover:bg-accent"
+            title="Xuất bảng tính Excel danh sách đơn hàng"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Xuất Excel</span>
           </Button>
         )}
 

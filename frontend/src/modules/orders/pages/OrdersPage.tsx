@@ -14,6 +14,8 @@ import { OrdersTable } from "../components/OrdersTable";
 import { OrdersMobileList } from "../components/OrdersMobileList";
 import { OrderDetailDrawer } from "../components/OrderDetailDrawer";
 import { CreateOrderDialog } from "../components/CreateOrderDialog";
+import { exportToCsv } from "@/shared/utils/exportUtils";
+import { formatDateTime } from "@/shared/utils/formatters";
 
 export const OrdersPage: React.FC = () => {
   usePageTitle("Quản lý đơn hàng");
@@ -91,15 +93,41 @@ export const OrdersPage: React.FC = () => {
     toast.success("Khởi tạo thành công", `Đã tạo đơn hàng [${newOrder.orderCode}]`);
   };
 
+  // Handler xuất danh sách đơn hàng ra file Excel
+  const handleExportOrders = () => {
+    if (orders.length === 0) {
+      toast.warning("Không có dữ liệu", "Không có đơn hàng nào để xuất file");
+      return;
+    }
+    exportToCsv(
+      "Danh_sach_don_hang_VietRoute",
+      [
+        { key: "orderCode", label: "Mã đơn hàng" },
+        { key: "receiverName", label: "Người nhận" },
+        { key: "receiverPhone", label: "SĐT người nhận" },
+        { key: "receiverAddress", label: "Địa chỉ giao hàng" },
+        { key: "totalWeight", label: "Trọng lượng (kg)" },
+        { key: "totalVolume", label: "Thể tích (m³)" },
+        { key: "codAmount", label: "Tiền COD (VNĐ)", formatter: (v) => (v || 0).toLocaleString("vi-VN") },
+        { key: "priority", label: "Mức ưu tiên" },
+        { key: "status", label: "Trạng thái đơn hàng" },
+        { key: "createdAt", label: "Thời gian tạo", formatter: (v) => formatDateTime(v) },
+      ],
+      orders
+    );
+    toast.success("Xuất file thành công", `Đã tải về danh sách ${orders.length} đơn hàng`);
+  };
+
   return (
     <PageContainer className="space-y-6">
-      {/* 1. Header tác vụ: Tạo đơn, Điều phối, Làm mới */}
+      {/* 1. Header tác vụ: Tạo đơn, Điều phối, Làm mới, Xuất Excel */}
       <OrdersHeader
-          totalOrdersCount={orders.length}
-          onOpenCreateOrder={() => setIsCreateOpen(true)}
-          onRefresh={handleRefresh}
-          isRefreshing={isRefreshing}
-        />
+        totalOrdersCount={orders.length}
+        onOpenCreateOrder={() => setIsCreateOpen(true)}
+        onRefresh={handleRefresh}
+        onExportExcel={handleExportOrders}
+        isRefreshing={isRefreshing}
+      />
 
         {/* 2. Summary KPI Cards tương tác */}
         <OrdersSummary

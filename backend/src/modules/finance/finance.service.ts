@@ -1,18 +1,278 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateCodReconciliationDto } from './dto/create-cod-reconciliation.dto.js';
 import { SubmitCodDto } from './dto/submit-cod.dto.js';
 import { CreateInvoiceDto } from './dto/create-invoice.dto.js';
 import { UpdateInvoiceStatusDto } from './dto/update-invoice-status.dto.js';
-import { CodReconciliationStatus, InvoiceStatus, PaymentMethod } from '@prisma/client';
+import { CodReconciliationStatus, InvoiceStatus, PaymentMethod, CustomerType, CustomerTier } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 @Injectable()
-export class FinanceService {
+export class FinanceService implements OnModuleInit {
+  private readonly logger = new Logger('FinanceService');
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly realtimeGateway: RealtimeGateway,
   ) {}
+
+  async onModuleInit() {
+    await this.autoSeedFinanceIfEmpty();
+  }
+
+  private async autoSeedFinanceIfEmpty() {
+    try {
+      const invoiceCount = await this.prisma.invoice.count();
+      if (invoiceCount === 0) {
+        this.logger.log('📦 Bảng hóa đơn đang trống. Tự động nạp hóa đơn B2B chuẩn vào PostgreSQL...');
+
+        // 1. Tạo hoặc lấy khách hàng doanh nghiệp
+        const cus1 = await this.prisma.customer.upsert({
+          where: { id: 'cus-vinamilk' },
+          update: {},
+          create: {
+            id: 'cus-vinamilk',
+            name: 'Công ty Cổ phần Sữa Việt Nam (Vinamilk)',
+            tax_code: '0300588569',
+            phone: '02854155555',
+            email: 'vinamilk@vinamilk.com.vn',
+            address: 'Số 10 Tân Trào, Phường Tân Phú, Quận 7, TP. Hồ Chí Minh',
+            latitude: 10.7303,
+            longitude: 106.7196,
+            type: CustomerType.ENTERPRISE,
+            tier: CustomerTier.VIP,
+            contact_person: 'Trần Thị Mai',
+          },
+        });
+
+        const cus2 = await this.prisma.customer.upsert({
+          where: { id: 'cus-samsung' },
+          update: {},
+          create: {
+            id: 'cus-samsung',
+            name: 'Công ty TNHH Samsung Electronics Việt Nam',
+            tax_code: '2300324888',
+            phone: '02223696000',
+            email: 'sev.logistics@samsung.com',
+            address: 'KCN Yên Phong, Xã Yên Trung, Huyện Yên Phong, Tỉnh Bắc Ninh',
+            latitude: 21.1969,
+            longitude: 105.9723,
+            type: CustomerType.ENTERPRISE,
+            tier: CustomerTier.VIP,
+            contact_person: 'Nguyễn Văn Minh',
+          },
+        });
+
+        const cus3 = await this.prisma.customer.upsert({
+          where: { id: 'cus-vingroup' },
+          update: {},
+          create: {
+            id: 'cus-vingroup',
+            name: 'Tập đoàn Vingroup - CTCP (VinFast Logistics)',
+            tax_code: '0101245486',
+            phone: '02439749999',
+            email: 'vinfast.scm@vingroup.net',
+            address: 'Số 7 Đường Bằng Lăng 1, KĐT Vinhomes Riverside, Long Biên, Hà Nội',
+            latitude: 21.0478,
+            longitude: 105.9082,
+            type: CustomerType.ENTERPRISE,
+            tier: CustomerTier.VIP,
+            contact_person: 'Lê Hoàng Long',
+          },
+        });
+
+        const cus4 = await this.prisma.customer.upsert({
+          where: { id: 'cus-shopee' },
+          update: {},
+          create: {
+            id: 'cus-shopee',
+            name: 'Công ty TNHH Shopee Express Việt Nam',
+            tax_code: '0313580556',
+            phone: '19001221',
+            email: 'spx.partner@shopee.vn',
+            address: 'Tầng 17 Saigon Centre 2, 67 Lê Lợi, P. Bến Nghé, Quận 1, TP. HCM',
+            latitude: 10.7731,
+            longitude: 106.7006,
+            type: CustomerType.ENTERPRISE,
+            tier: CustomerTier.GOLD,
+            contact_person: 'Hoàng Phương Thảo',
+          },
+        });
+
+        // 2. Tạo 4 Hóa đơn B2B phong phú
+        const now = new Date();
+        const due15Days = new Date(now.getTime() + 15 * 86400000);
+        const due30Days = new Date(now.getTime() + 30 * 86400000);
+        const overdue5Days = new Date(now.getTime() - 5 * 86400000);
+
+        // Hóa đơn 1: Vinamilk (Chờ thanh toán)
+        await this.prisma.invoice.create({
+          data: {
+            id: 'inv-001',
+            invoice_code: 'INV-2026-001',
+            customer_id: cus1.id,
+            due_date: due15Days,
+            subtotal: 23000000,
+            vat_amount: 1840000,
+            discount_amount: 0,
+            total_amount: 24840000,
+            paid_amount: 0,
+            status: InvoiceStatus.PENDING_PAYMENT,
+            payment_terms: 'Net 30',
+            notes: 'Cước vận chuyển chuỗi cung ứng lạnh sữa tươi Hà Nội - Hải Phòng hợp đồng tháng 09/2026',
+            items: {
+              create: [
+                {
+                  description: 'Cước xe tải lạnh 5 tấn tuyến Hà Nội - Cảng Đình Vũ (Hải Phòng)',
+                  quantity: 4,
+                  unit_price: 4500000,
+                  amount: 18000000,
+                },
+                {
+                  description: 'Phí bốc dỡ hàng tại kho lạnh trung tâm Long Biên',
+                  quantity: 1,
+                  unit_price: 5000000,
+                  amount: 5000000,
+                },
+              ],
+            },
+          },
+        });
+
+        // Hóa đơn 2: Samsung (Quá hạn thanh toán 5 ngày)
+        await this.prisma.invoice.create({
+          data: {
+            id: 'inv-002',
+            invoice_code: 'INV-2026-002',
+            customer_id: cus2.id,
+            due_date: overdue5Days,
+            subtotal: 42000000,
+            vat_amount: 3360000,
+            discount_amount: 0,
+            total_amount: 45360000,
+            paid_amount: 0,
+            status: InvoiceStatus.OVERDUE,
+            payment_terms: 'Net 15',
+            notes: 'Cước xe tải bảo an vận chuyển linh kiện điện tử KCN Yên Phong - Sân bay Nội Bài',
+            items: {
+              create: [
+                {
+                  description: 'Vận chuyển linh kiện chip bán dẫn xe container chuyên dụng có niêm phong hải quan',
+                  quantity: 6,
+                  unit_price: 7000000,
+                  amount: 42000000,
+                },
+              ],
+            },
+          },
+        });
+
+        // Hóa đơn 3: Vingroup / VinFast (Đã thanh toán đủ)
+        await this.prisma.invoice.create({
+          data: {
+            id: 'inv-003',
+            invoice_code: 'INV-2026-003',
+            customer_id: cus3.id,
+            due_date: now,
+            subtotal: 80000000,
+            vat_amount: 6400000,
+            discount_amount: 2000000,
+            total_amount: 84400000,
+            paid_amount: 84400000,
+            status: InvoiceStatus.PAID,
+            payment_terms: 'Thanh toán ngay',
+            notes: 'Hợp đồng vận chuyển phụ tùng và khung xe điện VinFast Hải Phòng - Hà Nội',
+            items: {
+              create: [
+                {
+                  description: 'Cước vận chuyển phụ tùng xe điện trọn gói 10 chuyến xe tải 10 tấn',
+                  quantity: 10,
+                  unit_price: 8000000,
+                  amount: 80000000,
+                },
+              ],
+            },
+          },
+        });
+
+        // Hóa đơn 4: Shopee Express (Chờ thanh toán)
+        await this.prisma.invoice.create({
+          data: {
+            id: 'inv-004',
+            invoice_code: 'INV-2026-004',
+            customer_id: cus4.id,
+            due_date: due30Days,
+            subtotal: 17500000,
+            vat_amount: 1400000,
+            discount_amount: 0,
+            total_amount: 18900000,
+            paid_amount: 0,
+            status: InvoiceStatus.PENDING_PAYMENT,
+            payment_terms: 'Net 30',
+            notes: 'Dịch vụ trung chuyển bưu kiện liên tỉnh trục Bắc - Nam',
+            items: {
+              create: [
+                {
+                  description: 'Thuê bao xe tải trung chuyển line-haul Hub Long Biên - Hub Đà Nẵng',
+                  quantity: 1,
+                  unit_price: 17500000,
+                  amount: 17500000,
+                },
+              ],
+            },
+          },
+        });
+
+        this.logger.log('✅ Đã nạp thành công 4 hóa đơn B2B chuẩn vào PostgreSQL.');
+      }
+
+      // 3. Tự động nạp dữ liệu Đối soát COD nếu đang trống
+      const codCount = await this.prisma.codReconciliation.count();
+      if (codCount === 0) {
+        this.logger.log('💵 Bảng đối soát COD đang trống. Khởi tạo phiên COD mẫu...');
+        const drivers = await this.prisma.driver.findMany({ take: 2 });
+        if (drivers.length > 0) {
+          await this.prisma.codReconciliation.create({
+            data: {
+              reconciliation_code: 'COD-2026-001',
+              driver_id: drivers[0].id,
+              date: new Date(),
+              total_orders: 8,
+              total_cod_amount: 12500000,
+              collected_amount: 12500000,
+              submitted_amount: 12500000,
+              discrepancy: 0,
+              status: CodReconciliationStatus.SETTLED,
+              cashier_name: 'Thủ quỹ Nguyễn Mai Lan',
+              confirmed_at: new Date(),
+              notes: 'Tài xế đã hoàn tất nộp đủ 100% tiền mặt ca sáng',
+            },
+          });
+
+          if (drivers.length > 1) {
+            await this.prisma.codReconciliation.create({
+              data: {
+                reconciliation_code: 'COD-2026-002',
+                driver_id: drivers[1].id,
+                date: new Date(),
+                total_orders: 6,
+                total_cod_amount: 9800000,
+                collected_amount: 9800000,
+                submitted_amount: 9500000,
+                discrepancy: 300000,
+                status: CodReconciliationStatus.DISCREPANCY,
+                cashier_name: 'Thủ quỹ Nguyễn Mai Lan',
+                notes: 'Tài xế báo khách hàng hẹn chuyển khoản 300.000 đ vào tài khoản công ty chiều nay',
+              },
+            });
+          }
+          this.logger.log('✅ Đã nạp thành công các phiên đối soát COD mẫu vào PostgreSQL.');
+        }
+      }
+    } catch (err) {
+      this.logger.error(`Lỗi khi auto seed finance: ${(err as any)?.message}`);
+    }
+  }
 
   private formatCodReconciliation(r: any) {
     return {

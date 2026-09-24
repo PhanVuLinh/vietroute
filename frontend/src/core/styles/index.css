@@ -229,3 +229,34 @@
     }
   }
 }
+
+/* Định dạng in ấn khổ giấy chuẩn cho Hóa đơn VAT & Phiếu Vận Đơn */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #invoice-print-area,
+  #invoice-print-area *,
+  #waybill-print-area,
+  #waybill-print-area * {
+    visibility: visible;
+  }
+  #invoice-print-area,
+  #waybill-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+    background: white !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  @page {
+    size: auto;
+    margin: 8mm;
+  }
+}
