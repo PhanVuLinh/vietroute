@@ -30,6 +30,9 @@ import {
   IncidentSeverity,
   IncidentStatus,
   IncidentType,
+  CodReconciliationStatus,
+  PaymentMethod,
+  InvoiceStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -39,6 +42,10 @@ async function main() {
   console.log('🚀 Bắt đầu nạp dữ liệu khởi tạo (Seed) cho VietRoute...');
 
   // 0. Xóa dữ liệu cũ nếu có theo thứ tự ràng buộc khóa ngoại
+  await prisma.invoiceItem.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.codEntry.deleteMany();
+  await prisma.codReconciliation.deleteMany();
   await prisma.incidentComment.deleteMany();
   await prisma.incident.deleteMany();
   await prisma.warehouseActivity.deleteMany();
@@ -527,8 +534,8 @@ async function main() {
             type: z.type,
             capacity_pallets: z.capacityPallets,
             used_pallets: z.usedPallets,
-            temperature_celsius: z.temp,
-            humidity_percent: z.hum,
+            temperature_celsius: (z as any).temp,
+            humidity_percent: (z as any).hum,
           },
         });
       }
@@ -544,9 +551,9 @@ async function main() {
             name: d.name,
             type: d.type,
             status: d.status,
-            current_vehicle_plate: d.plate,
-            current_driver_name: d.driver,
-            progress_percent: d.progress || 0,
+            current_vehicle_plate: (d as any).plate,
+            current_driver_name: (d as any).driver,
+            progress_percent: (d as any).progress || 0,
           },
         });
       }
@@ -1251,6 +1258,168 @@ async function main() {
             user: 'Hoàng Đức Thắng',
             message: 'Khách hàng thông cảm do thời tiết mưa lớn, đã ký nhận đủ hàng.',
           },
+        ],
+      },
+    },
+  });
+
+  // 11. TÀI CHÍNH & ĐỐI SOÁT COD (FINANCE & COD)
+  console.log('💰 11/11. Tạo dữ liệu đối soát COD và hóa đơn cước vận chuyển...');
+
+  // Phiên đối soát 1: Tài xế Nguyễn Văn An (drv-01) - Đã hoàn tất (SETTLED)
+  await prisma.codReconciliation.create({
+    data: {
+      id: 'rec-01',
+      reconciliation_code: 'COD-2026-001',
+      driver_id: 'drv-01',
+      date: new Date(Date.now() - 86400000), // Hôm qua
+      total_orders: 1,
+      total_cod_amount: 14500000,
+      collected_amount: 14500000,
+      submitted_amount: 14500000,
+      discrepancy: 0,
+      status: CodReconciliationStatus.SETTLED,
+      cashier_name: 'Phan Vũ Linh (Kế toán trưởng)',
+      confirmed_at: new Date(Date.now() - 80000000),
+      notes: 'Đã nhận đủ tiền mặt cuối ca, chứng từ ký nhận khớp hoàn toàn.',
+      entries: {
+        create: [
+          {
+            order_id: 'ord-01',
+            expected_cod: 14500000,
+            actual_collected: 14500000,
+            payment_method: PaymentMethod.CASH,
+            is_discrepant: false,
+          },
+        ],
+      },
+    },
+  });
+
+  // Phiên đối soát 2: Tài xế Lê Văn Bình (drv-03) - CÓ CHÊNH LỆCH (DISCREPANCY)
+  await prisma.codReconciliation.create({
+    data: {
+      id: 'rec-02',
+      reconciliation_code: 'COD-2026-002',
+      driver_id: 'drv-03',
+      date: new Date(),
+      total_orders: 1,
+      total_cod_amount: 8900000,
+      collected_amount: 8700000,
+      submitted_amount: 8700000,
+      discrepancy: -200000,
+      status: CodReconciliationStatus.DISCREPANCY,
+      cashier_name: 'Phan Vũ Linh (Kế toán trưởng)',
+      notes: 'Khách hàng đơn VR-2026-002 xin nợ lại 200.000đ tiền hàng lẻ, hẹn chuyển khoản trong ngày.',
+      entries: {
+        create: [
+          {
+            order_id: 'ord-02',
+            expected_cod: 8900000,
+            actual_collected: 8700000,
+            payment_method: PaymentMethod.CASH,
+            is_discrepant: true,
+            discrepancy_reason: 'Khách thiếu tiền lẻ 200.000đ, tài xế xác nhận cho nợ và cam kết thu lại.',
+          },
+        ],
+      },
+    },
+  });
+
+  // Phiên đối soát 3: Tài xế Phạm Quốc Dũng (drv-04) - ĐANG CHỜ ĐỐI SOÁT (PENDING)
+  await prisma.codReconciliation.create({
+    data: {
+      id: 'rec-03',
+      reconciliation_code: 'COD-2026-003',
+      driver_id: 'drv-04',
+      date: new Date(),
+      total_orders: 1,
+      total_cod_amount: 5200000,
+      collected_amount: 5200000,
+      submitted_amount: 0,
+      discrepancy: 5200000,
+      status: CodReconciliationStatus.PENDING,
+      notes: 'Tài xế vừa hoàn thành ca giao, đang làm thủ tục nộp tiền tại quầy thủ quỹ.',
+      entries: {
+        create: [
+          {
+            order_id: 'ord-04',
+            expected_cod: 5200000,
+            actual_collected: 5200000,
+            payment_method: PaymentMethod.CASH,
+            is_discrepant: false,
+          },
+        ],
+      },
+    },
+  });
+
+  // Hóa đơn cước vận chuyển B2B (Invoices)
+  await prisma.invoice.create({
+    data: {
+      id: 'inv-01',
+      invoice_code: 'INV-2026-001',
+      customer_id: 'cus-hn-01',
+      issue_date: new Date(Date.now() - 15 * 86400000),
+      due_date: new Date(Date.now() + 15 * 86400000),
+      subtotal: 45000000,
+      vat_amount: 3600000, // 8% VAT
+      discount_amount: 2000000,
+      total_amount: 46600000,
+      paid_amount: 46600000,
+      status: InvoiceStatus.PAID,
+      payment_terms: 'Net 30',
+      notes: 'Cước vận chuyển tuyến liên tỉnh tháng 09/2026',
+      items: {
+        create: [
+          { description: 'Vận chuyển hàng công nghiệp Hà Nội - Hải Phòng (Xe 15 tấn)', quantity: 3, unit_price: 10000000, amount: 30000000 },
+          { description: 'Dịch vụ nâng hạ và bốc xếp hàng cồng kềnh tại điểm nhận', quantity: 3, unit_price: 5000000, amount: 15000000 },
+        ],
+      },
+    },
+  });
+
+  await prisma.invoice.create({
+    data: {
+      id: 'inv-02',
+      invoice_code: 'INV-2026-002',
+      customer_id: 'cus-hn-02',
+      issue_date: new Date(Date.now() - 5 * 86400000),
+      due_date: new Date(Date.now() + 25 * 86400000),
+      subtotal: 28000000,
+      vat_amount: 2240000,
+      discount_amount: 1000000,
+      total_amount: 29240000,
+      paid_amount: 10000000,
+      status: InvoiceStatus.PENDING_PAYMENT,
+      payment_terms: 'Net 30',
+      notes: 'Cước vận chuyển dược phẩm xe đông lạnh tiêu chuẩn GSP',
+      items: {
+        create: [
+          { description: 'Vận chuyển dược phẩm chuyên dụng xe lạnh 2.5 tấn', quantity: 4, unit_price: 7000000, amount: 28000000 },
+        ],
+      },
+    },
+  });
+
+  await prisma.invoice.create({
+    data: {
+      id: 'inv-03',
+      invoice_code: 'INV-2026-003',
+      customer_id: 'cus-sg-01',
+      issue_date: new Date(Date.now() - 40 * 86400000),
+      due_date: new Date(Date.now() - 10 * 86400000), // Đã quá hạn 10 ngày
+      subtotal: 52000000,
+      vat_amount: 4160000,
+      discount_amount: 0,
+      total_amount: 56160000,
+      paid_amount: 0,
+      status: InvoiceStatus.OVERDUE,
+      payment_terms: 'Net 30',
+      notes: 'Đã quá hạn thanh toán 10 ngày, phòng kế toán đã gửi thông báo nhắc nợ lần 1.',
+      items: {
+        create: [
+          { description: 'Vận chuyển hàng bách hóa chuỗi siêu thị Cát Lái - Bình Dương', quantity: 8, unit_price: 6500000, amount: 52000000 },
         ],
       },
     },

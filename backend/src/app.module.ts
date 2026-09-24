@@ -17,6 +17,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module.js';
 import { CustomersModule } from './modules/customers/customers.module.js';
 import { WmsModule } from './modules/wms/wms.module.js';
 import { IncidentsModule } from './modules/incidents/incidents.module.js';
+import { FinanceModule } from './modules/finance/finance.module.js';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { IncidentsModule } from './modules/incidents/incidents.module.js';
     CustomersModule,
     WmsModule,
     IncidentsModule,
+    FinanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

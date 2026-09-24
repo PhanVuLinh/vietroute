@@ -78,6 +78,7 @@ model Customer {
   orders         Order[]
   addresses      CustomerAddress[]
   pricing_rules  CustomerPricingRule[]
+  invoices       Invoice[]
 
   created_at     DateTime              @default(now())
   updated_at     DateTime              @updatedAt
@@ -161,6 +162,7 @@ model Order {
 
   items                 OrderItem[]
   deliveries            Delivery[]
+  cod_entries           CodEntry[]
 
   created_at            DateTime      @default(now())
   updated_at            DateTime      @updatedAt
@@ -431,6 +433,7 @@ model Driver {
   deliveries                 Delivery[]
   assignments                DriverAssignment[]
   routes                     Route[]
+  cod_reconciliations        CodReconciliation[]
 
   created_at                 DateTime           @default(now())
   updated_at                 DateTime           @updatedAt
@@ -816,4 +819,112 @@ model IncidentComment {
   created_at  DateTime @default(now())
 
   @@map("incident_comments")
+}
+
+// ==========================================
+// 11. TÀI CHÍNH & ĐỐI SOÁT COD (FINANCE & COD)
+// ==========================================
+
+enum CodReconciliationStatus {
+  PENDING      // Chờ đối soát
+  PARTIAL      // Đã nộp một phần
+  SETTLED      // Đã hoàn tất đối soát
+  DISCREPANCY  // Có chênh lệch cần giải trình
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  E_WALLET
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// 1. Phiếu đối soát tiền COD theo ca/ngày của tài xế
+model CodReconciliation {
+  id                  String                  @id @default(uuid())
+  reconciliation_code String                  @unique // Ví dụ: COD-2026-001
+  driver_id           String
+  driver              Driver                  @relation(fields: [driver_id], references: [id])
+  date                DateTime                @default(now())
+  total_orders        Int                     @default(0)
+  total_cod_amount    Float                   @default(0)    // Tiền COD theo đơn hàng
+  collected_amount    Float                   @default(0)    // Tiền tài xế thực thu từ khách
+  submitted_amount    Float                   @default(0)    // Tiền tài xế nộp lại công ty
+  discrepancy         Float                   @default(0)    // Chênh lệch (collected - submitted)
+  status              CodReconciliationStatus @default(PENDING)
+  notes               String?
+  cashier_name        String?                 // Kế toán/Thủ quỹ xác nhận
+  confirmed_at        DateTime?
+
+  entries             CodEntry[]
+
+  created_at          DateTime                @default(now())
+  updated_at          DateTime                @updatedAt
+
+  @@map("cod_reconciliations")
+}
+
+// 2. Chi tiết từng đơn hàng trong phiên đối soát
+model CodEntry {
+  id                   String            @id @default(uuid())
+  reconciliation_id    String
+  reconciliation       CodReconciliation @relation(fields: [reconciliation_id], references: [id], onDelete: Cascade)
+  order_id             String
+  order                Order             @relation(fields: [order_id], references: [id])
+  expected_cod         Float
+  actual_collected     Float
+  payment_method       PaymentMethod     @default(CASH)
+  is_discrepant        Boolean           @default(false)
+  discrepancy_reason   String?
+
+  created_at           DateTime          @default(now())
+
+  @@map("cod_entries")
+}
+
+// 3. Hóa đơn cước vận chuyển B2B
+model Invoice {
+  id              String        @id @default(uuid())
+  invoice_code    String        @unique // Ví dụ: INV-2026-001
+  customer_id     String
+  customer        Customer      @relation(fields: [customer_id], references: [id])
+  issue_date      DateTime      @default(now())
+  due_date        DateTime
+  subtotal        Float
+  vat_amount      Float         @default(0)
+  discount_amount Float         @default(0)
+  total_amount    Float
+  paid_amount     Float         @default(0)
+  status          InvoiceStatus @default(PENDING_PAYMENT)
+  payment_terms   String?       @default("Net 30")
+  notes           String?
+
+  items           InvoiceItem[]
+
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  @@map("invoices")
+}
+
+// 4. Chi tiết dòng cước trên hóa đơn
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoice_id  String
+  invoice     Invoice  @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int      @default(1)
+  unit_price  Float
+  amount      Float
+
+  created_at  DateTime @default(now())
+
+  @@map("invoice_items")
 }
