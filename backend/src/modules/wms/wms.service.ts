@@ -554,11 +554,11 @@ export class WmsService {
         },
       });
 
-      // Nếu đơn hàng đang ở trạng thái PICKING hoặc CONFIRMED, chuyển sang DELIVERING
-      if (currentOrder && (currentOrder.status === OrderStatus.CONFIRMED || currentOrder.status === OrderStatus.PICKING || currentOrder.status === OrderStatus.PACKING)) {
+      // Nếu đơn hàng đang ở trạng thái CONFIRMED, ASSIGNED hoặc PICKING_UP, chuyển sang IN_TRANSIT
+      if (currentOrder && (currentOrder.status === OrderStatus.CONFIRMED || currentOrder.status === OrderStatus.ASSIGNED || currentOrder.status === OrderStatus.PICKING_UP)) {
         await this.prisma.order.update({
           where: { id: currentOrder.id },
-          data: { status: OrderStatus.DELIVERING },
+          data: { status: OrderStatus.IN_TRANSIT },
         });
       }
     }
