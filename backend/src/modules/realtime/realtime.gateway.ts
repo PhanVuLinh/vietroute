@@ -156,12 +156,17 @@ export class RealtimeGateway
    * Phát sóng khi tài xế nộp tiền COD
    */
   emitCodSubmitted(codSession: {
-    id: string;
-    reconciliationCode: string;
-    driverName: string;
-    submittedAmount: number;
-    discrepancy: number;
-    status: string;
+    id?: string;
+    reconciliationId?: string;
+    reconciliationCode?: string;
+    driverName?: string;
+    driverId?: string;
+    submittedAmount?: number;
+    amount?: number;
+    discrepancy?: number;
+    status?: string;
+    orderCode?: string;
+    message?: string;
   }) {
     if (!this.server) return;
     this.server.to('role:staff').emit('cod:submitted', codSession);

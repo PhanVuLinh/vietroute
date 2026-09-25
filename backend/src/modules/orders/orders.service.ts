@@ -346,7 +346,9 @@ export class OrdersService {
       }
 
       this.realtimeGateway.emitCodSubmitted({
+        id: reconciliation.id,
         reconciliationId: reconciliation.id,
+        reconciliationCode: reconciliation.reconciliation_code || '',
         driverId: delivery.driver_id,
         amount: order.codAmount,
         orderCode: order.orderCode,
@@ -468,18 +470,18 @@ export class OrdersService {
       title: 'Đơn hàng đã tiếp nhận',
       time: createdTimeStr,
       location: 'Hệ thống VietRoute',
-      description: `Đơn hàng vận chuyển được tạo thành công bởi ${order.customer?.company_name || 'Khách hàng'}.`,
+      description: `Đơn hàng vận chuyển được tạo thành công bởi ${order.customer?.name || 'Khách hàng'}.`,
       completed: true,
       current: order.status === OrderStatus.PENDING,
     });
 
     // Bước 2: Xuất kho / Phân bổ xe
-    const isAssignedOrLater = [
+    const isAssignedOrLater = ([
       OrderStatus.ASSIGNED,
       OrderStatus.PICKING_UP,
       OrderStatus.IN_TRANSIT,
       OrderStatus.DELIVERED,
-    ].includes(order.status);
+    ] as OrderStatus[]).includes(order.status);
 
     steps.push({
       title: order.status === OrderStatus.PENDING ? 'Đang chuẩn bị hàng tại kho' : 'Đã phân bổ & Xuất kho',
@@ -495,7 +497,7 @@ export class OrdersService {
     });
 
     // Bước 3: Đang giao hàng
-    const isInTransitOrDelivered = [OrderStatus.IN_TRANSIT, OrderStatus.DELIVERED].includes(order.status);
+    const isInTransitOrDelivered = ([OrderStatus.IN_TRANSIT, OrderStatus.DELIVERED] as OrderStatus[]).includes(order.status);
     steps.push({
       title: 'Tài xế đang giao hàng',
       time: activeDelivery?.started_at
@@ -559,7 +561,7 @@ export class OrdersService {
     return {
       orderCode: order.order_code,
       id: order.id,
-      senderName: order.customer?.company_name || order.warehouse?.name || 'Tổng kho VietRoute',
+      senderName: order.customer?.name || order.warehouse?.name || 'Tổng kho VietRoute',
       senderAddress: order.warehouse?.address || 'Hà Nội, Việt Nam',
       receiverName: order.receiver_name,
       receiverPhone: order.receiver_phone,

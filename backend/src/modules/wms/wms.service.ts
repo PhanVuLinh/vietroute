@@ -322,7 +322,7 @@ export class WmsService {
                 warehouse_id: targetWh.id,
                 dispatch_code: dispCode,
                 order_code: ord.order_code,
-                item_count: ord.package_count || 3,
+                item_count: (ord as any).package_count || 3,
                 total_weight: ord.total_weight || 15,
                 status: OutboundStatus.PICKING,
                 picked_by: 'Nguyễn Văn Nam (Thủ kho)',
@@ -444,10 +444,11 @@ export class WmsService {
     }
 
     // Lấy thông tin đơn hàng của lệnh này
-    let currentOrder = null;
+    let currentOrder: any = null;
     if (dispatch.order_code) {
       currentOrder = await this.prisma.order.findUnique({
         where: { order_code: dispatch.order_code },
+        include: { customer: true },
       });
     }
 
@@ -568,7 +569,7 @@ export class WmsService {
       barcode: cleanBarcode,
       dispatchCode: dto.dispatchCode,
       orderCode: dispatch.order_code,
-      customerName: currentOrder?.customer_name || 'Khách hàng',
+      customerName: currentOrder?.customer?.name || currentOrder?.receiver_name || 'Khách hàng',
       scannedCount,
       totalCount: totalPackages,
       progressPercent,
@@ -584,7 +585,7 @@ export class WmsService {
       dispatchCode: dto.dispatchCode,
       barcode: cleanBarcode,
       success: true,
-      itemName: `Kiện ${cleanBarcode} - ${currentOrder?.customer_name || 'Khách hàng'}`,
+      itemName: `Kiện ${cleanBarcode} - ${currentOrder?.customer?.name || currentOrder?.receiver_name || 'Khách hàng'}`,
       scannedCount,
       totalCount: totalPackages,
       isComplete,
@@ -726,6 +727,7 @@ export class WmsService {
     const order = await this.prisma.order.findFirst({
       where: { order_code: orderCode },
       include: {
+        customer: { select: { name: true } },
         deliveries: { select: { id: true, delivery_code: true, status: true } },
       },
     });
@@ -741,16 +743,16 @@ export class WmsService {
         found: true,
         type: 'ORDER_PACKAGE',
         barcode: clean,
-        title: `Vận đơn ${order.order_code} - ${order.customer_name}`,
+        title: `Vận đơn ${order.order_code} - ${order.customer?.name || order.receiver_name}`,
         code: order.order_code,
         warehouseName: dispatch?.warehouse.name || 'Kho trung tâm',
         status: order.status,
-        quantity: order.package_count,
+        quantity: (order as any).package_count || 1,
         unit: 'kiện',
         weight: order.total_weight,
         details: {
-          customerName: order.customer_name,
-          deliveryAddress: order.delivery_address,
+          customerName: order.customer?.name || order.receiver_name,
+          deliveryAddress: order.receiver_address,
           dispatchCode: dispatch?.dispatch_code || 'Chưa xếp lệnh xuất',
           dispatchStatus: dispatch?.status || 'PENDING',
         },
