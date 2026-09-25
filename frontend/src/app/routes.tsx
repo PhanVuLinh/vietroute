@@ -24,6 +24,7 @@ import { IncidentsPage } from "@/modules/incidents/pages/IncidentsPage";
 import { CodReconciliationPage } from "@/modules/finance/pages/CodReconciliationPage";
 import { BillingPage } from "@/modules/finance/pages/BillingPage";
 import { InvoicePaymentPortalPage } from "@/modules/finance/pages/InvoicePaymentPortalPage";
+import { B2BShipperPortalPage } from "@/modules/customers/pages/B2BShipperPortalPage";
 
 export const router = createBrowserRouter([
   {
@@ -53,6 +54,14 @@ export const router = createBrowserRouter([
   {
     path: "/pay/:invoiceCode",
     element: <InvoicePaymentPortalPage />,
+  },
+  {
+    path: "/portal/b2b",
+    element: <B2BShipperPortalPage />,
+  },
+  {
+    path: "/portal/b2b/:shipperId",
+    element: <B2BShipperPortalPage />,
   },
 
   {
@@ -117,6 +126,14 @@ export const router = createBrowserRouter([
           {
             path: "customers",
             element: <CustomersPage />,
+          },
+          {
+            path: "shipper",
+            element: <B2BShipperPortalPage />,
+          },
+          {
+            path: "portal-b2b",
+            element: <B2BShipperPortalPage />,
           },
           {
             path: "incidents",

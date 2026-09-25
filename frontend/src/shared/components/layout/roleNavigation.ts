@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   Wallet,
   Receipt,
+  Building2,
 } from "lucide-react";
 import type { UserRole } from "@/core/types/auth";
 
@@ -93,6 +94,12 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         label: "Khách hàng",
         path: "/customers",
         icon: Users,
+        allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER"],
+      },
+      {
+        label: "Cổng Doanh nghiệp B2B",
+        path: "/shipper",
+        icon: Building2,
         allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER"],
       },
       {

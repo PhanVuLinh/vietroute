@@ -119,3 +119,9 @@ class SoundEffectsService {
 }
 
 export const soundEffects = new SoundEffectsService();
+
+export function playSound(type: 'SUCCESS' | 'WARNING' | 'COMPLETE' = 'SUCCESS') {
+  if (type === 'SUCCESS') soundEffects.playSuccessBeep();
+  else if (type === 'WARNING') soundEffects.playWarningBuzzer();
+  else if (type === 'COMPLETE') soundEffects.playCompleteFanfare();
+}
