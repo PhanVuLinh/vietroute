@@ -25,6 +25,7 @@ import { CodReconciliationPage } from "@/modules/finance/pages/CodReconciliation
 import { BillingPage } from "@/modules/finance/pages/BillingPage";
 import { InvoicePaymentPortalPage } from "@/modules/finance/pages/InvoicePaymentPortalPage";
 import { B2BShipperPortalPage } from "@/modules/customers/pages/B2BShipperPortalPage";
+import { CargoLoadOptimizerPage } from "@/modules/dispatch/pages/CargoLoadOptimizerPage";
 
 export const router = createBrowserRouter([
   {
@@ -86,6 +87,14 @@ export const router = createBrowserRouter([
           {
             path: "dispatch",
             element: <DispatchPage />,
+          },
+          {
+            path: "load-optimizer",
+            element: <CargoLoadOptimizerPage />,
+          },
+          {
+            path: "dispatch/3d-load",
+            element: <CargoLoadOptimizerPage />,
           },
           {
             path: "tracking",

@@ -21,6 +21,7 @@ import {
   Wallet,
   Receipt,
   Building2,
+  Boxes,
 } from "lucide-react";
 import type { UserRole } from "@/core/types/auth";
 
@@ -60,6 +61,12 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: "/dispatch",
         icon: Waypoints,
         allowedRoles: ["ADMIN", "DISPATCHER"],
+      },
+      {
+        label: "Xếp hàng 3D",
+        path: "/load-optimizer",
+        icon: Boxes,
+        allowedRoles: ["ADMIN", "DISPATCHER", "WAREHOUSE_STAFF"],
       },
       {
         label: "Giám sát",
