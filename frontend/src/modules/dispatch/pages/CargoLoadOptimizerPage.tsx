@@ -9,6 +9,8 @@ import {
   Scale,
   Layers,
   ArrowRight,
+  Package,
+  Zap,
 } from 'lucide-react';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { PageContainer } from '@/shared/components/layout/PageContainer';
@@ -16,6 +18,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { toast } from '@/shared/components/feedback/Toast';
 import { playSound } from '@/shared/utils/soundEffects';
+import { useOrders } from '@/modules/orders/hooks/useOrders';
 import { TRUCK_PRESETS } from '../types/load3d';
 import {
   optimize3DLoad,
@@ -25,6 +28,8 @@ import { Cargo3DCanvas } from '../components/load3d/Cargo3DCanvas';
 import { AxleLoadIndicator } from '../components/load3d/AxleLoadIndicator';
 import { CargoInputPanel } from '../components/load3d/CargoInputPanel';
 import { StackingGuideModal } from '../components/load3d/StackingGuideModal';
+import { SelectOrdersModal } from '../components/load3d/SelectOrdersModal';
+import { ConfirmDispatchTripModal } from '../components/load3d/ConfirmDispatchTripModal';
 import type {
   VehicleContainerPreset,
   CargoItemInput,
@@ -35,11 +40,19 @@ import type {
 export const CargoLoadOptimizerPage: React.FC = () => {
   usePageTitle('Mô Phỏng Xếp Hàng 3D & Tải Trọng Trục — VietRoute');
 
+  // Lấy danh sách đơn hàng thực tế từ cơ sở dữ liệu
+  const { orders } = useOrders();
+  const realOrders = orders || [];
+
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleContainerPreset>(TRUCK_PRESETS[1]); // Hyundai Mighty 3.5T
   const [cargoItems, setCargoItems] = useState<CargoItemInput[]>(generateDemoCargoBatch());
   const [optimizationResult, setOptimizationResult] = useState<LoadOptimizationResult | null>(null);
   const [selectedBox, setSelectedBox] = useState<PlacedCargoBox | null>(null);
+
+  // Modals state
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isSelectOrdersModalOpen, setIsSelectOrdersModalOpen] = useState(false);
+  const [isConfirmDispatchOpen, setIsConfirmDispatchOpen] = useState(false);
 
   // Chạy tối ưu hóa xếp hàng 3D
   const runOptimization = () => {
@@ -56,6 +69,18 @@ export const CargoLoadOptimizerPage: React.FC = () => {
   useEffect(() => {
     runOptimization();
   }, [selectedVehicle]);
+
+  // Nạp danh sách kiện hàng thật từ đơn hàng trong kho
+  const handleImportRealOrders = (importedItems: CargoItemInput[]) => {
+    setCargoItems(importedItems);
+    const result = optimize3DLoad(selectedVehicle, importedItems);
+    setOptimizationResult(result);
+    playSound('SUCCESS');
+    toast.success(
+      'Đã nạp đơn hàng thực tế từ kho!',
+      `Đã chuyển đổi ${importedItems.length} kiện hàng từ các vận đơn được chọn và tối ưu hóa vị trí LIFO.`
+    );
+  };
 
   // Thêm kiện hàng mới
   const handleAddCargoItem = () => {
@@ -76,7 +101,7 @@ export const CargoLoadOptimizerPage: React.FC = () => {
       allowRotate: true,
     };
     setCargoItems([...cargoItems, newItem]);
-    toast.info('Đã thêm 1 kiện', 'Bấm "Tối Ưu Hóa Xếp Hàng 3D" để cập nhật vị trí mới');
+    toast.info('Đã thêm 1 kiện', 'Bấm "Tối Ưu Xếp Hàng 3D" để cập nhật vị trí mới');
   };
 
   // Xóa kiện hàng
@@ -107,16 +132,27 @@ export const CargoLoadOptimizerPage: React.FC = () => {
                 Tối Ưu Xếp Hàng 3D & Phân Bổ Tải Trọng Trục
               </h1>
               <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold">
-                3D Bin Packing AI
+                Thực Tế Vận Hành
+              </Badge>
+              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-bold">
+                Quy Chuẩn LIFO
               </Badge>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Mô phỏng 3D không gian thùng xe tải & container, triệt tiêu quá tải trục cầu và tuân thủ quy chuẩn bốc dỡ LIFO
+              Mô phỏng 3D thể tích thùng xe tải & container, triệt tiêu quá tải trục cầu và tự động xuất lệnh bốc dỡ cho kho vận
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <Button
+            size="sm"
+            onClick={() => setIsSelectOrdersModalOpen(true)}
+            className="h-9 text-xs gap-1.5 font-bold cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+          >
+            <Package className="h-3.5 w-3.5" />
+            Nạp đơn hàng từ kho
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -169,17 +205,38 @@ export const CargoLoadOptimizerPage: React.FC = () => {
             onAddCargoItem={handleAddCargoItem}
             onRemoveCargoItem={handleRemoveCargoItem}
             onLoadDemoBatch={handleLoadDemoBatch}
+            onOpenSelectOrdersModal={() => setIsSelectOrdersModalOpen(true)}
             onRunOptimization={runOptimization}
+            onOpenDispatchConfirm={() => setIsConfirmDispatchOpen(true)}
             onPrintGuide={() => setIsPrintModalOpen(true)}
           />
         </div>
       </div>
 
-      {/* 3. Modal In Sơ Đồ Bốc Xếp Cho Tài Xế & Thủ Kho */}
+      {/* 3. Modal Nạp Đơn Hàng Thực Tế Trong Kho */}
+      <SelectOrdersModal
+        isOpen={isSelectOrdersModalOpen}
+        onClose={() => setIsSelectOrdersModalOpen(false)}
+        availableOrders={realOrders}
+        onImportOrders={handleImportRealOrders}
+      />
+
+      {/* 4. Modal In Sơ Đồ Bốc Xếp Cho Tài Xế & Thủ Kho */}
       <StackingGuideModal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
         result={optimizationResult}
+      />
+
+      {/* 5. Modal Xác Nhận & Xuất Lệnh Điều Phối Chuyến Xe */}
+      <ConfirmDispatchTripModal
+        isOpen={isConfirmDispatchOpen}
+        onClose={() => setIsConfirmDispatchOpen(false)}
+        result={optimizationResult}
+        selectedVehicle={selectedVehicle}
+        onDispatchSuccess={() => {
+          // Callback sau khi điều phối thành công
+        }}
       />
     </PageContainer>
   );

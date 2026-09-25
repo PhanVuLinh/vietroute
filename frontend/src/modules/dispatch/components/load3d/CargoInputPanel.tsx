@@ -31,7 +31,9 @@ interface CargoInputPanelProps {
   onAddCargoItem: () => void;
   onRemoveCargoItem: (id: string) => void;
   onLoadDemoBatch: () => void;
+  onOpenSelectOrdersModal: () => void;
   onRunOptimization: () => void;
+  onOpenDispatchConfirm: () => void;
   onPrintGuide: () => void;
 }
 
@@ -42,7 +44,9 @@ export const CargoInputPanel: React.FC<CargoInputPanelProps> = ({
   onAddCargoItem,
   onRemoveCargoItem,
   onLoadDemoBatch,
+  onOpenSelectOrdersModal,
   onRunOptimization,
+  onOpenDispatchConfirm,
   onPrintGuide,
 }) => {
   const totalWeight = cargoItems.reduce((sum, item) => sum + (Number(item.weightKg) || 0), 0);
@@ -118,10 +122,18 @@ export const CargoInputPanel: React.FC<CargoInputPanelProps> = ({
               <Button
                 variant="outline"
                 size="sm"
+                onClick={onOpenSelectOrdersModal}
+                className="h-7 px-2.5 text-[11px] gap-1 cursor-pointer bg-primary/10 hover:bg-primary/20 text-primary border-primary/30 font-semibold"
+              >
+                <Boxes className="h-3 w-3" /> Nạp đơn từ kho
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={onLoadDemoBatch}
                 className="h-7 px-2 text-[11px] gap-1 cursor-pointer text-amber-600 border-amber-500/30 hover:bg-amber-500/10"
               >
-                <Sparkles className="h-3 w-3" /> Nạp mẫu 24 kiện
+                <Sparkles className="h-3 w-3" /> Mẫu 24 kiện
               </Button>
               <Button
                 size="sm"
@@ -209,7 +221,7 @@ export const CargoInputPanel: React.FC<CargoInputPanelProps> = ({
               className="flex-1 h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs gap-2 cursor-pointer shadow-md"
             >
               <RotateCw className="h-4 w-4" />
-              Tối Ưu Hóa Xếp Hàng 3D
+              Tối Ưu Xếp Hàng 3D
             </Button>
             <Button
               variant="outline"
@@ -222,6 +234,15 @@ export const CargoInputPanel: React.FC<CargoInputPanelProps> = ({
               In sơ đồ
             </Button>
           </div>
+
+          <Button
+            size="default"
+            onClick={onOpenDispatchConfirm}
+            className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-2 cursor-pointer shadow-md"
+          >
+            <Truck className="h-4 w-4" />
+            🚀 Xác Nhận Tạo Chuyến Xe Điều Phối
+          </Button>
         </div>
       </CardContent>
     </Card>
