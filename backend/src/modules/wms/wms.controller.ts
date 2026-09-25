@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { WmsService } from './wms.service.js';
 import { CreateInboundDto } from './dto/create-inbound.dto.js';
 import { CreateOutboundDto } from './dto/create-outbound.dto.js';
 import { CreateTransferDto } from './dto/create-transfer.dto.js';
+import { ScanDockDto } from './dto/scan-dock.dto.js';
+import { ScanInboundDto } from './dto/scan-inbound.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
@@ -54,4 +56,36 @@ export class WmsController {
   getActivityLog(@Query('warehouseId') warehouseId?: string) {
     return this.wmsService.getActivityLog(warehouseId);
   }
+
+  // ==========================================
+  // WMS SCANNER KIOSK ENDPOINTS
+  // ==========================================
+
+  @Get('scanner/dock-sessions')
+  @Roles('ADMIN', 'MANAGER', 'WAREHOUSE_STAFF', 'DISPATCHER', 'DRIVER')
+  getDockScanSessions(@Query('warehouseId') warehouseId?: string) {
+    return this.wmsService.getDockScanSessions(warehouseId);
+  }
+
+  @Post('scanner/scan-dock')
+  @Roles('ADMIN', 'MANAGER', 'WAREHOUSE_STAFF', 'DISPATCHER', 'DRIVER')
+  scanDockItem(@Body() dto: ScanDockDto) {
+    return this.wmsService.scanDockItem(dto);
+  }
+
+  @Post('scanner/scan-inbound')
+  @Roles('ADMIN', 'MANAGER', 'WAREHOUSE_STAFF')
+  scanInboundItem(@Body() dto: ScanInboundDto) {
+    return this.wmsService.scanInboundItem(dto);
+  }
+
+  @Get('scanner/lookup/:barcode')
+  @Roles('ADMIN', 'MANAGER', 'WAREHOUSE_STAFF', 'DISPATCHER', 'DRIVER')
+  lookupBarcode(
+    @Param('barcode') barcode: string,
+    @Query('warehouseId') warehouseId?: string,
+  ) {
+    return this.wmsService.lookupBarcode(barcode, warehouseId);
+  }
 }
+

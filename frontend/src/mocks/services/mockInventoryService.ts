@@ -187,4 +187,167 @@ export const mockInventoryService = {
 
     return { success: true, statusCode: 201, message: "Tạo phiếu luân chuyển thành công", data: newTransfer };
   },
+
+  // ==========================================
+  // WMS SCANNER KIOSK MOCK METHODS
+  // ==========================================
+  async getDockScanSessions(
+    params?: { warehouseId?: string },
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<any[]>> {
+    await simulateLatency(options);
+    let list = [...outbounds];
+    if (params?.warehouseId) {
+      list = list.filter((o) => o.warehouseId === params.warehouseId);
+    }
+
+    const sessions = list.slice(0, 10).map((d) => {
+      const orderCode = d.orderCode || `VR-ORD-${d.dispatchCode.slice(-4)}`;
+      const totalPackages = d.itemCount || 3;
+      const expectedPackages = [];
+      for (let i = 1; i <= totalPackages; i++) {
+        expectedPackages.push({
+          barcode: `PKG-${orderCode}-${i.toString().padStart(2, "0")}`,
+          index: i,
+          total: totalPackages,
+          name: `Kiện hàng #${i}/${totalPackages} - Đơn ${orderCode}`,
+          weight: Math.round(((d.totalWeight || 15) / totalPackages) * 10) / 10,
+          isScanned: d.status === "DISPATCHED" || d.status === "COMPLETED",
+        });
+      }
+
+      return {
+        dispatchCode: d.dispatchCode,
+        warehouseId: d.warehouseId,
+        warehouseName: "Kho Tổng Logistics",
+        warehouseCode: "WH-NORTH",
+        orderCode: d.orderCode,
+        routeCode: d.routeCode,
+        customerName: "Công ty Cổ phần B2B Viettel / FPT",
+        deliveryAddress: "Cầu Giấy, Hà Nội",
+        status: d.status,
+        pickedBy: d.pickedBy,
+        totalPackages,
+        totalWeight: d.totalWeight,
+        scannedCount: d.status === "DISPATCHED" ? totalPackages : 0,
+        progressPercent: d.status === "DISPATCHED" ? 100 : 0,
+        isComplete: d.status === "DISPATCHED" || d.status === "COMPLETED",
+        expectedPackages,
+        createdAt: d.createdAt,
+      };
+    });
+
+    return { success: true, statusCode: 200, message: "OK", data: sessions };
+  },
+
+  async scanDockItem(
+    payload: { warehouseId: string; dispatchCode: string; barcode: string; scannedBy?: string },
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<any>> {
+    await simulateLatency(options);
+    const cleanBarcode = payload.barcode.trim().toUpperCase();
+    const dispatch = outbounds.find((o) => o.dispatchCode === payload.dispatchCode);
+
+    if (!dispatch) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: "Không tìm thấy lệnh xuất kho",
+        data: { success: false, reason: "DISPATCH_NOT_FOUND", barcode: cleanBarcode, message: "Không tìm thấy lệnh xuất" },
+      };
+    }
+
+    const orderCode = dispatch.orderCode || `VR-ORD-${dispatch.dispatchCode.slice(-4)}`;
+    const isMatching = cleanBarcode.includes(orderCode) || cleanBarcode === dispatch.dispatchCode;
+
+    if (!isMatching) {
+      return {
+        success: true,
+        statusCode: 200,
+        message: "Cảnh báo nhầm kiện",
+        data: {
+          success: false,
+          reason: "WRONG_VEHICLE",
+          barcode: cleanBarcode,
+          correctOrderCode: "VR-2026-999",
+          message: `🚨 CẢNH BÁO NGUY HIỂM: Kiện hàng [${cleanBarcode}] KHÔNG THUỘC chuyến xe này! Thuộc về đơn hàng khác. Không được xếp lên xe!`,
+        },
+      };
+    }
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: "Quét thành công",
+      data: {
+        success: true,
+        barcode: cleanBarcode,
+        dispatchCode: dispatch.dispatchCode,
+        orderCode: dispatch.orderCode,
+        scannedCount: dispatch.itemCount,
+        totalCount: dispatch.itemCount,
+        progressPercent: 100,
+        isComplete: true,
+        message: `✅ HỢP LỆ: Kiện hàng [${cleanBarcode}] đã được bốc lên xe thành công!`,
+      },
+    };
+  },
+
+  async scanInboundItem(
+    payload: any,
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<any>> {
+    await simulateLatency(options);
+    const qty = payload.quantity || 1;
+    const cleanSku = (payload.sku || payload.barcode).trim().toUpperCase();
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: "Nhập kho thành công",
+      data: {
+        success: true,
+        barcode: payload.barcode,
+        sku: cleanSku,
+        productName: payload.productName || `Hàng hóa [${cleanSku}]`,
+        zoneCode: payload.zoneCode,
+        quantityAdded: qty,
+        newTotalQuantity: 100 + qty,
+        unit: payload.unit || "kiện",
+        message: `✅ Đã nhập kho ${qty} kiện vào phân khu ${payload.zoneCode}!`,
+      },
+    };
+  },
+
+  async lookupBarcode(
+    barcode: string,
+    options?: MockServiceOptions
+  ): Promise<ApiResponse<any>> {
+    await simulateLatency(options);
+    const clean = barcode.trim().toUpperCase();
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: "OK",
+      data: {
+        found: true,
+        type: "ORDER_PACKAGE",
+        barcode: clean,
+        title: `Vận đơn bưu kiện [${clean}]`,
+        code: clean,
+        warehouseName: "Kho Tổng Hà Nội Hub",
+        zoneCode: "Z-STAGE-01",
+        quantity: 1,
+        unit: "kiện",
+        weight: 8.5,
+        status: "READY_FOR_DISPATCH",
+        details: {
+          customerName: "Khách hàng Doanh nghiệp B2B",
+          deliveryAddress: "Cầu Giấy, Hà Nội",
+        },
+      },
+    };
+  },
 };
+

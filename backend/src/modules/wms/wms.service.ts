@@ -1,13 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateInboundDto } from './dto/create-inbound.dto.js';
 import { CreateOutboundDto } from './dto/create-outbound.dto.js';
 import { CreateTransferDto } from './dto/create-transfer.dto.js';
-import { InboundStatus, OutboundStatus, TransferStatus, WmsActivityType } from '@prisma/client';
+import { ScanDockDto } from './dto/scan-dock.dto.js';
+import { ScanInboundDto } from './dto/scan-inbound.dto.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
+import { InboundStatus, OrderStatus, OutboundStatus, TransferStatus, WmsActivityType } from '@prisma/client';
 
 @Injectable()
 export class WmsService {
-  constructor(private prisma: PrismaService) {}
+  // In-memory cache lưu các kiện đã quét cho các lệnh xuất kho đang bốc dỡ (Dock sessions)
+  private scannedDockItems = new Map<string, Set<string>>();
+
+  constructor(
+    private prisma: PrismaService,
+    @Optional() private realtimeGateway?: RealtimeGateway,
+  ) {}
 
   async getInventory(warehouseId?: string) {
     const where: any = {};
@@ -267,5 +276,518 @@ export class WmsService {
       quantity: a.quantity || undefined,
       createdAt: a.created_at.toISOString(),
     }));
+  }
+
+  // ==========================================
+  // WMS BARCODE & QR SCANNER KIOSK METHODS
+  // ==========================================
+
+  /**
+   * Lấy danh sách các phiên bốc hàng lên xe tại cổng Dock (Dock Scan-to-Dispatch)
+   */
+  async getDockScanSessions(warehouseId?: string) {
+    const where: any = {};
+    if (warehouseId) where.warehouse_id = warehouseId;
+
+    // Lấy các lệnh xuất kho gần nhất
+    let dispatches = await this.prisma.outboundDispatch.findMany({
+      where,
+      include: {
+        warehouse: { select: { id: true, name: true, code: true } },
+      },
+      orderBy: { created_at: 'desc' },
+      take: 20,
+    });
+
+    // Nếu kho chưa có lệnh xuất kho nào, tự động liên kết từ các đơn hàng hiện có trong DB
+    if (dispatches.length === 0) {
+      const activeOrders = await this.prisma.order.findMany({
+        take: 6,
+        orderBy: { created_at: 'desc' },
+      });
+
+      const targetWh = (warehouseId
+        ? await this.prisma.warehouse.findUnique({ where: { id: warehouseId } })
+        : await this.prisma.warehouse.findFirst()) || await this.prisma.warehouse.findFirst();
+
+      if (targetWh && activeOrders.length > 0) {
+        for (let idx = 0; idx < activeOrders.length; idx++) {
+          const ord = activeOrders[idx];
+          const dispCode = `DSP-2026-${(idx + 1).toString().padStart(3, '0')}`;
+          try {
+            await this.prisma.outboundDispatch.upsert({
+              where: { dispatch_code: dispCode },
+              update: { warehouse_id: targetWh.id },
+              create: {
+                warehouse_id: targetWh.id,
+                dispatch_code: dispCode,
+                order_code: ord.order_code,
+                item_count: ord.package_count || 3,
+                total_weight: ord.total_weight || 15,
+                status: OutboundStatus.PICKING,
+                picked_by: 'Nguyễn Văn Nam (Thủ kho)',
+                notes: `Bốc dỡ xuất bến đơn hàng ${ord.order_code}`,
+              },
+            });
+          } catch {
+            // bỏ qua nếu trùng
+          }
+        }
+
+        dispatches = await this.prisma.outboundDispatch.findMany({
+          where: warehouseId ? { warehouse_id: targetWh.id } : {},
+          include: {
+            warehouse: { select: { id: true, name: true, code: true } },
+          },
+          orderBy: { created_at: 'desc' },
+          take: 20,
+        });
+      }
+    }
+
+    // Lấy thông tin các đơn hàng liên quan
+    const orderCodes = dispatches.map((d) => d.order_code).filter(Boolean) as string[];
+    const orders = orderCodes.length > 0
+      ? await this.prisma.order.findMany({
+          where: { order_code: { in: orderCodes } },
+          select: {
+            id: true,
+            order_code: true,
+            customer_name: true,
+            delivery_address: true,
+            package_count: true,
+            total_weight: true,
+            status: true,
+          },
+        })
+      : [];
+
+    const orderMap = new Map(orders.map((o) => [o.order_code, o]));
+
+    return dispatches.map((d) => {
+      const order = d.order_code ? orderMap.get(d.order_code) : null;
+      const totalPackages = order?.package_count || d.item_count || 1;
+      const orderCode = d.order_code || `VR-ORD-${d.dispatch_code.slice(-4)}`;
+
+      // Khởi tạo danh sách các kiện hàng mong đợi
+      const expectedPackages = [];
+      for (let i = 1; i <= totalPackages; i++) {
+        const pkgCode = `PKG-${orderCode}-${i.toString().padStart(2, '0')}`;
+        expectedPackages.push({
+          barcode: pkgCode,
+          index: i,
+          total: totalPackages,
+          name: `Kiện hàng #${i}/${totalPackages} - ${order?.customer_name || 'Khách hàng B2B'}`,
+          weight: Math.round(((order?.total_weight || d.total_weight || 10) / totalPackages) * 10) / 10,
+        });
+      }
+
+      // Lấy danh sách mã đã quét từ cache
+      let scannedSet = this.scannedDockItems.get(d.dispatch_code);
+      if (!scannedSet) {
+        scannedSet = new Set<string>();
+        // Nếu lệnh đã DISPATCHED hoặc COMPLETED, coi như đã quét đủ
+        if (d.status === OutboundStatus.DISPATCHED || d.status === OutboundStatus.COMPLETED) {
+          expectedPackages.forEach((p) => scannedSet!.add(p.barcode));
+        }
+        this.scannedDockItems.set(d.dispatch_code, scannedSet);
+      }
+
+      const scannedCount = scannedSet.size;
+      const progressPercent = totalPackages > 0 ? Math.round((scannedCount / totalPackages) * 100) : 0;
+      const isComplete = scannedCount >= totalPackages || d.status === OutboundStatus.DISPATCHED || d.status === OutboundStatus.COMPLETED;
+
+      return {
+        dispatchCode: d.dispatch_code,
+        warehouseId: d.warehouse_id,
+        warehouseName: d.warehouse.name,
+        warehouseCode: d.warehouse.code,
+        orderCode: d.order_code || undefined,
+        routeCode: d.route_code || undefined,
+        customerName: order?.customer_name || 'Đơn hàng vận chuyển',
+        deliveryAddress: order?.delivery_address || 'Tuyến giao nội thành',
+        status: d.status,
+        pickedBy: d.picked_by,
+        totalPackages,
+        totalWeight: d.total_weight,
+        scannedCount,
+        progressPercent,
+        isComplete,
+        expectedPackages: expectedPackages.map((p) => ({
+          ...p,
+          isScanned: scannedSet!.has(p.barcode),
+        })),
+        createdAt: d.created_at.toISOString(),
+      };
+    });
+  }
+
+  /**
+   * Quét mã kiện hàng tại cổng Dock để bốc lên xe (Dock Scan-to-Dispatch)
+   * Kiểm tra nghiêm ngặt chống nhầm chuyến xe/nhầm đơn hàng
+   */
+  async scanDockItem(dto: ScanDockDto) {
+    const dispatch = await this.prisma.outboundDispatch.findUnique({
+      where: { dispatch_code: dto.dispatchCode },
+      include: {
+        warehouse: { select: { id: true, name: true, code: true } },
+      },
+    });
+
+    if (!dispatch) {
+      return {
+        success: false,
+        reason: 'DISPATCH_NOT_FOUND',
+        barcode: dto.barcode,
+        message: `Lệnh xuất kho ${dto.dispatchCode} không tồn tại trong hệ thống!`,
+      };
+    }
+
+    // Lấy thông tin đơn hàng của lệnh này
+    let currentOrder = null;
+    if (dispatch.order_code) {
+      currentOrder = await this.prisma.order.findUnique({
+        where: { order_code: dispatch.order_code },
+      });
+    }
+
+    const totalPackages = currentOrder?.package_count || dispatch.item_count || 1;
+    const orderCode = dispatch.order_code || `VR-ORD-${dispatch.dispatch_code.slice(-4)}`;
+
+    // Tạo tập hợp các mã hợp lệ cho lệnh này
+    const validBarcodes = new Set<string>();
+    for (let i = 1; i <= totalPackages; i++) {
+      validBarcodes.add(`PKG-${orderCode}-${i.toString().padStart(2, '0')}`);
+    }
+    // Hỗ trợ quét trực tiếp mã đơn hàng
+    if (dispatch.order_code) validBarcodes.add(dispatch.order_code);
+
+    const cleanBarcode = dto.barcode.trim().toUpperCase();
+
+    // KIỂM TRA 1: Có đúng mã của lệnh này không?
+    if (!validBarcodes.has(cleanBarcode)) {
+      // Tìm xem mã này thuộc đơn hàng nào khác trong hệ thống để đưa ra cảnh báo chính xác
+      let foundOrderCode: string | null = null;
+      let otherDispatchCode: string | null = null;
+
+      // Thử trích xuất mã đơn từ barcode dạng PKG-[ORDER]-XX
+      const pkgMatch = cleanBarcode.match(/^PKG-(VR-\d{4}-\d+)-\d+$/);
+      if (pkgMatch) {
+        foundOrderCode = pkgMatch[1];
+      } else {
+        const anyOrder = await this.prisma.order.findFirst({
+          where: { order_code: cleanBarcode },
+        });
+        if (anyOrder) foundOrderCode = anyOrder.order_code;
+      }
+
+      if (foundOrderCode) {
+        const otherDispatch = await this.prisma.outboundDispatch.findFirst({
+          where: { order_code: foundOrderCode },
+        });
+        otherDispatchCode = otherDispatch?.dispatch_code || null;
+
+        return {
+          success: false,
+          reason: 'WRONG_VEHICLE',
+          barcode: cleanBarcode,
+          correctOrderCode: foundOrderCode,
+          correctDispatchCode: otherDispatchCode,
+          message: `🚨 CẢNH BÁO NGUY HIỂM: Kiện hàng thuộc ĐƠN HÀNG [${foundOrderCode}]${otherDispatchCode ? ` (Lệnh xuất ${otherDispatchCode})` : ''}! KHÔNG ĐƯỢC XẾP LÊN XE NÀY!`,
+        };
+      }
+
+      return {
+        success: false,
+        reason: 'UNKNOWN_BARCODE',
+        barcode: cleanBarcode,
+        message: `⚠️ Mã kiện "${cleanBarcode}" không thuộc lệnh xuất kho ${dto.dispatchCode} và không tồn tại trong hệ thống!`,
+      };
+    }
+
+    // KIỂM TRA 2: Mã này đã được quét trước đó chưa?
+    let scannedSet = this.scannedDockItems.get(dto.dispatchCode);
+    if (!scannedSet) {
+      scannedSet = new Set<string>();
+      this.scannedDockItems.set(dto.dispatchCode, scannedSet);
+    }
+
+    if (scannedSet.has(cleanBarcode)) {
+      return {
+        success: false,
+        reason: 'ALREADY_SCANNED',
+        barcode: cleanBarcode,
+        message: `⚠️ Kiện hàng "${cleanBarcode}" ĐÃ ĐƯỢC QUÉT lên xe trước đó rồi! Tránh quét trùng lặp.`,
+        scannedCount: scannedSet.size,
+        totalCount: totalPackages,
+        progressPercent: Math.round((scannedSet.size / totalPackages) * 100),
+        isComplete: scannedSet.size >= totalPackages,
+      };
+    }
+
+    // HỢP LỆ: Ghi nhận kiện hàng đã bốc lên xe!
+    scannedSet.add(cleanBarcode);
+    const scannedCount = scannedSet.size;
+    const progressPercent = Math.min(100, Math.round((scannedCount / totalPackages) * 100));
+    const isComplete = scannedCount >= totalPackages;
+
+    // Ghi nhật ký kho Audit Log
+    const user = dto.scannedBy || 'Thủ kho quét Dock';
+    await this.prisma.warehouseActivity.create({
+      data: {
+        warehouse_id: dispatch.warehouse_id,
+        type: WmsActivityType.OUTBOUND,
+        description: `Bốc kiện hàng [${cleanBarcode}] (${scannedCount}/${totalPackages}) lên xe theo lệnh xuất ${dispatch.dispatch_code}`,
+        user,
+        reference_code: dispatch.dispatch_code,
+        quantity: 1,
+      },
+    });
+
+    // Nếu đã quét đủ 100% kiện: Tự động cập nhật lệnh xuất kho thành DISPATCHED
+    if (isComplete && dispatch.status !== OutboundStatus.DISPATCHED && dispatch.status !== OutboundStatus.COMPLETED) {
+      await this.prisma.outboundDispatch.update({
+        where: { id: dispatch.id },
+        data: {
+          status: OutboundStatus.DISPATCHED,
+          completed_at: new Date(),
+        },
+      });
+
+      // Nếu đơn hàng đang ở trạng thái PICKING hoặc CONFIRMED, chuyển sang DELIVERING
+      if (currentOrder && (currentOrder.status === OrderStatus.CONFIRMED || currentOrder.status === OrderStatus.PICKING || currentOrder.status === OrderStatus.PACKING)) {
+        await this.prisma.order.update({
+          where: { id: currentOrder.id },
+          data: { status: OrderStatus.DELIVERING },
+        });
+      }
+    }
+
+    const result = {
+      success: true,
+      barcode: cleanBarcode,
+      dispatchCode: dto.dispatchCode,
+      orderCode: dispatch.order_code,
+      customerName: currentOrder?.customer_name || 'Khách hàng',
+      scannedCount,
+      totalCount: totalPackages,
+      progressPercent,
+      isComplete,
+      message: isComplete
+        ? `🎉 XUẤT SẮC! Đã bốc đủ 100% (${scannedCount}/${totalPackages} kiện) cho lệnh ${dto.dispatchCode}. Chuyến xe đã sẵn sàng xuất bến!`
+        : `✅ HỢP LỆ: Kiện hàng [${cleanBarcode}] đã được bốc lên xe thành công! (${scannedCount}/${totalPackages} kiện)`,
+    };
+
+    // Phát sóng WebSocket Realtime
+    this.realtimeGateway?.emitWmsDockScanned({
+      warehouseId: dispatch.warehouse_id,
+      dispatchCode: dto.dispatchCode,
+      barcode: cleanBarcode,
+      success: true,
+      itemName: `Kiện ${cleanBarcode} - ${currentOrder?.customer_name || 'Khách hàng'}`,
+      scannedCount,
+      totalCount: totalPackages,
+      isComplete,
+      scannedBy: user,
+      timestamp: new Date().toISOString(),
+    });
+
+    return result;
+  }
+
+  /**
+   * Quét nhập kho nhanh và phân bổ kệ (Inbound Putaway Scan)
+   */
+  async scanInboundItem(dto: ScanInboundDto) {
+    const qty = dto.quantity || 1;
+    const cleanSku = (dto.sku || dto.barcode).trim().toUpperCase();
+    const cleanBarcode = dto.barcode.trim().toUpperCase();
+    const productName = dto.productName || `Hàng hóa nhập kho [${cleanSku}]`;
+    const user = dto.scannedBy || 'Thủ kho Check-in';
+
+    // Tìm xem SKU đã có trong kho chưa
+    let item = await this.prisma.inventoryItem.findFirst({
+      where: {
+        warehouse_id: dto.warehouseId,
+        sku: cleanSku,
+      },
+    });
+
+    let newTotalQuantity = qty;
+
+    if (item) {
+      item = await this.prisma.inventoryItem.update({
+        where: { id: item.id },
+        data: {
+          quantity: item.quantity + qty,
+          zone_code: dto.zoneCode || item.zone_code,
+          last_updated: new Date(),
+        },
+      });
+      newTotalQuantity = item.quantity;
+    } else {
+      item = await this.prisma.inventoryItem.create({
+        data: {
+          warehouse_id: dto.warehouseId,
+          sku: cleanSku,
+          product_name: productName,
+          zone_code: dto.zoneCode || 'Z-GEN-01',
+          quantity: qty,
+          unit: dto.unit || 'kiện',
+          weight_per_unit: dto.weightPerUnit || 1.0,
+          min_stock_level: 10,
+        },
+      });
+      newTotalQuantity = item.quantity;
+    }
+
+    // Ghi nhật ký kho Audit Log
+    await this.prisma.warehouseActivity.create({
+      data: {
+        warehouse_id: dto.warehouseId,
+        type: WmsActivityType.INBOUND,
+        description: `Quét nhập kho ${qty} ${item.unit} [${cleanSku}] vào phân khu ${dto.zoneCode}`,
+        user,
+        reference_code: dto.receiptCode || cleanBarcode,
+        quantity: qty,
+      },
+    });
+
+    // Phát sóng WebSocket Realtime
+    this.realtimeGateway?.emitWmsInboundScanned({
+      warehouseId: dto.warehouseId,
+      barcode: cleanBarcode,
+      sku: cleanSku,
+      productName: item.product_name,
+      zoneCode: dto.zoneCode,
+      quantity: qty,
+      newTotalQuantity,
+      scannedBy: user,
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      barcode: cleanBarcode,
+      sku: cleanSku,
+      productName: item.product_name,
+      zoneCode: dto.zoneCode,
+      quantityAdded: qty,
+      newTotalQuantity,
+      unit: item.unit,
+      message: `✅ Nhập kho thành công: +${qty} ${item.unit} [${item.product_name}] lưu vào kệ ${dto.zoneCode} (Tổng tồn: ${newTotalQuantity})`,
+    };
+  }
+
+  /**
+   * Tra cứu nhanh tức thời thông tin mã vạch / QR (Quick Barcode Lookup)
+   */
+  async lookupBarcode(barcode: string, warehouseId?: string) {
+    const clean = barcode.trim().toUpperCase();
+
+    // 1. Thử tìm trong Tồn kho InventoryItem theo SKU
+    const inventoryItem = await this.prisma.inventoryItem.findFirst({
+      where: {
+        sku: clean,
+        ...(warehouseId ? { warehouse_id: warehouseId } : {}),
+      },
+      include: {
+        warehouse: { select: { id: true, name: true, code: true } },
+      },
+    });
+
+    if (inventoryItem) {
+      return {
+        found: true,
+        type: 'INVENTORY_SKU',
+        barcode: clean,
+        title: inventoryItem.product_name,
+        code: inventoryItem.sku,
+        warehouseName: inventoryItem.warehouse.name,
+        zoneCode: inventoryItem.zone_code,
+        quantity: inventoryItem.quantity,
+        unit: inventoryItem.unit,
+        weightPerUnit: inventoryItem.weight_per_unit,
+        status: inventoryItem.quantity > inventoryItem.min_stock_level ? 'IN_STOCK' : 'LOW_STOCK',
+        details: {
+          minStockLevel: inventoryItem.min_stock_level,
+          lastUpdated: inventoryItem.last_updated.toISOString(),
+        },
+      };
+    }
+
+    // 2. Thử tìm trong Đơn hàng theo mã vận đơn
+    let orderCode = clean;
+    const pkgMatch = clean.match(/^PKG-(VR-\d{4}-\d+)-\d+$/);
+    if (pkgMatch) {
+      orderCode = pkgMatch[1];
+    }
+
+    const order = await this.prisma.order.findFirst({
+      where: { order_code: orderCode },
+      include: {
+        deliveries: { select: { id: true, delivery_code: true, status: true } },
+      },
+    });
+
+    if (order) {
+      // Tìm lệnh xuất kho liên quan nếu có
+      const dispatch = await this.prisma.outboundDispatch.findFirst({
+        where: { order_code: order.order_code },
+        include: { warehouse: { select: { name: true } } },
+      });
+
+      return {
+        found: true,
+        type: 'ORDER_PACKAGE',
+        barcode: clean,
+        title: `Vận đơn ${order.order_code} - ${order.customer_name}`,
+        code: order.order_code,
+        warehouseName: dispatch?.warehouse.name || 'Kho trung tâm',
+        status: order.status,
+        quantity: order.package_count,
+        unit: 'kiện',
+        weight: order.total_weight,
+        details: {
+          customerName: order.customer_name,
+          deliveryAddress: order.delivery_address,
+          dispatchCode: dispatch?.dispatch_code || 'Chưa xếp lệnh xuất',
+          dispatchStatus: dispatch?.status || 'PENDING',
+        },
+      };
+    }
+
+    // 3. Thử tìm theo Lệnh xuất kho OutboundDispatch
+    const dispatch = await this.prisma.outboundDispatch.findUnique({
+      where: { dispatch_code: clean },
+      include: { warehouse: { select: { name: true } } },
+    });
+
+    if (dispatch) {
+      return {
+        found: true,
+        type: 'OUTBOUND_DISPATCH',
+        barcode: clean,
+        title: `Lệnh xuất kho ${dispatch.dispatch_code}`,
+        code: dispatch.dispatch_code,
+        warehouseName: dispatch.warehouse.name,
+        status: dispatch.status,
+        quantity: dispatch.item_count,
+        unit: 'kiện',
+        weight: dispatch.total_weight,
+        details: {
+          orderCode: dispatch.order_code,
+          routeCode: dispatch.route_code,
+          pickedBy: dispatch.picked_by,
+          createdAt: dispatch.created_at.toISOString(),
+        },
+      };
+    }
+
+    return {
+      found: false,
+      barcode: clean,
+      message: `Không tìm thấy thông tin nào liên quan đến mã "${clean}".`,
+    };
   }
 }

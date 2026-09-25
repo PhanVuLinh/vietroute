@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Share2,
   ArrowRightLeft,
+  ScanLine,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -36,6 +37,7 @@ import { WarehouseActivityLog } from "./WarehouseActivityLog";
 import { InboundReceiptDialog } from "./InboundReceiptDialog";
 import { OutboundDispatchDialog } from "./OutboundDispatchDialog";
 import { StockTransferDialog } from "./StockTransferDialog";
+import { BarcodeScannerKioskModal } from "./BarcodeScannerKioskModal";
 import type { Warehouse, WarehouseStatus, DockStatus } from "@/core/types/logistics";
 import { cn } from "@/shared/utils/cn";
 
@@ -98,6 +100,7 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
   const [isInboundOpen, setIsInboundOpen] = useState(false);
   const [isOutboundOpen, setIsOutboundOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
+  const [isKioskOpen, setIsKioskOpen] = useState(false);
   const [wmsSubTab, setWmsSubTab] = useState<"inventory" | "activity">("inventory");
 
   if (!isOpen || !warehouse) return null;
@@ -535,14 +538,25 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
 
               {/* TAB 3: ĐIỀU PHỐI CỔNG DOCK REALTIME */}
               <TabsContent value="docks" className="space-y-3 pt-3">
-                <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between text-xs flex-wrap gap-2">
                   <span className="font-semibold text-foreground flex items-center gap-1.5">
                     <Truck className="h-4 w-4 text-primary" />
                     <span>Trạng thái {warehouse.dockList?.length || warehouse.dockDoors || 0} Cổng Dock</span>
                   </span>
-                  <span className="text-[11px] text-muted-foreground font-mono">
-                    Cập nhật trực tiếp (Live TAT)
-                  </span>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setIsKioskOpen(true)}
+                      className="h-7 text-xs px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 font-semibold cursor-pointer shadow-2xs"
+                    >
+                      <ScanLine className="h-3.5 w-3.5" />
+                      <span>Trạm quét Dock Kiosk</span>
+                    </Button>
+                    <span className="text-[11px] text-muted-foreground font-mono hidden sm:inline">
+                      Live TAT
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-2.5">
@@ -657,7 +671,15 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
                     </Button>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Button
+                      size="sm"
+                      onClick={() => setIsKioskOpen(true)}
+                      className="h-7 text-xs px-2.5 bg-primary hover:bg-primary/90 text-primary-foreground gap-1 font-semibold cursor-pointer shadow-2xs"
+                    >
+                      <ScanLine className="h-3.5 w-3.5" />
+                      <span>Trạm quét Barcode</span>
+                    </Button>
                     <Button
                       size="sm"
                       onClick={() => setIsInboundOpen(true)}
@@ -884,6 +906,14 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
         isOpen={isTransferOpen}
         onClose={() => setIsTransferOpen(false)}
         onSuccess={() => {}}
+        warehouses={allWarehouses && allWarehouses.length > 0 ? allWarehouses : [warehouse]}
+        currentWarehouseId={warehouse.id}
+      />
+
+      {/* WMS Barcode & QR Scanner Kiosk Modal */}
+      <BarcodeScannerKioskModal
+        isOpen={isKioskOpen}
+        onClose={() => setIsKioskOpen(false)}
         warehouses={allWarehouses && allWarehouses.length > 0 ? allWarehouses : [warehouse]}
         currentWarehouseId={warehouse.id}
       />

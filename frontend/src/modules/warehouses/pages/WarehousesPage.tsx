@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, RefreshCw, AlertCircle } from "lucide-react";
+import { Plus, RefreshCw, AlertCircle, ScanLine } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { Button } from "@/shared/components/ui/button";
@@ -14,6 +14,7 @@ import { WarehouseMobileCards } from "../components/WarehouseMobileCards";
 import { WarehouseMap } from "../components/WarehouseMap";
 import { WarehouseDetailDrawer } from "../components/WarehouseDetailDrawer";
 import { CreateWarehouseDialog } from "../components/CreateWarehouseDialog";
+import { BarcodeScannerKioskModal } from "../components/BarcodeScannerKioskModal";
 import type { Warehouse, WarehouseStatus } from "@/core/types/logistics";
 
 export const WarehousesPage: React.FC = () => {
@@ -50,6 +51,7 @@ export const WarehousesPage: React.FC = () => {
   const [activeDrawerWarehouse, setActiveDrawerWarehouse] = useState<Warehouse | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [isKioskOpen, setIsKioskOpen] = useState<boolean>(false);
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
 
   // State modal xác nhận xóa
@@ -129,6 +131,16 @@ export const WarehousesPage: React.FC = () => {
         <div className="flex items-center gap-2 flex-wrap">
           {/* View Mode Switcher */}
           <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+
+          {/* Nút Trạm Quét Mã Vạch Kiosk */}
+          <Button
+            onClick={() => setIsKioskOpen(true)}
+            size="sm"
+            className="h-9 px-3 text-xs gap-1.5 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
+          >
+            <ScanLine className="h-4 w-4" />
+            <span>Trạm quét Barcode Kiosk</span>
+          </Button>
 
           <Button
             onClick={handleOpenCreate}
@@ -392,6 +404,15 @@ export const WarehousesPage: React.FC = () => {
         confirmText="Xóa kho bãi"
         cancelText="Hủy bỏ"
         variant="destructive"
+      />
+
+      {/* WMS Barcode & QR Scanner Kiosk Modal */}
+      <BarcodeScannerKioskModal
+        isOpen={isKioskOpen}
+        onClose={() => setIsKioskOpen(false)}
+        warehouses={allWarehouses}
+        currentWarehouseId={selectedWarehouseId || undefined}
+        onScanSuccess={refetch}
       />
     </PageContainer>
   );

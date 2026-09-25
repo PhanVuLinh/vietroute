@@ -180,6 +180,21 @@ const apiInventoryService = {
       status: data.status,
       created_by: data.createdBy,
     }),
+
+  // ==========================================
+  // WMS SCANNER KIOSK API ENDPOINTS
+  // ==========================================
+  getDockScanSessions: (params?: { warehouseId?: string }) =>
+    httpClient.get<any[]>("/wms/scanner/dock-sessions", { params }),
+
+  scanDockItem: (payload: { warehouseId: string; dispatchCode: string; barcode: string; scannedBy?: string }) =>
+    httpClient.post<any>("/wms/scanner/scan-dock", payload),
+
+  scanInboundItem: (payload: any) =>
+    httpClient.post<any>("/wms/scanner/scan-inbound", payload),
+
+  lookupBarcode: (barcode: string, params?: { warehouseId?: string }) =>
+    httpClient.get<any>(`/wms/scanner/lookup/${encodeURIComponent(barcode)}`, { params }),
 };
 
 const apiIncidentService = {

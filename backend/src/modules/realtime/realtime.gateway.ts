@@ -215,6 +215,43 @@ export class RealtimeGateway
     this.server.emit('alert:emergency', alert);
   }
 
+  /**
+   * Phát sóng sự kiện quét mã vạch bốc xếp hàng xuất kho (WMS Dock Scan)
+   */
+  emitWmsDockScanned(payload: {
+    warehouseId: string;
+    dispatchCode: string;
+    barcode: string;
+    success: boolean;
+    itemName?: string;
+    scannedCount: number;
+    totalCount: number;
+    isComplete: boolean;
+    scannedBy?: string;
+    timestamp: string;
+  }) {
+    if (!this.server) return;
+    this.server.emit('wms:dock_scanned', payload);
+  }
+
+  /**
+   * Phát sóng sự kiện quét nhập kho vào phân khu (WMS Inbound Scan)
+   */
+  emitWmsInboundScanned(payload: {
+    warehouseId: string;
+    barcode: string;
+    sku: string;
+    productName: string;
+    zoneCode: string;
+    quantity: number;
+    newTotalQuantity: number;
+    scannedBy?: string;
+    timestamp: string;
+  }) {
+    if (!this.server) return;
+    this.server.emit('wms:inbound_scanned', payload);
+  }
+
   // ==========================================
   // CLIENT LISTENERS (Client gửi lên Server)
   // ==========================================
