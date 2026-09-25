@@ -131,9 +131,10 @@ export const CargoInputPanel: React.FC<CargoInputPanelProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onLoadDemoBatch}
-                className="h-7 px-2 text-[11px] gap-1 cursor-pointer text-amber-600 border-amber-500/30 hover:bg-amber-500/10"
+                className="h-7 px-2 text-[11px] gap-1 cursor-pointer text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10 font-semibold"
+                title="Nạp toàn bộ các đơn hàng thực tế đang chờ xếp xe từ cơ sở dữ liệu PostgreSQL"
               >
-                <Sparkles className="h-3 w-3" /> Mẫu 24 kiện
+                <Sparkles className="h-3 w-3" /> Nạp tất cả đơn DB
               </Button>
               <Button
                 size="sm"

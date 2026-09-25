@@ -20,10 +20,7 @@ import { toast } from '@/shared/components/feedback/Toast';
 import { playSound } from '@/shared/utils/soundEffects';
 import { useOrders } from '@/modules/orders/hooks/useOrders';
 import { TRUCK_PRESETS } from '../types/load3d';
-import {
-  optimize3DLoad,
-  generateDemoCargoBatch,
-} from '../utils/loadOptimizerEngine';
+import { optimize3DLoad } from '../utils/loadOptimizerEngine';
 import { Cargo3DCanvas } from '../components/load3d/Cargo3DCanvas';
 import { AxleLoadIndicator } from '../components/load3d/AxleLoadIndicator';
 import { CargoInputPanel } from '../components/load3d/CargoInputPanel';
@@ -37,47 +34,123 @@ import type {
   PlacedCargoBox,
 } from '../types/load3d';
 
+// Chuyển đổi đơn hàng thật từ database PostgreSQL thành kiện hàng 3D
+function convertRealOrdersToCargo(orders: any[]): CargoItemInput[] {
+  const result: CargoItemInput[] = [];
+  const stopColors = ['#059669', '#D97706', '#1E40AF', '#7C3AED', '#DC2626', '#0891B2'];
+
+  orders.forEach((order, ordIdx) => {
+    const stopIndex = (ordIdx % 3) + 1;
+    const color = stopColors[stopIndex - 1] || '#3B82F6';
+
+    if (order.items && order.items.length > 0) {
+      order.items.forEach((item: any, itemIdx: number) => {
+        const sideCm = Math.round(Math.cbrt((item.volume || 0.05) * 1000000));
+        const lengthCm = Math.max(30, Math.min(100, Math.round(sideCm * 1.2)));
+        const widthCm = Math.max(25, Math.min(80, Math.round(sideCm * 0.9)));
+        const heightCm = Math.max(20, Math.min(80, Math.round(sideCm * 0.9)));
+
+        result.push({
+          id: `cargo-${order.id}-${itemIdx}`,
+          orderCode: `${order.orderCode} (#${itemIdx + 1})`,
+          customerName: order.receiverName || order.customerName,
+          destination: order.receiverAddress || 'Hà Nội',
+          stopIndex,
+          lengthCm,
+          widthCm,
+          heightCm,
+          weightKg: Math.max(5, Math.round(item.weight || 20)),
+          color,
+          isFragile: Boolean(item.isFragile),
+          allowRotate: true,
+        });
+      });
+    } else {
+      const packageCount = Math.max(1, Math.min(4, Math.ceil((order.totalWeight || 50) / 50)));
+      const weightPerPkg = Math.round((order.totalWeight || 50) / packageCount);
+
+      for (let i = 1; i <= packageCount; i++) {
+        result.push({
+          id: `cargo-${order.id}-${i}`,
+          orderCode: `${order.orderCode} [Kiện ${i}/${packageCount}]`,
+          customerName: order.receiverName || order.customerName,
+          destination: order.receiverAddress || 'Hà Nội',
+          stopIndex,
+          lengthCm: 60 + (i % 2) * 15,
+          widthCm: 45 + (i % 2) * 10,
+          heightCm: 40 + (i % 3) * 10,
+          weightKg: weightPerPkg || 30,
+          color,
+          isFragile: order.priority === 'URGENT' || i === packageCount,
+          allowRotate: true,
+        });
+      }
+    }
+  });
+
+  return result;
+}
+
 export const CargoLoadOptimizerPage: React.FC = () => {
   usePageTitle('Mô Phỏng Xếp Hàng 3D & Tải Trọng Trục — VietRoute');
 
-  // Lấy danh sách đơn hàng thực tế từ cơ sở dữ liệu
-  const { orders } = useOrders();
+  // Lấy danh sách đơn hàng thực tế từ cơ sở dữ liệu PostgreSQL
+  const { orders, isLoading } = useOrders();
   const realOrders = orders || [];
 
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleContainerPreset>(TRUCK_PRESETS[1]); // Hyundai Mighty 3.5T
-  const [cargoItems, setCargoItems] = useState<CargoItemInput[]>(generateDemoCargoBatch());
+  const [cargoItems, setCargoItems] = useState<CargoItemInput[]>([]);
   const [optimizationResult, setOptimizationResult] = useState<LoadOptimizationResult | null>(null);
   const [selectedBox, setSelectedBox] = useState<PlacedCargoBox | null>(null);
+  const [hasInitializedWithRealData, setHasInitializedWithRealData] = useState(false);
 
   // Modals state
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isSelectOrdersModalOpen, setIsSelectOrdersModalOpen] = useState(false);
   const [isConfirmDispatchOpen, setIsConfirmDispatchOpen] = useState(false);
 
+  // Tự động nạp toàn bộ đơn hàng thật từ database PostgreSQL khi tải trang
+  useEffect(() => {
+    if (realOrders.length > 0 && !hasInitializedWithRealData) {
+      const realItems = convertRealOrdersToCargo(realOrders);
+      setCargoItems(realItems);
+      const result = optimize3DLoad(selectedVehicle, realItems);
+      setOptimizationResult(result);
+      setHasInitializedWithRealData(true);
+    }
+  }, [realOrders, selectedVehicle, hasInitializedWithRealData]);
+
   // Chạy tối ưu hóa xếp hàng 3D
   const runOptimization = () => {
+    if (cargoItems.length === 0) {
+      toast.warning('Chưa có kiện hàng nào để tính toán');
+      return;
+    }
     const result = optimize3DLoad(selectedVehicle, cargoItems);
     setOptimizationResult(result);
     playSound('SUCCESS');
     toast.success(
       'Tối ưu hóa xếp hàng 3D thành công!',
-      `Đã xếp ${result.placedBoxes.length}/${cargoItems.length} kiện hàng. Thể tích sử dụng: ${result.analysis.volumeUtilizationPercent}%.`
+      `Đã xếp ${result.placedBoxes.length}/${cargoItems.length} kiện hàng từ database. Thể tích sử dụng: ${result.analysis.volumeUtilizationPercent}%.`
     );
   };
 
-  // Khởi chạy tối ưu lần đầu
+  // Cập nhật kết quả khi đổi loại phương tiện
   useEffect(() => {
-    runOptimization();
+    if (cargoItems.length > 0) {
+      const result = optimize3DLoad(selectedVehicle, cargoItems);
+      setOptimizationResult(result);
+    }
   }, [selectedVehicle]);
 
-  // Nạp danh sách kiện hàng thật từ đơn hàng trong kho
+  // Nạp danh sách kiện hàng thật từ đơn hàng được chọn trong kho
   const handleImportRealOrders = (importedItems: CargoItemInput[]) => {
     setCargoItems(importedItems);
     const result = optimize3DLoad(selectedVehicle, importedItems);
     setOptimizationResult(result);
     playSound('SUCCESS');
     toast.success(
-      'Đã nạp đơn hàng thực tế từ kho!',
+      'Đã nạp đơn hàng thực tế từ PostgreSQL!',
       `Đã chuyển đổi ${importedItems.length} kiện hàng từ các vận đơn được chọn và tối ưu hóa vị trí LIFO.`
     );
   };
@@ -88,8 +161,8 @@ export const CargoLoadOptimizerPage: React.FC = () => {
     const colors = ['#1E40AF', '#D97706', '#059669', '#7C3AED', '#DC2626'];
     const newItem: CargoItemInput = {
       id: `item-${Date.now()}`,
-      orderCode: `VR-PKG-${Math.floor(100 + Math.random() * 900)}`,
-      customerName: 'Khách hàng ký gửi',
+      orderCode: `VR-2026-${Math.floor(100 + Math.random() * 900)}`,
+      customerName: 'Khách hàng vận chuyển',
       destination: `Điểm giao #${randomStop}`,
       stopIndex: randomStop,
       lengthCm: 60,
@@ -100,22 +173,35 @@ export const CargoLoadOptimizerPage: React.FC = () => {
       isFragile: false,
       allowRotate: true,
     };
-    setCargoItems([...cargoItems, newItem]);
-    toast.info('Đã thêm 1 kiện', 'Bấm "Tối Ưu Xếp Hàng 3D" để cập nhật vị trí mới');
+    const nextItems = [...cargoItems, newItem];
+    setCargoItems(nextItems);
+    const result = optimize3DLoad(selectedVehicle, nextItems);
+    setOptimizationResult(result);
+    toast.info('Đã thêm 1 kiện', 'Đã tự động tính toán lại vị trí');
   };
 
   // Xóa kiện hàng
   const handleRemoveCargoItem = (id: string) => {
-    setCargoItems(cargoItems.filter((item) => item.id !== id));
+    const nextItems = cargoItems.filter((item) => item.id !== id);
+    setCargoItems(nextItems);
+    if (nextItems.length > 0) {
+      setOptimizationResult(optimize3DLoad(selectedVehicle, nextItems));
+    } else {
+      setOptimizationResult(null);
+    }
   };
 
-  // Nạp 24 kiện hàng mẫu
-  const handleLoadDemoBatch = () => {
-    const demo = generateDemoCargoBatch();
-    setCargoItems(demo);
-    const result = optimize3DLoad(selectedVehicle, demo);
+  // Nạp toàn bộ đơn hàng thật từ database PostgreSQL
+  const handleLoadAllDbOrders = () => {
+    if (realOrders.length === 0) {
+      toast.warning('Chưa có đơn hàng nào trong cơ sở dữ liệu');
+      return;
+    }
+    const realItems = convertRealOrdersToCargo(realOrders);
+    setCargoItems(realItems);
+    const result = optimize3DLoad(selectedVehicle, realItems);
     setOptimizationResult(result);
-    toast.success('Đã nạp 24 kiện hàng mẫu', 'Đã phân bổ 3 điểm giao hàng theo LIFO');
+    toast.success('Đã nạp toàn bộ đơn hàng từ PostgreSQL', `Đã chuyển đổi ${realItems.length} kiện hàng thật`);
   };
 
   return (
@@ -204,7 +290,7 @@ export const CargoLoadOptimizerPage: React.FC = () => {
             cargoItems={cargoItems}
             onAddCargoItem={handleAddCargoItem}
             onRemoveCargoItem={handleRemoveCargoItem}
-            onLoadDemoBatch={handleLoadDemoBatch}
+            onLoadDemoBatch={handleLoadAllDbOrders}
             onOpenSelectOrdersModal={() => setIsSelectOrdersModalOpen(true)}
             onRunOptimization={runOptimization}
             onOpenDispatchConfirm={() => setIsConfirmDispatchOpen(true)}

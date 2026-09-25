@@ -21,23 +21,43 @@ import { Roles } from '../../common/decorators/roles.decorator.js';
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
-  @Get('portal/:id/dashboard')
+  @Get(':id/portal-dashboard')
   getPortalDashboard(@Param('id') id: string) {
     return this.customersService.getPortalDashboard(id);
   }
 
-  @Get('portal/:id/active-cargo')
+  @Get('portal/:id/dashboard')
+  getPortalDashboardLegacy(@Param('id') id: string) {
+    return this.customersService.getPortalDashboard(id);
+  }
+
+  @Get(':id/portal-active-cargo')
   getActiveCargo(@Param('id') id: string) {
     return this.customersService.getActiveCargo(id);
   }
 
-  @Post('portal/:id/bulk-orders')
+  @Get('portal/:id/active-cargo')
+  getActiveCargoLegacy(@Param('id') id: string) {
+    return this.customersService.getActiveCargo(id);
+  }
+
+  @Post(':id/portal-bulk-orders')
   createBulkOrders(@Param('id') id: string, @Body() dto: BulkCreateOrderDto) {
     return this.customersService.createBulkOrders(id, dto);
   }
 
-  @Post('portal/:id/pay-debt')
+  @Post('portal/:id/bulk-orders')
+  createBulkOrdersLegacy(@Param('id') id: string, @Body() dto: BulkCreateOrderDto) {
+    return this.customersService.createBulkOrders(id, dto);
+  }
+
+  @Post(':id/portal-pay-debt')
   payDebt(@Param('id') id: string, @Body() dto: PayDebtDto) {
+    return this.customersService.payDebt(id, dto);
+  }
+
+  @Post('portal/:id/pay-debt')
+  payDebtLegacy(@Param('id') id: string, @Body() dto: PayDebtDto) {
     return this.customersService.payDebt(id, dto);
   }
 

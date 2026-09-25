@@ -1,4 +1,3 @@
-import { ENV } from "@/core/config/env";
 import { httpClient } from "@/core/http/client";
 import type { ApiPaginatedResponse, PaginatedData } from "@/core/types/api";
 import type {
@@ -21,20 +20,12 @@ import type {
 } from "@/core/types/logistics";
 import type { AuthUser, LoginCredentials, LoginResponseData } from "@/core/types/auth";
 
-import { mockAuthService } from "../services/mockAuthService";
-import { mockUserService } from "../services/mockUserService";
-import { mockDriverService, type DriverFilterParams } from "../services/mockDriverService";
-import { mockVehicleService, type VehicleFilterParams } from "../services/mockVehicleService";
-import { mockWarehouseService, type WarehouseFilterParams } from "../services/mockWarehouseService";
-import { mockOrderService, type OrderFilterParams } from "../services/mockOrderService";
-import { mockDeliveryService, type DeliveryFilterParams } from "../services/mockDeliveryService";
-import { mockDispatchService } from "../services/mockDispatchService";
-import { mockRouteService, type RouteFilterParams } from "../services/mockRouteService";
-import { mockNotificationService } from "../services/mockNotificationService";
-import { mockAnalyticsService } from "../services/mockAnalyticsService";
-import { mockCustomerService } from "../services/mockCustomerService";
-import { mockInventoryService } from "../services/mockInventoryService";
-import { mockIncidentService } from "../services/mockIncidentService";
+import type { DriverFilterParams } from "../services/mockDriverService";
+import type { VehicleFilterParams } from "../services/mockVehicleService";
+import type { WarehouseFilterParams } from "../services/mockWarehouseService";
+import type { OrderFilterParams } from "../services/mockOrderService";
+import type { DeliveryFilterParams } from "../services/mockDeliveryService";
+import type { RouteFilterParams } from "../services/mockRouteService";
 import type { EnrichedCustomer } from "@/modules/customers/types/customer";
 import type {
   InboundReceipt,
@@ -260,23 +251,21 @@ const apiFinanceService = {
 
 
 // ==========================================
-// 2. SERVICE FACTORY TỰ ĐỘNG CHUYỂN ĐỔI THEO ENV
+// 2. EXPORT 100% REAL BACKEND SERVICES (KHÔNG DÙNG MOCK)
 // ==========================================
-const isMock = ENV.USE_MOCK;
-
-export const authService = isMock ? mockAuthService : apiAuthService;
-export const userService = isMock ? mockUserService : apiUserService;
-export const driverService = isMock ? mockDriverService : apiDriverService;
-export const vehicleService = isMock ? mockVehicleService : apiVehicleService;
-export const warehouseService = isMock ? mockWarehouseService : apiWarehouseService;
-export const orderService = isMock ? mockOrderService : apiOrderService;
-export const deliveryService = isMock ? mockDeliveryService : apiDeliveryService;
-export const dispatchService = isMock ? mockDispatchService : apiDispatchService;
-export const routeService = isMock ? mockRouteService : apiRouteService;
-export const notificationService = isMock ? mockNotificationService : apiNotificationService;
-export const analyticsService = isMock ? mockAnalyticsService : apiAnalyticsService;
-export const customerService = isMock ? mockCustomerService : apiCustomerService;
-export const inventoryService = isMock ? mockInventoryService : apiInventoryService;
-export const incidentService = isMock ? mockIncidentService : apiIncidentService;
+export const authService = apiAuthService;
+export const userService = apiUserService;
+export const driverService = apiDriverService;
+export const vehicleService = apiVehicleService;
+export const warehouseService = apiWarehouseService;
+export const orderService = apiOrderService;
+export const deliveryService = apiDeliveryService;
+export const dispatchService = apiDispatchService;
+export const routeService = apiRouteService;
+export const notificationService = apiNotificationService;
+export const analyticsService = apiAnalyticsService;
+export const customerService = apiCustomerService;
+export const inventoryService = apiInventoryService;
+export const incidentService = apiIncidentService;
 export const financeService = apiFinanceService;
 

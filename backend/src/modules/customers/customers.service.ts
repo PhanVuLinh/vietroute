@@ -198,7 +198,6 @@ export class CustomersService {
       where: {
         OR: [
           { id: customerId },
-          { id: { contains: customerId, mode: 'insensitive' } },
           { name: { contains: customerId, mode: 'insensitive' } },
         ],
       },
@@ -337,7 +336,7 @@ export class CustomersService {
       where: {
         OR: [
           { id: customerId },
-          { id: { contains: customerId, mode: 'insensitive' } },
+          { name: { contains: customerId, mode: 'insensitive' } },
         ],
       },
     });
