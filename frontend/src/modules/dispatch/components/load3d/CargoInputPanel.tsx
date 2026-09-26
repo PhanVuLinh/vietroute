@@ -161,8 +161,8 @@ export const CargoInputPanel: React.FC<CargoInputPanelProps> = ({
                     <div className="font-bold text-foreground truncate flex items-center gap-1">
                       <span>{item.orderCode}</span>
                       {item.isFragile && (
-                        <span className="text-[10px] text-amber-500 font-semibold" title="Hàng dễ vỡ">
-                          ⚠️
+                        <span className="inline-flex items-center text-amber-500" title="Hàng dễ vỡ">
+                          <AlertCircle className="h-3 w-3 shrink-0" />
                         </span>
                       )}
                     </div>
@@ -239,7 +239,7 @@ export const CargoInputPanel: React.FC<CargoInputPanelProps> = ({
             className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-2 cursor-pointer shadow-md"
           >
             <Truck className="h-4 w-4" />
-            🚀 Xác Nhận Tạo Chuyến Xe Điều Phối
+            Xác Nhận Tạo Chuyến Xe Điều Phối
           </Button>
         </div>
       </CardContent>

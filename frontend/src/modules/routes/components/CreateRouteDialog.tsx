@@ -233,7 +233,7 @@ export const CreateRouteDialog: React.FC<CreateRouteDialogProps> = ({
 
     setCreationMode("MANUAL"); // Chuyển sang xem danh sách chặng và tối ưu
     setNotificationMsg(
-      `🎉 Đã gom thành công ${ordersToBatch.length} đơn hàng vào lộ trình! Nhấn "Tự động tối ưu TSP" để sắp xếp chặng gần nhất.`
+      `Đã gom thành công ${ordersToBatch.length} đơn hàng vào lộ trình! Nhấn "Tự động tối ưu TSP" để sắp xếp chặng gần nhất.`
     );
   };
 
@@ -257,7 +257,7 @@ export const CreateRouteDialog: React.FC<CreateRouteDialogProps> = ({
 
     setStops(clonedStops);
     setCreationMode("MANUAL");
-    setNotificationMsg(`📋 Đã nạp thành công Tuyến Mẫu "${tpl.name}" với ${clonedStops.length} điểm dừng!`);
+    setNotificationMsg(`Đã nạp thành công Tuyến Mẫu "${tpl.name}" với ${clonedStops.length} điểm dừng!`);
   };
 
   if (!isOpen) return null;
@@ -314,7 +314,7 @@ export const CreateRouteDialog: React.FC<CreateRouteDialogProps> = ({
 
       const optimized = await onOptimizeStops(originCoords, stops);
       setStops(optimized);
-      setNotificationMsg(`✨ Đã tối ưu hóa thứ tự ${optimized.length} điểm dừng theo khoảng cách gần nhất!`);
+      setNotificationMsg(`Đã tối ưu hóa thứ tự ${optimized.length} điểm dừng theo khoảng cách gần nhất!`);
     } catch (err: any) {
       setErrorMessage("Không thể tối ưu chặng dừng. Vui lòng thử lại.");
     } finally {

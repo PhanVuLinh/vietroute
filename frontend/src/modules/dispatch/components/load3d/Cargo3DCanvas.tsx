@@ -6,6 +6,7 @@ import {
   Pause,
   ZoomIn,
   ZoomOut,
+  MousePointer,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import type { PlacedCargoBox, VehicleContainerPreset } from '../../types/load3d';
@@ -224,13 +225,13 @@ export const Cargo3DCanvas: React.FC<Cargo3DCanvasProps> = ({
     ctx.fillStyle = '#60A5FA';
     ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🚚 ĐẦU XE (CABIN)', cabinLabelPt.x, cabinLabelPt.y);
+    ctx.fillText('ĐẦU XE (CABIN)', cabinLabelPt.x, cabinLabelPt.y);
 
     const rearLabelPt = project3D(vehicle.lengthM + 0.5, vehicle.widthM / 2, 0.3, centerX, centerY, scale);
     ctx.fillStyle = '#34D399';
     ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🚪 CỬA DỠ HÀNG (LIFO)', rearLabelPt.x, rearLabelPt.y);
+    ctx.fillText('CỬA DỠ HÀNG (LIFO)', rearLabelPt.x, rearLabelPt.y);
 
     // 6. Chuẩn bị danh sách các kiện hàng cần vẽ (theo bước stepIndex)
     const visibleBoxes = placedBoxes.filter((b) => b.stepIndex <= currentStep);
@@ -319,7 +320,7 @@ export const Cargo3DCanvas: React.FC<Cargo3DCanvasProps> = ({
       if (box.cargo.isFragile) {
         ctx.fillStyle = '#FBBF24';
         ctx.font = '9px sans-serif';
-        ctx.fillText('⚠️ Dễ vỡ', topCenter.x, topCenter.y + 7);
+        ctx.fillText('[DỄ VỠ]', topCenter.x, topCenter.y + 7);
       }
     });
 
@@ -475,8 +476,9 @@ export const Cargo3DCanvas: React.FC<Cargo3DCanvasProps> = ({
         />
 
         {/* Help Tip Overlay */}
-        <div className="absolute top-14 left-3 pointer-events-none text-[10px] text-slate-400 bg-slate-900/60 backdrop-blur-xs px-2 py-1 rounded-lg border border-white/5">
-          🖱️ Kéo chuột để xoay 360° • Lăn chuột để Zoom
+        <div className="absolute top-14 left-3 pointer-events-none text-[10px] text-slate-400 bg-slate-900/60 backdrop-blur-xs px-2 py-1 rounded-lg border border-white/5 flex items-center gap-1.5">
+          <MousePointer className="h-3 w-3 text-slate-400" />
+          <span>Kéo chuột để xoay 360° • Lăn chuột để Zoom</span>
         </div>
       </div>
 

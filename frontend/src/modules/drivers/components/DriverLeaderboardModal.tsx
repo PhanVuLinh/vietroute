@@ -10,6 +10,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import {
   Trophy,
+  Medal,
   Star,
   Award,
   Download,
@@ -45,20 +46,20 @@ export const DriverLeaderboardModal: React.FC<DriverLeaderboardModalProps> = ({
     switch (index) {
       case 0:
         return (
-          <div className="h-7 w-7 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-amber-500/30">
-            🥇
+          <div className="h-7 w-7 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/40 flex items-center justify-center font-bold text-xs shadow-md shadow-amber-500/10">
+            <Trophy className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
           </div>
         );
       case 1:
         return (
-          <div className="h-7 w-7 rounded-full bg-slate-300 text-slate-800 flex items-center justify-center font-bold text-xs shadow-md shadow-slate-300/30">
-            🥈
+          <div className="h-7 w-7 rounded-full bg-slate-400/20 text-slate-400 border border-slate-400/40 flex items-center justify-center font-bold text-xs shadow-md shadow-slate-400/10">
+            <Medal className="h-3.5 w-3.5 fill-slate-400 text-slate-400" />
           </div>
         );
       case 2:
         return (
-          <div className="h-7 w-7 rounded-full bg-amber-700 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-amber-700/30">
-            🥉
+          <div className="h-7 w-7 rounded-full bg-amber-700/20 text-amber-700 border border-amber-700/40 flex items-center justify-center font-bold text-xs shadow-md shadow-amber-700/10">
+            <Medal className="h-3.5 w-3.5 fill-amber-700 text-amber-700" />
           </div>
         );
       default:
@@ -209,7 +210,10 @@ export const DriverLeaderboardModal: React.FC<DriverLeaderboardModalProps> = ({
                       {driver.successRate}%
                     </td>
                     <td className="py-2.5 px-3 text-center font-mono font-bold text-amber-500">
-                      ★ {(driver as any).rating || 4.9}
+                      <span className="inline-flex items-center gap-1 justify-center">
+                        <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                        {(driver as any).rating || 4.9}
+                      </span>
                     </td>
                     <td className="py-2.5 px-3 text-right">
                       <Button

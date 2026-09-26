@@ -1,5 +1,5 @@
 import React from "react";
-import { Award, Trophy, Star, Truck, Navigation, CheckCircle2, Phone } from "lucide-react";
+import { Award, Trophy, Medal, Star, Truck, Navigation, CheckCircle2, Phone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
 import type { Driver, Vehicle } from "@/core/types/logistics";
@@ -32,19 +32,19 @@ export const DriverRankingTable: React.FC<DriverRankingTableProps> = ({
       case 1:
         return (
           <div className="h-6 w-6 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shadow-xs ring-2 ring-amber-400/30">
-            🥇
+            <Trophy className="h-3.5 w-3.5 fill-white text-white" />
           </div>
         );
       case 2:
         return (
           <div className="h-6 w-6 rounded-full bg-slate-400 text-white flex items-center justify-center font-bold text-xs shadow-xs ring-2 ring-slate-300/30">
-            🥈
+            <Medal className="h-3.5 w-3.5 fill-white text-white" />
           </div>
         );
       case 3:
         return (
           <div className="h-6 w-6 rounded-full bg-amber-700 text-white flex items-center justify-center font-bold text-xs shadow-xs ring-2 ring-amber-600/30">
-            🥉
+            <Medal className="h-3.5 w-3.5 fill-white text-white" />
           </div>
         );
       default:

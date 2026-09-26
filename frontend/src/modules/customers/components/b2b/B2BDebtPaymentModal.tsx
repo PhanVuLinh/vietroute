@@ -180,7 +180,7 @@ export const B2BDebtPaymentModal: React.FC<B2BDebtPaymentModalProps> = ({
               className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-2 cursor-pointer shadow-md"
             >
               <Zap className="h-4 w-4" />
-              {isProcessing ? 'Đang xác thực giao dịch...' : '⚡ Giả Lập Nhận Tiền Thành Công (Auto Webhook)'}
+              {isProcessing ? 'Đang xác thực giao dịch...' : 'Giả Lập Nhận Tiền Thành Công (Auto Webhook)'}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground">
               Trong môi trường sản xuất, Webhook ngân hàng sẽ tự động xác nhận và giải phóng hạn mức trong 3-5 giây.

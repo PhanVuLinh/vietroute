@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Printer,
   FileCheck,
+  FileSignature,
   CheckCircle2,
 } from "lucide-react";
 import type { EnrichedOrder } from "../hooks/useOrders";
@@ -443,8 +444,17 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                 className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer"
                 title="Xác nhận giao hàng và ký nhận điện tử e-POD"
               >
-                <FileCheck className="w-3.5 h-3.5" />
-                <span>{currentOrder.pod ? "Cập nhật e-POD" : "✍️ Ký nhận e-POD"}</span>
+                {currentOrder.pod ? (
+                  <>
+                    <FileCheck className="w-3.5 h-3.5" />
+                    <span>Cập nhật e-POD</span>
+                  </>
+                ) : (
+                  <>
+                    <FileSignature className="w-3.5 h-3.5" />
+                    <span>Ký nhận e-POD</span>
+                  </>
+                )}
               </button>
 
               <button

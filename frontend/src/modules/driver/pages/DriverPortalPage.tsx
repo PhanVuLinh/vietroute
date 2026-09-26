@@ -13,6 +13,7 @@ import {
   Maximize2,
   RefreshCw,
   Database,
+  X,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -507,8 +508,9 @@ export const DriverPortalPage: React.FC = () => {
 
                     {/* Mặt hàng tóm tắt & Tiền COD */}
                     <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 flex items-center justify-between text-xs">
-                      <div className="line-clamp-1 text-muted-foreground text-[11px] pr-2">
-                        📦 {stop.itemsSummary}
+                      <div className="line-clamp-1 text-muted-foreground text-[11px] pr-2 flex items-center gap-1.5">
+                        <Package className="h-3 w-3 text-muted-foreground shrink-0 inline" />
+                        <span>{stop.itemsSummary}</span>
                       </div>
 
                       {stop.codAmount > 0 ? (
@@ -609,9 +611,9 @@ export const DriverPortalPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setViewingPodStop(null)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                className="text-muted-foreground hover:text-foreground cursor-pointer p-1 rounded-md"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 

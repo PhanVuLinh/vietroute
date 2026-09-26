@@ -270,7 +270,7 @@ export const mockInventoryService = {
           reason: "WRONG_VEHICLE",
           barcode: cleanBarcode,
           correctOrderCode: "VR-2026-999",
-          message: `🚨 CẢNH BÁO NGUY HIỂM: Kiện hàng [${cleanBarcode}] KHÔNG THUỘC chuyến xe này! Thuộc về đơn hàng khác. Không được xếp lên xe!`,
+          message: `CẢNH BÁO NGUY HIỂM: Kiện hàng [${cleanBarcode}] KHÔNG THUỘC chuyến xe này! Thuộc về đơn hàng khác. Không được xếp lên xe!`,
         },
       };
     }
@@ -288,7 +288,7 @@ export const mockInventoryService = {
         totalCount: dispatch.itemCount,
         progressPercent: 100,
         isComplete: true,
-        message: `✅ HỢP LỆ: Kiện hàng [${cleanBarcode}] đã được bốc lên xe thành công!`,
+        message: `HỢP LỆ: Kiện hàng [${cleanBarcode}] đã được bốc lên xe thành công!`,
       },
     };
   },
@@ -314,7 +314,7 @@ export const mockInventoryService = {
         quantityAdded: qty,
         newTotalQuantity: 100 + qty,
         unit: payload.unit || "kiện",
-        message: `✅ Đã nhập kho ${qty} kiện vào phân khu ${payload.zoneCode}!`,
+        message: `Đã nhập kho ${qty} kiện vào phân khu ${payload.zoneCode}!`,
       },
     };
   },

@@ -478,7 +478,7 @@ export const InvoicePaymentPortalPage: React.FC = () => {
                       >
                         <Zap className="h-4 w-4 text-amber-300" />
                         <span>
-                          {payMutation.isPending ? "Đang xử lý gạch nợ..." : "⚡ Giả lập Quét QR Thanh Toán Ngay (Demo 1-Chạm)"}
+                          {payMutation.isPending ? "Đang xử lý gạch nợ..." : "Giả lập Quét QR Thanh Toán Ngay (Demo 1-Chạm)"}
                         </span>
                       </Button>
                       <span className="text-[10px] text-muted-foreground text-center block mt-1.5">

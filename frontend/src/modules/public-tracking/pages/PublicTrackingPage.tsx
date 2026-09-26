@@ -15,6 +15,7 @@ import {
   CreditCard,
   ShieldCheck,
   Navigation2,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -278,7 +279,7 @@ export const PublicTrackingPage: React.FC = () => {
       const elOrigin = document.createElement("div");
       elOrigin.className =
         "h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xl border-2 border-white transition-transform hover:scale-110 cursor-pointer";
-      elOrigin.innerHTML = "🏭";
+      elOrigin.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>`;
       const markerOrigin = new Marker({ element: elOrigin })
         .setLngLat(shipment.originCoords)
         .setPopup(
@@ -293,7 +294,7 @@ export const PublicTrackingPage: React.FC = () => {
       const elDest = document.createElement("div");
       elDest.className =
         "h-9 w-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xl border-2 border-white transition-transform hover:scale-110 cursor-pointer";
-      elDest.innerHTML = "📍";
+      elDest.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>`;
       const markerDest = new Marker({ element: elDest })
         .setLngLat(shipment.destinationCoords)
         .setPopup(
@@ -309,7 +310,7 @@ export const PublicTrackingPage: React.FC = () => {
         const elVehicle = document.createElement("div");
         elVehicle.className =
           "h-10 w-10 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-sm shadow-2xl border-2 border-white animate-pulse transition-transform hover:scale-125 cursor-pointer";
-        elVehicle.innerHTML = "🚚";
+        elVehicle.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>`;
         const markerVehicle = new Marker({ element: elVehicle })
           .setLngLat(shipment.driver.currentLocation)
           .setPopup(
@@ -653,8 +654,11 @@ export const PublicTrackingPage: React.FC = () => {
                         {shipment.driver.name}
                       </span>
                       <span className="text-[10px] text-muted-foreground block font-mono">
-                        {shipment.driver.vehiclePlate} • ⭐{" "}
-                        {shipment.driver.rating}
+                        {shipment.driver.vehiclePlate} •{" "}
+                        <span className="inline-flex items-center gap-0.5">
+                          <Star className="h-3 w-3 fill-amber-500 text-amber-500 inline" />
+                          {shipment.driver.rating}
+                        </span>
                       </span>
                     </div>
                     <a
@@ -757,8 +761,9 @@ export const PublicTrackingPage: React.FC = () => {
                             ({step.time})
                           </span>
                           {step.location && (
-                            <span className="text-[10px] bg-muted/60 text-muted-foreground px-1.5 py-0.2 rounded font-mono">
-                              📍 {step.location}
+                            <span className="text-[10px] bg-muted/60 text-muted-foreground px-1.5 py-0.5 rounded font-mono inline-flex items-center gap-1">
+                              <MapPin className="h-3 w-3 text-primary inline" />
+                              {step.location}
                             </span>
                           )}
                         </div>
@@ -870,8 +875,9 @@ export const PublicTrackingPage: React.FC = () => {
                   <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider block">
                     Thông tin kiện hàng & COD
                   </span>
-                  <div className="text-muted-foreground text-[11px] line-clamp-2">
-                    📦 {shipment.itemsSummary}
+                  <div className="text-muted-foreground text-[11px] line-clamp-2 flex items-start gap-1.5">
+                    <Package className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                    <span>{shipment.itemsSummary}</span>
                   </div>
                   <div className="flex items-center justify-between pt-1 text-[11px]">
                     <span className="text-muted-foreground">Khối lượng:</span>
@@ -904,9 +910,11 @@ export const PublicTrackingPage: React.FC = () => {
               </div>
 
               {feedbackSent ? (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-center font-medium">
-                  🎉 Cảm ơn bạn đã gửi đánh giá! VietRoute luôn nỗ lực cải tiến chất
-                  lượng dịch vụ để mang lại sự hài lòng tối đa.
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-center font-medium flex items-center justify-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span>
+                    Cảm ơn bạn đã gửi đánh giá! VietRoute luôn nỗ lực cải tiến chất lượng dịch vụ để mang lại sự hài lòng tối đa.
+                  </span>
                 </div>
               ) : (
                 <div className="space-y-3">

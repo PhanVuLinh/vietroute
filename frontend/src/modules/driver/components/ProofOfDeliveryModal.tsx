@@ -11,6 +11,8 @@ import {
   FileCheck,
   AlertCircle,
   Sparkles,
+  Package,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -469,9 +471,10 @@ export const ProofOfDeliveryModal: React.FC<ProofOfDeliveryModalProps> = ({
                         "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500&auto=format&fit=crop&q=60"
                       )
                     }
-                    className="px-2 py-0.5 rounded text-[10px] bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer border border-border"
+                    className="px-2 py-0.5 rounded text-[10px] bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer border border-border inline-flex items-center gap-1"
                   >
-                    📦 Kiện hàng trước cửa
+                    <Package className="h-3 w-3 text-primary shrink-0" />
+                    <span>Kiện hàng trước cửa</span>
                   </button>
                   <button
                     type="button"
@@ -480,9 +483,10 @@ export const ProofOfDeliveryModal: React.FC<ProofOfDeliveryModalProps> = ({
                         "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&auto=format&fit=crop&q=60"
                       )
                     }
-                    className="px-2 py-0.5 rounded text-[10px] bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer border border-border"
+                    className="px-2 py-0.5 rounded text-[10px] bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer border border-border inline-flex items-center gap-1"
                   >
-                    📝 Biên bản ký nhận
+                    <FileText className="h-3 w-3 text-primary shrink-0" />
+                    <span>Biên bản ký nhận</span>
                   </button>
                 </div>
               </div>

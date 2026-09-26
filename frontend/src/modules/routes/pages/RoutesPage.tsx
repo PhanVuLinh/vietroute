@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, RefreshCw, AlertCircle } from "lucide-react";
+import { Plus, RefreshCw, AlertCircle, X } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { Button } from "@/shared/components/ui/button";
@@ -316,7 +316,7 @@ export const RoutesPage: React.FC = () => {
                         onClick={() => setSelectedRouteId(null)}
                         className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
                       >
-                        ✕
+                        <X className="h-3.5 w-3.5" />
                       </Button>
                     </div>
 

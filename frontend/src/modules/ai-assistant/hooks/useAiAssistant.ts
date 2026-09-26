@@ -139,7 +139,7 @@ export const useAiAssistant = () => {
             insights: {
               type: "DRIVER_DISPATCH",
               title: "Khả Năng Điều Động Đội Xe Trực Tuyến",
-              description: `Tài xế xếp hạng cao nhất: ${availableDrivers[0]?.fullName || "Nguyễn Văn Hùng"} (⭐ 4.9, OTD 99.1%) sẵn sàng nhận chuyến tại Hub Tân Bình.`,
+              description: `Tài xế xếp hạng cao nhất: ${availableDrivers[0]?.fullName || "Nguyễn Văn Hùng"} (Đánh giá 4.9/5, OTD 99.1%) sẵn sàng nhận chuyến tại Hub Tân Bình.`,
               metrics: [
                 { label: "Tài xế sẵn sàng", value: `${availableDrivers.length} người`, positive: true },
                 { label: "Xe rảnh bãi", value: `${availableVehicles.length} xe`, positive: true },

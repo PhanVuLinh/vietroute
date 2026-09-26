@@ -76,7 +76,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
 
       toast.error(
-        `⚠️ SỰ CỐ KHẨN CẤP [${data.severity}]`,
+        `SỰ CỐ KHẨN CẤP [${data.severity}]`,
         `${data.title} - Mã: ${data.incidentCode}${data.driverName ? ` (Tài xế: ${data.driverName})` : ""}`
       );
     });
@@ -87,9 +87,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
 
       if (data.severity === "HIGH") {
-        toast.error(`🚨 ${data.title}`, data.message);
+        toast.error(data.title, data.message);
       } else {
-        toast.warning(`⚠️ ${data.title}`, data.message);
+        toast.warning(data.title, data.message);
       }
     });
 
@@ -114,7 +114,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     // Sự kiện 7: Handshake thành công
     const unbindAck = socketManager.on("connection:ack", (data) => {
-      console.log("⚡ [VietRoute Realtime] Kết nối thành công tới máy chủ Gateway:", data);
+      console.log("[VietRoute Realtime] Kết nối thành công tới máy chủ Gateway:", data);
     });
 
     return () => {

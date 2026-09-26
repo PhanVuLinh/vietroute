@@ -157,7 +157,7 @@ export const BillingPage: React.FC = () => {
             title="Tự động phát hiện công nợ quá hạn và kích hoạt nhắc nợ đa kênh kèm link VietQR"
           >
             <BellRing className={`h-3.5 w-3.5 ${scanDebtMutation.isPending ? "animate-bounce" : ""}`} />
-            <span>{scanDebtMutation.isPending ? "Đang quét công nợ..." : "⚡ Quét & Thu hồi công nợ"}</span>
+            <span>{scanDebtMutation.isPending ? "Đang quét công nợ..." : "Quét & Thu hồi công nợ"}</span>
           </Button>
 
           <Button

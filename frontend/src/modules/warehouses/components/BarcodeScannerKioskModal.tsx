@@ -269,7 +269,7 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
 
         setLastScanResult({
           status: "SUCCESS",
-          message: data.message || `✅ HỢP LỆ: Kiện hàng [${code}] đã được bốc lên xe thành công!`,
+          message: data.message || `HỢP LỆ: Kiện hàng [${code}] đã được bốc lên xe thành công!`,
           details: `Tiến độ: ${data.scannedCount || 1}/${data.totalCount || 3} kiện (${data.progressPercent || 33}%)`,
           timestamp: new Date().toLocaleTimeString(),
         });
@@ -315,9 +315,9 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
 
         setLastScanResult({
           status: "WARNING",
-          message: data?.message || `🚨 CẢNH BÁO: Kiện hàng [${code}] không thuộc chuyến xe này!`,
+          message: data?.message || `CẢNH BÁO: Kiện hàng [${code}] không thuộc chuyến xe này!`,
           details: data?.reason === "WRONG_VEHICLE"
-            ? `⚠️ Đơn hàng chính xác: ${data.correctOrderCode || "VR-2026-002"}. KHÔNG ĐƯỢC XẾP LÊN XE NÀY!`
+            ? `Đơn hàng chính xác: ${data.correctOrderCode || "VR-2026-002"}. KHÔNG ĐƯỢC XẾP LÊN XE NÀY!`
             : "Vui lòng kiểm tra lại tem nhãn vận chuyển.",
           timestamp: new Date().toLocaleTimeString(),
         });
@@ -329,7 +329,7 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
             barcode: code,
             type: "DOCK",
             success: false,
-            message: data?.message || `🚨 CẢNH BÁO: Kiện [${code}] không thuộc chuyến xe này!`,
+            message: data?.message || `CẢNH BÁO: Kiện [${code}] không thuộc chuyến xe này!`,
           },
           ...prev.slice(0, 30),
         ]);
@@ -360,7 +360,7 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
           );
           setLastScanResult({
             status: "SUCCESS",
-            message: `✅ HỢP LỆ: Kiện hàng [${code}] đã được bốc lên xe thành công!`,
+            message: `HỢP LỆ: Kiện hàng [${code}] đã được bốc lên xe thành công!`,
             details: `Đã cập nhật tiến độ bốc dỡ`,
             timestamp: new Date().toLocaleTimeString(),
           });
@@ -372,12 +372,12 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
           if (soundEnabled) soundEffects.playWarningBuzzer();
           setLastScanResult({
             status: "WARNING",
-            message: `🚨 CẢNH BÁO NGUY HIỂM: Kiện hàng [${code}] KHÔNG THUỘC chuyến xe này! Thuộc về đơn hàng khác (VR-2026-002). Không được xếp lên xe!`,
+            message: `CẢNH BÁO NGUY HIỂM: Kiện hàng [${code}] KHÔNG THUỘC chuyến xe này! Thuộc về đơn hàng khác (VR-2026-002). Không được xếp lên xe!`,
             details: "Cảnh báo chống giao nhầm hàng hóa",
             timestamp: new Date().toLocaleTimeString(),
           });
           setScanHistory((prev) => [
-            { id: `log-${Date.now()}`, time: new Date().toLocaleTimeString(), barcode: code, type: "DOCK", success: false, message: `🚨 Cảnh báo sai xe: Kiện [${code}] không thuộc chuyến này!` },
+            { id: `log-${Date.now()}`, time: new Date().toLocaleTimeString(), barcode: code, type: "DOCK", success: false, message: `Cảnh báo sai xe: Kiện [${code}] không thuộc chuyến này!` },
             ...prev,
           ]);
         }
@@ -862,7 +862,10 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
                                 : "border-primary/40 text-primary hover:bg-primary/10"
                             )}
                           >
-                            <span>✅ {pkg.barcode}</span>
+                            <span className="inline-flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
+                              {pkg.barcode}
+                            </span>
                           </Button>
                         ))}
 
@@ -874,7 +877,10 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
                           className="h-7 text-[11px] font-mono px-2 text-rose-600 border-rose-500/40 hover:bg-rose-500/10 cursor-pointer"
                           title="Thử nghiệm quét nhầm kiện của chuyến xe khác để kiểm tra còi báo động"
                         >
-                          <span>🚨 Test nhầm xe: PKG-VR-2026-002-01</span>
+                          <span className="inline-flex items-center gap-1">
+                            <AlertOctagon className="h-3 w-3 text-rose-600 shrink-0" />
+                            Test nhầm xe: PKG-VR-2026-002-01
+                          </span>
                         </Button>
                       </div>
                     </div>
@@ -937,7 +943,10 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
                           onClick={() => handleInboundScan(sku)}
                           className="h-7 text-[11px] font-mono px-2 text-emerald-600 border-emerald-500/40 hover:bg-emerald-500/10 cursor-pointer"
                         >
-                          <span>📥 {sku}</span>
+                          <span className="inline-flex items-center gap-1">
+                            <ArrowDownToLine className="h-3 w-3 text-emerald-600 shrink-0" />
+                            {sku}
+                          </span>
                         </Button>
                       ))}
                     </div>
@@ -976,7 +985,10 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
                         onClick={() => handleLookupScan(code)}
                         className="h-7 text-[11px] font-mono px-2 text-cyan-600 border-cyan-500/40 hover:bg-cyan-500/10 cursor-pointer"
                       >
-                        <span>🔍 {code}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <Search className="h-3 w-3 text-cyan-600 shrink-0" />
+                          {code}
+                        </span>
                       </Button>
                     ))}
                   </div>

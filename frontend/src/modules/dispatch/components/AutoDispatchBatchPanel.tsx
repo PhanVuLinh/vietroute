@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Layers,
   ArrowRight,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -127,7 +128,7 @@ export const AutoDispatchBatchPanel: React.FC<AutoDispatchBatchPanelProps> = ({
             >
               <Zap className={`h-4 w-4 fill-slate-950 ${isProcessing ? "animate-bounce" : ""}`} />
               <span>
-                {isProcessing ? "Đang xử lý phân bổ..." : `⚡ Phân bổ tự động (${pendingOrders.length} đơn)`}
+                {isProcessing ? "Đang xử lý phân bổ..." : `Phân bổ tự động (${pendingOrders.length} đơn)`}
               </span>
             </Button>
           </div>
@@ -249,8 +250,9 @@ export const AutoDispatchBatchPanel: React.FC<AutoDispatchBatchPanelProps> = ({
                     <p className="font-semibold text-xs text-foreground line-clamp-1">
                       {item.order.receiverName}
                     </p>
-                    <p className="text-[11px] text-muted-foreground line-clamp-1">
-                      📍 {item.order.receiverAddress}
+                    <p className="text-[11px] text-muted-foreground line-clamp-1 flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-primary shrink-0 inline" />
+                      <span>{item.order.receiverAddress}</span>
                     </p>
                   </div>
 
