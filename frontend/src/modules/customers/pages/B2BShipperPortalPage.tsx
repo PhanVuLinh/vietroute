@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import {
-  Building2,
   Navigation,
   FileSpreadsheet,
   Receipt,
-  Sparkles,
   ShieldCheck,
-  TrendingUp,
 } from 'lucide-react';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { PageContainer } from '@/shared/components/layout/PageContainer';
@@ -26,7 +23,6 @@ export const B2BShipperPortalPage: React.FC = () => {
   usePageTitle('Cổng Khách Hàng Doanh Nghiệp B2B — VietRoute');
 
   const {
-    selectedShipperId,
     setSelectedShipperId,
     currentShipper,
     dashboardData,

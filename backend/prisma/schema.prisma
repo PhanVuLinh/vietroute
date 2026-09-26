@@ -928,3 +928,49 @@ model InvoiceItem {
 
   @@map("invoice_items")
 }
+
+// ==========================================
+// 8. AUDIT LOG & NHẬT KÝ THAO TÁC TUÂN THỦ (ISO 27001 / GDPR)
+// ==========================================
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  CREATE
+  UPDATE
+  DELETE
+  DISPATCH
+  RECONCILE
+  APPROVE
+  EXPORT
+  PAYMENT
+}
+
+enum AuditSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model AuditLog {
+  id            String        @id @default(uuid())
+  action        AuditAction
+  entity_type   String        // Order, Driver, Vehicle, Route, Warehouse, CodReconciliation, Invoice, Incident
+  entity_id     String?
+  entity_name   String?
+  user_id       String?
+  user_name     String        @default("Hệ thống")
+  user_role     String        @default("ADMIN")
+  ip_address    String?       @default("127.0.0.1")
+  user_agent    String?
+  severity      AuditSeverity @default(INFO)
+  summary       String
+  details       String?       // JSON stringified payload / diff
+  checksum_hash String?       // SHA-256 tamper-proof hash
+  created_at    DateTime      @default(now())
+
+  @@index([entity_type, entity_id])
+  @@index([action])
+  @@index([created_at])
+  @@map("audit_logs")
+}

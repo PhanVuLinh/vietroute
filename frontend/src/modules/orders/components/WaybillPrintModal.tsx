@@ -4,7 +4,7 @@ import {
   DialogContent,
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
-import { Printer, X, Package, Truck, MapPin, QrCode, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Printer, X, Package, Truck, MapPin, AlertTriangle, ShieldCheck } from "lucide-react";
 import type { Order } from "@/core/types/logistics";
 import { formatCurrency, formatDateTime } from "@/shared/utils/formatters";
 

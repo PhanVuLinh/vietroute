@@ -2,12 +2,9 @@ import React, { useRef } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
-import { Printer, Download, X, QrCode, CheckCircle2, ShieldCheck, Building2 } from "lucide-react";
+import { Printer, X, QrCode, CheckCircle2, ShieldCheck } from "lucide-react";
 import type { InvoiceItem } from "../types/finance";
 import { formatCurrency, formatDateTime } from "@/shared/utils/formatters";
 import { readMoneyInWords } from "@/shared/utils/vietnameseCurrency";
@@ -103,7 +100,7 @@ export const InvoicePrintModal: React.FC<InvoicePrintModalProps> = ({
               HÓA ĐƠN GIÁ TRỊ GIA TĂNG
             </h2>
             <p className="text-xs text-slate-500 italic mt-0.5">
-              Ngày lập: {formatDateTime(invoice.createdAt || new Date().toISOString())}
+              Ngày lập: {formatDateTime(invoice.issueDate || new Date().toISOString())}
             </p>
           </div>
 
@@ -275,7 +272,7 @@ export const InvoicePrintModal: React.FC<InvoicePrintModalProps> = ({
                   Ký bởi: CÔNG TY CỔ PHẦN CÔNG NGHỆ LOGISTICS VIETROUTE
                 </p>
                 <p className="text-[9px] text-slate-500 font-mono mt-0.5">
-                  Ngày ký: {new Date(invoice.createdAt || Date.now()).toLocaleDateString("vi-VN")}
+                  Ngày ký: {new Date(invoice.issueDate || Date.now()).toLocaleDateString("vi-VN")}
                 </p>
               </div>
             </div>

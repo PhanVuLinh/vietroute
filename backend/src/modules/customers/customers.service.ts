@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateCustomerDto } from './dto/create-customer.dto.js';
 import { UpdateCustomerDto } from './dto/update-customer.dto.js';
 import { BulkCreateOrderDto, PayDebtDto } from './dto/bulk-create-order.dto.js';
-import { CustomerType, OrderStatus, OrderPriority } from '@prisma/client';
+import { CustomerType, OrderStatus, OrderPriority, InvoiceStatus } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 export interface CustomerFilterParams {
@@ -553,7 +553,7 @@ export class CustomersService {
     const pendingInvoices = await this.prisma.invoice.findMany({
       where: {
         customer_id: customer.id,
-        status: { in: ['PENDING', 'OVERDUE', 'PARTIALLY_PAID'] },
+        status: { in: [InvoiceStatus.PENDING_PAYMENT, InvoiceStatus.OVERDUE] },
       },
       orderBy: { due_date: 'asc' },
     });
@@ -566,7 +566,7 @@ export class CustomersService {
       const unpaid = inv.total_amount - inv.paid_amount;
       const paymentForThis = Math.min(unpaid, remainingToPay);
       const newPaidAmount = inv.paid_amount + paymentForThis;
-      const newStatus = newPaidAmount >= inv.total_amount ? 'PAID' : 'PARTIALLY_PAID';
+      const newStatus = newPaidAmount >= inv.total_amount ? InvoiceStatus.PAID : InvoiceStatus.PENDING_PAYMENT;
 
       const updated = await this.prisma.invoice.update({
         where: { id: inv.id },

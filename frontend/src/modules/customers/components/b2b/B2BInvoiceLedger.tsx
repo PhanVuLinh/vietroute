@@ -6,13 +6,11 @@ import {
   CheckCircle2,
   AlertTriangle,
   Clock,
-  ExternalLink,
-  ShieldCheck,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { formatCurrency, formatDateTime } from '@/shared/utils/formatters';
+import { formatCurrency } from '@/shared/utils/formatters';
 import { toast } from '@/shared/components/feedback/Toast';
 import type { B2BInvoiceSummary } from '../../types/b2bPortal';
 

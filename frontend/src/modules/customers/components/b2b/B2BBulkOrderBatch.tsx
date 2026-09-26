@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import {
-  UploadCloud,
   FileSpreadsheet,
   Plus,
   Trash2,
   CheckCircle2,
-  AlertCircle,
   Download,
   Send,
   Sparkles,
@@ -14,7 +12,7 @@ import {
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { toast } from '@/shared/components/feedback/Toast';
 import type { B2BBulkOrderItem } from '../../types/b2bPortal';
 

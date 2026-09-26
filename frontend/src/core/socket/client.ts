@@ -1,7 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 import { ENV } from "@/core/config/env";
 import { getStoredToken } from "@/core/http/client";
-import type { VehicleTelemetry } from "@/core/types/logistics";
 
 export type SocketStatus = "DISCONNECTED" | "CONNECTING" | "CONNECTED" | "ERROR";
 

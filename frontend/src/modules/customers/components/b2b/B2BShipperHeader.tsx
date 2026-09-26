@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   RefreshCw,
   Sparkles,
-  Zap,
   ShieldCheck,
   ChevronDown,
 } from 'lucide-react';

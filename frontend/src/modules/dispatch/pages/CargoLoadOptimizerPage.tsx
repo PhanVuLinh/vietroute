@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Boxes,
-  Truck,
   RotateCw,
   Printer,
-  Sparkles,
-  ShieldCheck,
-  Scale,
-  Layers,
-  ArrowRight,
   Package,
-  Zap,
 } from 'lucide-react';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { PageContainer } from '@/shared/components/layout/PageContainer';
@@ -95,7 +88,7 @@ export const CargoLoadOptimizerPage: React.FC = () => {
   usePageTitle('Mô Phỏng Xếp Hàng 3D & Tải Trọng Trục — VietRoute');
 
   // Lấy danh sách đơn hàng thực tế từ cơ sở dữ liệu PostgreSQL
-  const { orders, isLoading } = useOrders();
+  const { orders } = useOrders();
   const realOrders = orders || [];
 
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleContainerPreset>(TRUCK_PRESETS[1]); // Hyundai Mighty 3.5T

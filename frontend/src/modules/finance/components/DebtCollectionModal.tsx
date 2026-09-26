@@ -11,7 +11,6 @@ import { Badge } from "@/shared/components/ui/badge";
 import {
   AlertTriangle,
   BellRing,
-  CheckCircle2,
   Clock,
   ExternalLink,
   Mail,

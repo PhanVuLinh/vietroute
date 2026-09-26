@@ -19,6 +19,7 @@ import { WmsModule } from './modules/wms/wms.module.js';
 import { IncidentsModule } from './modules/incidents/incidents.module.js';
 import { FinanceModule } from './modules/finance/finance.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
+import { AuditModule } from './modules/audit/audit.module.js';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module.js';
     WmsModule,
     IncidentsModule,
     FinanceModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -2,22 +2,15 @@ import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Building2,
-  Calendar,
   CheckCircle2,
   Clock,
   Copy,
   Check,
-  CreditCard,
-  Download,
-  ExternalLink,
-  FileText,
-  Lock,
   Printer,
   QrCode,
   Receipt,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   Truck,
   Zap,
 } from "lucide-react";
@@ -28,7 +21,7 @@ import {
   usePublicInvoice,
   useSimulatePublicInvoicePaymentMutation,
 } from "../hooks/useFinance";
-import { formatCurrency, formatDateTime } from "@/shared/utils/formatters";
+import { formatCurrency } from "@/shared/utils/formatters";
 import { InvoicePrintModal } from "../components/InvoicePrintModal";
 import { toast } from "@/shared/components/feedback/Toast";
 
@@ -36,7 +29,7 @@ export const InvoicePaymentPortalPage: React.FC = () => {
   const { invoiceCode: routeCode } = useParams<{ invoiceCode?: string }>();
   const invoiceCode = routeCode || "INV-2026-002";
 
-  const { data: invoice, isLoading, isError, refetch } = usePublicInvoice(invoiceCode);
+  const { data: invoice, isLoading } = usePublicInvoice(invoiceCode);
   const payMutation = useSimulatePublicInvoicePaymentMutation(invoiceCode);
 
   const [copiedField, setCopiedField] = useState<string | null>(null);

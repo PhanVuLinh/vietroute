@@ -3,10 +3,7 @@ import {
   Scale,
   ShieldCheck,
   AlertTriangle,
-  Layers,
-  TrendingUp,
   Truck,
-  CheckCircle2,
   Gauge,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';

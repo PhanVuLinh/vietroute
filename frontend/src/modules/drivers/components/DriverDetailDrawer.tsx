@@ -24,6 +24,7 @@ interface DriverDetailDrawerProps {
   onClose: () => void;
   onEdit?: (driver: any) => void;
   onUpdateStatus?: (id: string, status: DriverStatus) => void;
+  onOpenScorecard?: (driver: any) => void;
 }
 
 export const DriverDetailDrawer: React.FC<DriverDetailDrawerProps> = ({
@@ -32,6 +33,7 @@ export const DriverDetailDrawer: React.FC<DriverDetailDrawerProps> = ({
   onClose,
   onEdit,
   onUpdateStatus,
+  onOpenScorecard,
 }) => {
   if (!isOpen || !driver) return null;
 
@@ -144,6 +146,16 @@ export const DriverDetailDrawer: React.FC<DriverDetailDrawerProps> = ({
                   </span>
                 </div>
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenScorecard?.(driver)}
+                className="w-full text-xs font-semibold gap-1.5 border-primary/30 text-primary hover:bg-primary/10 cursor-pointer"
+              >
+                <Award className="h-3.5 w-3.5" />
+                Xem Bảng Điểm Toàn Diện (Scorecard 5 Trục)
+              </Button>
             </div>
 
             {/* 3. Giấy phép lái xe */}

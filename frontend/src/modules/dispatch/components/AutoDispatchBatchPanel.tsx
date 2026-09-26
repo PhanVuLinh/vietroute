@@ -5,12 +5,8 @@ import {
   Truck,
   UserCheck,
   CheckCircle2,
-  Package,
   Layers,
   ArrowRight,
-  TrendingUp,
-  ShieldCheck,
-  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -32,7 +28,7 @@ export const AutoDispatchBatchPanel: React.FC<AutoDispatchBatchPanelProps> = ({
   orders,
   drivers,
   vehicles,
-  warehouseMap,
+  warehouseMap: _warehouseMap,
   onSuccess,
   onSwitchToManual,
 }) => {
@@ -232,7 +228,7 @@ export const AutoDispatchBatchPanel: React.FC<AutoDispatchBatchPanelProps> = ({
             </div>
           ) : (
             <div className="divide-y divide-border/60">
-              {simulatedMatches.map((item, index) => (
+              {simulatedMatches.map((item) => (
                 <div
                   key={item.order.id}
                   className="p-4 hover:bg-muted/30 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"

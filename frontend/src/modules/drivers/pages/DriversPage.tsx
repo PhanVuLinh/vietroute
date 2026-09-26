@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { UserPlus, RefreshCw, AlertCircle } from "lucide-react";
+import { UserPlus, RefreshCw, AlertCircle, Trophy } from "lucide-react";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { Button } from "@/shared/components/ui/button";
@@ -11,6 +11,8 @@ import { DriversTable } from "../components/DriversTable";
 import { DriversMobileList } from "../components/DriversMobileList";
 import { DriverDetailDrawer } from "../components/DriverDetailDrawer";
 import { CreateDriverDialog } from "../components/CreateDriverDialog";
+import { DriverScorecardModal } from "../components/DriverScorecardModal";
+import { DriverLeaderboardModal } from "../components/DriverLeaderboardModal";
 import type { Driver, DriverStatus } from "@/core/types/logistics";
 
 export const DriversPage: React.FC = () => {
@@ -39,6 +41,14 @@ export const DriversPage: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editingDriver, setEditingDriver] = useState<EnrichedDriver | null>(null);
+  const [scorecardDriver, setScorecardDriver] = useState<EnrichedDriver | null>(null);
+  const [isScorecardOpen, setIsScorecardOpen] = useState<boolean>(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(false);
+
+  const handleOpenScorecard = (driver: EnrichedDriver) => {
+    setScorecardDriver(driver);
+    setIsScorecardOpen(true);
+  };
 
   // Mở Drawer chi tiết
   const handleViewDetail = (driver: EnrichedDriver) => {
@@ -88,6 +98,15 @@ export const DriversPage: React.FC = () => {
       subtitle="Theo dõi trạng thái trực tuyến, giấy phép lái xe, phương tiện phụ trách và hiệu suất giao hàng."
       action={
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsLeaderboardOpen(true)}
+            className="h-9 px-3 text-xs gap-1.5 cursor-pointer hover:bg-accent border-amber-500/30 text-amber-600 dark:text-amber-400"
+          >
+            <Trophy className="h-3.5 w-3.5 text-amber-500" />
+            Bảng xếp hạng
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -177,6 +196,7 @@ export const DriversPage: React.FC = () => {
         onClose={() => setIsDrawerOpen(false)}
         onEdit={handleEdit}
         onUpdateStatus={handleUpdateStatus}
+        onOpenScorecard={handleOpenScorecard}
       />
 
       {/* Modal thêm mới / chỉnh sửa */}
@@ -186,6 +206,24 @@ export const DriversPage: React.FC = () => {
         editingDriver={editingDriver}
         vehicles={vehicles}
         onSubmit={handleFormSubmit}
+      />
+
+      {/* Modal Bảng điểm Scorecard 5 Trục */}
+      <DriverScorecardModal
+        driver={scorecardDriver}
+        isOpen={isScorecardOpen}
+        onClose={() => setIsScorecardOpen(false)}
+      />
+
+      {/* Modal Bảng xếp hạng vinh danh tài xế */}
+      <DriverLeaderboardModal
+        drivers={drivers}
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+        onSelectDriverScorecard={(d) => {
+          setScorecardDriver(d);
+          setIsScorecardOpen(true);
+        }}
       />
     </PageContainer>
   );

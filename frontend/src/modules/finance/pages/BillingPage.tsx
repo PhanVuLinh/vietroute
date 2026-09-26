@@ -40,7 +40,6 @@ import {
   Sparkles,
   BellRing,
   QrCode,
-  ExternalLink,
 } from "lucide-react";
 import {
   useInvoices,

@@ -90,113 +90,6 @@ export const POPULAR_SHIPPERS: B2BShipperProfile[] = [
   },
 ];
 
-const INITIAL_MOCK_DASHBOARD: Record<string, B2BPortalDashboardData> = {
-  'cus-vinamilk': {
-    customer: POPULAR_SHIPPERS[0],
-    kpi: {
-      totalOrders: 156,
-      inTransitOrders: 8,
-      deliveredOrders: 144,
-      pendingOrders: 4,
-      onTimeRate: 99.4,
-      totalTonnage: 342.8,
-      slaCompliance: '99.8%',
-    },
-    finance: {
-      creditLimit: 150000000,
-      currentDebt: 38450000,
-      availableCredit: 111550000,
-      creditUsagePercent: 26,
-      paymentTermsDays: 30,
-      dueInDays: 9,
-      dueDate: new Date(Date.now() + 9 * 86400000).toISOString(),
-      bankAccount: {
-        bank: 'Vietcombank',
-        accountNumber: '1029384756',
-        accountName: 'CONG TY CP VIETROUTE LOGISTICS',
-        vietQrPayload: 'vietroute-b2b-debt-cus-vinamilk',
-      },
-    },
-    invoices: [
-      {
-        id: 'inv-vnm-01',
-        invoiceCode: 'INV-2026-VNM-001',
-        periodName: 'Kỳ cước vận tải tháng 09/2026',
-        totalAmount: 38450000,
-        paidAmount: 0,
-        balance: 38450000,
-        status: 'PENDING',
-        dueDate: new Date(Date.now() + 9 * 86400000).toISOString(),
-        createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-      },
-      {
-        id: 'inv-vnm-02',
-        invoiceCode: 'INV-2026-VNM-002',
-        periodName: 'Kỳ cước vận tải tháng 08/2026',
-        totalAmount: 45200000,
-        paidAmount: 45200000,
-        balance: 0,
-        status: 'PAID',
-        dueDate: new Date(Date.now() - 25 * 86400000).toISOString(),
-        createdAt: new Date(Date.now() - 35 * 86400000).toISOString(),
-      },
-      {
-        id: 'inv-vnm-03',
-        invoiceCode: 'INV-2026-VNM-003',
-        periodName: 'Kỳ cước vận tải tháng 07/2026',
-        totalAmount: 52100000,
-        paidAmount: 52100000,
-        balance: 0,
-        status: 'PAID',
-        dueDate: new Date(Date.now() - 55 * 86400000).toISOString(),
-        createdAt: new Date(Date.now() - 65 * 86400000).toISOString(),
-      },
-    ],
-    recentOrders: [
-      {
-        id: 'ord-vnm-1',
-        orderCode: 'VR-B2B-2026-901',
-        receiverName: 'Siêu thị Co.opmart Cống Quỳnh',
-        receiverAddress: '189C Cống Quỳnh, P. Nguyễn Cư Trinh, Quận 1, TP. HCM',
-        weightKg: 1450,
-        codAmount: 0,
-        status: 'IN_TRANSIT',
-        createdAt: new Date(Date.now() - 3 * 3600000).toISOString(),
-      },
-      {
-        id: 'ord-vnm-2',
-        orderCode: 'VR-B2B-2026-902',
-        receiverName: 'Đại lý phân phối Minh Anh',
-        receiverAddress: '45 Võ Văn Tần, Phường 6, Quận 3, TP. HCM',
-        weightKg: 890,
-        codAmount: 0,
-        status: 'IN_TRANSIT',
-        createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-      },
-      {
-        id: 'ord-vnm-3',
-        orderCode: 'VR-B2B-2026-903',
-        receiverName: 'Nhà máy Vinamilk Bình Dương',
-        receiverAddress: 'KCN VSIP 1, TP. Thuận An, Bình Dương',
-        weightKg: 3200,
-        codAmount: 0,
-        status: 'IN_TRANSIT',
-        createdAt: new Date(Date.now() - 1 * 3600000).toISOString(),
-      },
-      {
-        id: 'ord-vnm-4',
-        orderCode: 'VR-B2B-2026-880',
-        receiverName: 'Bách Hóa Xanh Bình Thạnh',
-        receiverAddress: '124 Nơ Trang Long, P. 14, Q. Bình Thạnh, TP. HCM',
-        weightKg: 620,
-        codAmount: 0,
-        status: 'DELIVERED',
-        createdAt: new Date(Date.now() - 24 * 3600000).toISOString(),
-      },
-    ],
-  },
-};
-
 const INITIAL_ACTIVE_CARGO: B2BCargoItem[] = [
   {
     id: 'cargo-1',
@@ -282,17 +175,17 @@ export function useB2BPortal() {
       const customerData = customerRes?.data;
       const allOrders = ordersRes?.data?.items || [];
       const customerOrders = allOrders.filter(
-        (o) =>
+        (o: any) =>
           o.customerId === selectedShipperId ||
           o.customerName?.toLowerCase().includes(currentShipper.shortName.toLowerCase()) ||
           o.receiverName?.toLowerCase().includes(currentShipper.shortName.toLowerCase())
       );
       const ordersToDisplay = customerOrders.length > 0 ? customerOrders : allOrders;
 
-      const inTransit = ordersToDisplay.filter((o) => o.status === 'IN_TRANSIT').length;
-      const delivered = ordersToDisplay.filter((o) => o.status === 'DELIVERED').length;
-      const pending = ordersToDisplay.filter((o) => o.status === 'PENDING' || o.status === 'ASSIGNED').length;
-      const totalWeightKg = ordersToDisplay.reduce((sum, o) => sum + (o.totalWeight || 0), 0);
+      const inTransit = ordersToDisplay.filter((o: any) => o.status === 'IN_TRANSIT').length;
+      const delivered = ordersToDisplay.filter((o: any) => o.status === 'DELIVERED').length;
+      const pending = ordersToDisplay.filter((o: any) => o.status === 'PENDING' || o.status === 'ASSIGNED').length;
+      const totalWeightKg = ordersToDisplay.reduce((sum: number, o: any) => sum + (o.totalWeight || 0), 0);
 
       // Invoices từ DB
       const rawInvoices = invoicesRes?.data || [];
@@ -315,9 +208,9 @@ export function useB2BPortal() {
 
       // Active live cargo từ các đơn hàng thật trong PostgreSQL
       const realActiveCargo: B2BCargoItem[] = ordersToDisplay
-        .filter((o) => o.status === 'IN_TRANSIT' || o.status === 'ASSIGNED')
+        .filter((o: any) => o.status === 'IN_TRANSIT' || o.status === 'ASSIGNED')
         .slice(0, 5)
-        .map((o, idx) => ({
+        .map((o: any, idx: number) => ({
           id: o.id,
           orderCode: o.orderCode,
           cargoName: o.items && o.items[0] ? o.items[0].productName : `Lô hàng vận chuyển ${o.orderCode}`,
@@ -333,7 +226,7 @@ export function useB2BPortal() {
           status: 'IN_TRANSIT',
           etaMinutes: 15 + idx * 10,
           etaTime: `${14 + idx}:30`,
-          temperature: o.items?.some((i) => i.isLiquid || i.requiresSpecialHandling)
+          temperature: o.items?.some((i: any) => i.isLiquid || i.requiresSpecialHandling)
             ? '4.5°C (Cold-chain chuẩn)'
             : 'Tiêu chuẩn',
           progressPercent: 55 + idx * 15,

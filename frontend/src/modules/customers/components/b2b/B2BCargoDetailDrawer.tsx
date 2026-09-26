@@ -11,13 +11,9 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Progress } from '@/shared/components/ui/progress';
 import {
   Truck,
-  MapPin,
-  Clock,
   Phone,
   Thermometer,
   ShieldCheck,
-  Navigation,
-  X,
 } from 'lucide-react';
 import type { B2BCargoItem } from '../../types/b2bPortal';
 

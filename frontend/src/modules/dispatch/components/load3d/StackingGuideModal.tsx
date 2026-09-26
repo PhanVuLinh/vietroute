@@ -9,7 +9,7 @@ import {
 } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Printer, Download, Truck, CheckCircle2, ShieldCheck, X } from 'lucide-react';
+import { Printer, Truck, CheckCircle2 } from 'lucide-react';
 import type { LoadOptimizationResult } from '../../types/load3d';
 
 interface StackingGuideModalProps {

@@ -149,6 +149,7 @@ export interface Driver {
   todayCompletedDeliveries: number;
   onTimeRate: number; // % ví dụ 98.5
   successRate: number; // % ví dụ 99.1
+  rating?: number; // Điểm đánh giá CSAT ví dụ 4.9
 }
 
 /**

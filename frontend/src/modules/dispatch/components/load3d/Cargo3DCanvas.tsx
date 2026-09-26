@@ -2,19 +2,12 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   RotateCcw,
   Eye,
-  Maximize2,
   Play,
   Pause,
-  Layers,
-  Sparkles,
-  Info,
-  ChevronRight,
   ZoomIn,
   ZoomOut,
-  Sliders,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
-import { Badge } from '@/shared/components/ui/badge';
 import type { PlacedCargoBox, VehicleContainerPreset } from '../../types/load3d';
 
 interface Cargo3DCanvasProps {
@@ -28,7 +21,7 @@ export const Cargo3DCanvas: React.FC<Cargo3DCanvasProps> = ({
   vehicle,
   placedBoxes,
   selectedBoxId,
-  onSelectBox,
+  onSelectBox: _onSelectBox,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -270,7 +263,6 @@ export const Cargo3DCanvas: React.FC<Cargo3DCanvasProps> = ({
       const p000 = project3D(x0, y0, z0, centerX, centerY, scale);
       const p100 = project3D(x1, y0, z0, centerX, centerY, scale);
       const p110 = project3D(x1, y1, z0, centerX, centerY, scale);
-      const p010 = project3D(x0, y1, z0, centerX, centerY, scale);
 
       const p001 = project3D(x0, y0, z1, centerX, centerY, scale);
       const p101 = project3D(x1, y0, z1, centerX, centerY, scale);

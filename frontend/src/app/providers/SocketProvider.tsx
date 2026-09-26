@@ -34,7 +34,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     // 2. Chế độ Thật: Kết nối Socket.IO tới Backend
-    const socket = socketManager.connect();
+    socketManager.connect();
 
     // Lắng nghe thay đổi trạng thái kết nối
     const unbindStatus = socketManager.onStatusChange((newStatus) => {

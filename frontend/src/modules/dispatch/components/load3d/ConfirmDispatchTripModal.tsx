@@ -6,19 +6,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import {
-  Truck,
   CheckCircle2,
   ShieldCheck,
   Zap,
-  MapPin,
   Barcode,
   Navigation,
-  ExternalLink,
 } from 'lucide-react';
 import { toast } from '@/shared/components/feedback/Toast';
 import { playSound } from '@/shared/utils/soundEffects';
@@ -42,7 +38,7 @@ export const ConfirmDispatchTripModal: React.FC<ConfirmDispatchTripModalProps> =
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDispatched, setIsDispatched] = useState(false);
-  const [tripCode, setTripCode] = useState(`TRIP-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+  const [tripCode] = useState(`TRIP-2026-${Math.floor(1000 + Math.random() * 9000)}`);
 
   if (!result) return null;
 

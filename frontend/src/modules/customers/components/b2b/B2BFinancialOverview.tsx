@@ -4,12 +4,7 @@ import {
   QrCode,
   TrendingUp,
   Truck,
-  CheckCircle2,
-  Calendar,
-  AlertCircle,
-  Clock,
   Sparkles,
-  ArrowUpRight,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent } from '@/shared/components/ui/card';

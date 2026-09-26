@@ -6,11 +6,8 @@ import {
   Clock,
   Navigation,
   Thermometer,
-  ShieldCheck,
   ChevronRight,
-  ExternalLink,
   Search,
-  Filter,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';

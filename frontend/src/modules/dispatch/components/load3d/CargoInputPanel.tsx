@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Boxes,
   Truck,
@@ -6,14 +6,11 @@ import {
   Trash2,
   Sparkles,
   Printer,
-  ChevronDown,
   AlertCircle,
   RotateCw,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Badge } from '@/shared/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/shared/components/ui/card';
 import {
   Select,
   SelectContent,

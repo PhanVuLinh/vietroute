@@ -14,9 +14,6 @@ import {
   QrCode,
   ShieldCheck,
   Zap,
-  Building2,
-  CreditCard,
-  Sparkles,
 } from 'lucide-react';
 import { formatCurrency } from '@/shared/utils/formatters';
 import { toast } from '@/shared/components/feedback/Toast';
@@ -123,7 +120,7 @@ export const B2BDebtPaymentModal: React.FC<B2BDebtPaymentModalProps> = ({
           <div className="space-y-2 text-xs bg-muted/40 p-3 rounded-xl border border-border/60">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Ngân hàng thụ hưởng:</span>
-              <span className="font-semibold text-foreground">Vietcombank (VCB)</span>
+              <span className="font-semibold text-foreground">{bankName}</span>
             </div>
 
             <div className="flex justify-between items-center">

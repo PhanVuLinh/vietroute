@@ -14,13 +14,8 @@ import { Checkbox } from '@/shared/components/ui/checkbox';
 import {
   Package,
   Search,
-  CheckCircle2,
-  AlertTriangle,
-  Building2,
   MapPin,
-  Scale,
   Sparkles,
-  ArrowRight,
 } from 'lucide-react';
 import type { Order } from '@/core/types/logistics';
 import type { CargoItemInput } from '../../types/load3d';

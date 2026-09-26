@@ -17,7 +17,6 @@ import {
   Printer,
   FileCheck,
   CheckCircle2,
-  Check,
 } from "lucide-react";
 import type { EnrichedOrder } from "../hooks/useOrders";
 import { OrderStatusBadge } from "./OrderStatusBadge";

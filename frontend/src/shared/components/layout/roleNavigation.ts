@@ -22,6 +22,7 @@ import {
   Receipt,
   Building2,
   Boxes,
+  ShieldCheck,
 } from "lucide-react";
 import type { UserRole } from "@/core/types/auth";
 
@@ -166,6 +167,12 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: "/ai-assistant",
         icon: Sparkles,
         allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER"],
+      },
+      {
+        label: "Nhật ký kiểm toán",
+        path: "/audit-log",
+        icon: ShieldCheck,
+        allowedRoles: ["ADMIN", "MANAGER"],
       },
     ],
   },
