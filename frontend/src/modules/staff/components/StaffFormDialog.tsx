@@ -15,8 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { User, Mail, Phone, Building2, KeyRound } from "lucide-react";
+import { User, Mail, Phone, Building2, KeyRound, ExternalLink } from "lucide-react";
 import type { StaffMember, RolePermissionItem } from "../types/staff";
+import { useDepartmentList } from "../hooks/useDepartments";
 
 interface StaffFormDialogProps {
   isOpen: boolean;
@@ -35,11 +36,13 @@ export const StaffFormDialog: React.FC<StaffFormDialogProps> = ({
   roles,
   isSubmitting,
 }) => {
+  const { data: departments = [] } = useDepartmentList();
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [roleId, setRoleId] = useState("");
-  const [department, setDepartment] = useState("Trung Tâm Vận Hành");
+  const [department, setDepartment] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string>("ACTIVE");
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +53,7 @@ export const StaffFormDialog: React.FC<StaffFormDialogProps> = ({
       setEmail(editingStaff.email);
       setPhone(editingStaff.phone || "");
       setRoleId(editingStaff.roleId);
-      setDepartment(editingStaff.department || "Khối Vận Hành");
+      setDepartment(editingStaff.department || departments[0]?.name || "Phòng Điều Phối Vận Tải");
       setStatus(editingStaff.status);
       setPassword("");
     } else {
@@ -58,12 +61,12 @@ export const StaffFormDialog: React.FC<StaffFormDialogProps> = ({
       setEmail("");
       setPhone("");
       setRoleId(roles[1]?.id || roles[0]?.id || "");
-      setDepartment("Khối Vận Hành");
+      setDepartment(departments[0]?.name || "Phòng Điều Phối Vận Tải");
       setStatus("ACTIVE");
       setPassword("123456");
     }
     setError(null);
-  }, [editingStaff, roles, isOpen]);
+  }, [editingStaff, roles, departments, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,20 +188,37 @@ export const StaffFormDialog: React.FC<StaffFormDialogProps> = ({
             </Select>
           </div>
 
-          {/* Phòng ban */}
+          {/* Phòng ban cơ cấu (Chọn từ danh mục quản lý, không nhập tay) */}
           <div>
-            <label className="text-xs font-medium text-foreground block mb-1">
-              Phòng ban / Điểm trực
-            </label>
-            <div className="relative">
-              <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                placeholder="VD: Khối Quản Lý Kho Bãi Long Biên"
-                className="h-8 pl-8 text-xs"
-              />
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Building2 className="h-3.5 w-3.5 text-primary" />
+                <span>Phòng ban trực thuộc</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => window.open("/departments", "_blank")}
+                className="text-[10px] text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
+              >
+                <span>Quản lý phòng ban</span>
+                <ExternalLink className="h-2.5 w-2.5" />
+              </button>
             </div>
+            <Select value={department} onValueChange={setDepartment}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Chọn phòng ban từ cơ cấu..." />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.name} className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-foreground">{dept.name}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono">({dept.code})</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Mật khẩu nếu tạo mới */}

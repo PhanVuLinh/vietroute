@@ -263,6 +263,8 @@ export class UsersService {
       orderBy: { name: 'asc' },
     });
 
+    const SYSTEM_ROLE_NAMES = ['ADMIN', 'MANAGER', 'DISPATCHER', 'DRIVER', 'WAREHOUSE_STAFF', 'ACCOUNTANT'];
+
     return roles.map((r) => {
       const perms = rolePermissionsCache.get(r.id) || DEFAULT_ROLE_PERMISSIONS[r.name] || [];
       return {
@@ -271,8 +273,110 @@ export class UsersService {
         description: r.description || `Vai trò ${r.name}`,
         userCount: r._count.users,
         permissions: perms,
+        isSystem: SYSTEM_ROLE_NAMES.includes(r.name),
       };
     });
+  }
+
+  async createRole(dto: { name: string; description?: string; permissions?: string[] }) {
+    const roleCode = dto.name.toUpperCase().trim().replace(/\s+/g, '_');
+    const existing = await this.prisma.role.findUnique({ where: { name: roleCode } });
+    if (existing) {
+      throw new BadRequestException(`Mã vai trò "${roleCode}" đã tồn tại trong hệ thống`);
+    }
+
+    const created = await this.prisma.role.create({
+      data: {
+        name: roleCode,
+        description: dto.description || `Vai trò ${dto.name}`,
+      },
+      include: {
+        _count: { select: { users: true } },
+      },
+    });
+
+    if (dto.permissions && dto.permissions.length > 0) {
+      rolePermissionsCache.set(created.id, dto.permissions);
+    }
+
+    return {
+      id: created.id,
+      name: created.name,
+      description: created.description,
+      userCount: 0,
+      permissions: dto.permissions || [],
+      isSystem: false,
+    };
+  }
+
+  async updateRole(id: string, dto: { name?: string; description?: string; permissions?: string[] }) {
+    const role = await this.prisma.role.findUnique({ where: { id } });
+    if (!role) {
+      throw new NotFoundException('Không tìm thấy vai trò cần cập nhật');
+    }
+
+    const SYSTEM_ROLE_NAMES = ['ADMIN', 'MANAGER', 'DISPATCHER', 'DRIVER', 'WAREHOUSE_STAFF', 'ACCOUNTANT'];
+    const isSystem = SYSTEM_ROLE_NAMES.includes(role.name);
+
+    const updateData: any = {};
+    if (dto.description !== undefined) {
+      updateData.description = dto.description;
+    }
+    if (dto.name && dto.name.trim()) {
+      const newCode = dto.name.toUpperCase().trim().replace(/\s+/g, '_');
+      if (newCode !== role.name) {
+        if (isSystem) {
+          throw new BadRequestException('Không thể đổi mã định danh của vai trò hệ thống mặc định');
+        }
+        updateData.name = newCode;
+      }
+    }
+
+    const updated = await this.prisma.role.update({
+      where: { id },
+      data: updateData,
+      include: {
+        _count: { select: { users: true } },
+      },
+    });
+
+    if (dto.permissions !== undefined) {
+      rolePermissionsCache.set(id, dto.permissions);
+    }
+
+    return {
+      id: updated.id,
+      name: updated.name,
+      description: updated.description,
+      userCount: updated._count.users,
+      permissions: rolePermissionsCache.get(id) || DEFAULT_ROLE_PERMISSIONS[updated.name] || [],
+      isSystem,
+    };
+  }
+
+  async deleteRole(id: string) {
+    const role = await this.prisma.role.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { users: true } },
+      },
+    });
+    if (!role) {
+      throw new NotFoundException('Không tìm thấy vai trò cần xóa');
+    }
+
+    const SYSTEM_ROLE_NAMES = ['ADMIN', 'MANAGER', 'DISPATCHER', 'DRIVER', 'WAREHOUSE_STAFF', 'ACCOUNTANT'];
+    if (SYSTEM_ROLE_NAMES.includes(role.name)) {
+      throw new BadRequestException('Không thể xóa vai trò hệ thống mặc định');
+    }
+
+    if (role._count.users > 0) {
+      throw new BadRequestException(`Không thể xóa vai trò đang có ${role._count.users} nhân sự đang đảm nhiệm. Hãy điều chuyển nhân sự trước.`);
+    }
+
+    await this.prisma.role.delete({ where: { id } });
+    rolePermissionsCache.delete(id);
+    return { success: true, message: `Đã xóa vai trò ${role.name} thành công` };
   }
 
   async updateRolePermissions(roleId: string, permissions: string[], description?: string) {

@@ -30,6 +30,7 @@ export interface StaffFilterParams {
   search?: string;
   role?: string;
   status?: string;
+  department?: string;
 }
 
 export interface RolePermissionItem {
@@ -39,6 +40,7 @@ export interface RolePermissionItem {
   description: string;
   userCount: number;
   permissions: string[];
+  isSystem?: boolean;
 }
 
 export interface PermissionDefinition {

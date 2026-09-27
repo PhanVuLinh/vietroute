@@ -187,6 +187,12 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         allowedRoles: ["ADMIN", "MANAGER"],
       },
       {
+        label: "Phòng ban cơ cấu",
+        path: "/departments",
+        icon: Building2,
+        allowedRoles: ["ADMIN", "MANAGER"],
+      },
+      {
         label: "Phân quyền & Vai trò",
         path: "/roles",
         icon: ShieldCheck,

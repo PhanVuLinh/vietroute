@@ -46,6 +46,12 @@ const apiAuthService = {
 };
 
 import type { StaffMember, RolePermissionItem, StaffFilterParams } from "@/modules/staff/types/staff";
+import type {
+  DepartmentItem,
+  DepartmentFilterParams,
+  CreateDepartmentInput,
+  UpdateDepartmentInput,
+} from "@/modules/staff/types/department";
 
 const apiUserService = {
   getUsers: () => httpClient.get<AuthUser[]>("/users"),
@@ -57,8 +63,26 @@ const apiUserService = {
   updateStaffStatus: (id: string, status: string) => httpClient.patch<StaffMember>(`/users/${id}/status`, { status }),
   deleteStaff: (id: string) => httpClient.delete<{ success: boolean }>(`/users/${id}`),
   getRoles: () => httpClient.get<RolePermissionItem[]>("/users/roles"),
+  createRole: (data: { name: string; description?: string; permissions?: string[] }) =>
+    httpClient.post<RolePermissionItem>("/users/roles", data),
+  updateRole: (id: string, data: { name?: string; description?: string; permissions?: string[] }) =>
+    httpClient.put<RolePermissionItem>(`/users/roles/${id}`, data),
+  deleteRole: (id: string) =>
+    httpClient.delete<{ success: boolean; message?: string }>(`/users/roles/${id}`),
   updateRolePermissions: (roleId: string, permissions: string[], description?: string) =>
     httpClient.put<RolePermissionItem>(`/users/roles/${roleId}/permissions`, { permissions, description }),
+};
+
+const apiDepartmentService = {
+  getDepartments: (params?: DepartmentFilterParams) =>
+    httpClient.get<DepartmentItem[]>("/departments", { params }),
+  getDepartmentById: (id: string) => httpClient.get<DepartmentItem>(`/departments/${id}`),
+  createDepartment: (data: CreateDepartmentInput) =>
+    httpClient.post<DepartmentItem>("/departments", data),
+  updateDepartment: (id: string, data: UpdateDepartmentInput) =>
+    httpClient.put<DepartmentItem>(`/departments/${id}`, data),
+  deleteDepartment: (id: string) =>
+    httpClient.delete<{ success: boolean; message?: string }>(`/departments/${id}`),
 };
 
 const apiDriverService = {
@@ -279,4 +303,5 @@ export const customerService = apiCustomerService;
 export const inventoryService = apiInventoryService;
 export const incidentService = apiIncidentService;
 export const financeService = apiFinanceService;
+export const departmentService = apiDepartmentService;
 

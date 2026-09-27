@@ -99,11 +99,50 @@ export function useStaffMutations() {
     },
   });
 
+  const createRole = useMutation({
+    mutationFn: (data: { name: string; description?: string; permissions?: string[] }) =>
+      userService.createRole(data),
+    onSuccess: (newRole: any) => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+      const roleName = newRole?.name || newRole?.data?.name || "mới";
+      toast.success("Tạo vai trò thành công", `Đã tạo vai trò "${roleName}"`);
+    },
+    onError: (err: any) => {
+      toast.error("Tạo vai trò thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
+  const updateRole = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; description?: string; permissions?: string[] } }) =>
+      userService.updateRole(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+      toast.success("Cập nhật vai trò thành công");
+    },
+    onError: (err: any) => {
+      toast.error("Cập nhật vai trò thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
+  const deleteRole = useMutation({
+    mutationFn: (id: string) => userService.deleteRole(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+      toast.success("Đã xóa vai trò thành công");
+    },
+    onError: (err: any) => {
+      toast.error("Xóa vai trò thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
   return {
     createStaff,
     updateStaff,
     updateStatus,
     deleteStaff,
+    createRole,
+    updateRole,
+    deleteRole,
     updateRolePermissions,
   };
 }

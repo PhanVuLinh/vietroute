@@ -15,24 +15,75 @@ import {
   CheckSquare,
   Square,
   Info,
+  Plus,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { useRoles, useStaffMutations } from "../hooks/useStaff";
-import { SYSTEM_PERMISSIONS } from "../types/staff";
+import { SYSTEM_PERMISSIONS, type RolePermissionItem } from "../types/staff";
 import { DEFAULT_ROLE_PERMISSIONS } from "@/mocks/services/mockRolePermissions";
 import { toast } from "@/shared/components/feedback/Toast";
+import { RoleFormDialog } from "../components/RoleFormDialog";
+import { ConfirmDialog } from "@/shared/components/feedback/ConfirmDialog";
 
 export const RolesPage: React.FC = () => {
   usePageTitle("Phân quyền & Vai trò (RBAC)");
 
   const { data: roles = [] } = useRoles();
-  const { updateRolePermissions } = useStaffMutations();
+  const { updateRolePermissions, createRole, updateRole, deleteRole } = useStaffMutations();
 
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
   const [currentPermissions, setCurrentPermissions] = useState<string[]>([]);
   const [hasChanges, setHasChanges] = useState<boolean>(false);
+
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [editingRoleData, setEditingRoleData] = useState<RolePermissionItem | null>(null);
+  const [deletingRole, setDeletingRole] = useState<RolePermissionItem | null>(null);
+
+  const handleOpenCreateRole = () => {
+    setEditingRoleData(null);
+    setIsRoleModalOpen(true);
+  };
+
+  const handleOpenEditRole = (role: RolePermissionItem) => {
+    setEditingRoleData(role);
+    setIsRoleModalOpen(true);
+  };
+
+  const handleRoleSubmit = async (data: { name: string; description?: string }) => {
+    if (editingRoleData) {
+      await updateRole.mutateAsync({
+        id: editingRoleData.id,
+        data,
+      });
+    } else {
+      const res: any = await createRole.mutateAsync({
+        name: data.name,
+        description: data.description,
+        permissions: [],
+      });
+      const newRoleId = res?.id || res?.data?.id;
+      if (newRoleId) {
+        setSelectedRoleId(newRoleId);
+        setCurrentPermissions([]);
+      }
+    }
+    setIsRoleModalOpen(false);
+    setEditingRoleData(null);
+  };
+
+  const handleConfirmDeleteRole = async () => {
+    if (!deletingRole) return;
+    await deleteRole.mutateAsync(deletingRole.id);
+    setDeletingRole(null);
+    if (selectedRoleId === deletingRole.id && roles.length > 0) {
+      setSelectedRoleId(roles[0].id);
+      setCurrentPermissions(roles[0].permissions || []);
+    }
+  };
 
   // Chọn role đầu tiên khi dữ liệu tải xong
   useEffect(() => {
@@ -142,6 +193,16 @@ export const RolesPage: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
+              onClick={handleOpenCreateRole}
+              className="h-8 text-xs gap-1.5 border-border hover:bg-accent font-medium cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5 text-primary" />
+              <span>Tạo vai trò mới</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleResetToDefault}
               className="h-8 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
             >
@@ -221,11 +282,44 @@ export const RolesPage: React.FC = () => {
               </div>
             </div>
 
-            {hasChanges && (
-              <Badge className="bg-amber-500 text-white text-[10px] px-2 py-0.5 self-start sm:self-center">
-                Có thay đổi chưa lưu
+            <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
+              {hasChanges && (
+                <Badge className="bg-amber-500 text-white text-[10px] px-2 py-0.5">
+                  Có thay đổi chưa lưu
+                </Badge>
+              )}
+
+              <Badge
+                variant="outline"
+                className={`text-[10px] ${
+                  activeRole.isSystem ? "border-amber-500/30 text-amber-600 bg-amber-500/5" : "border-blue-500/30 text-blue-600 bg-blue-500/5"
+                }`}
+              >
+                {activeRole.isSystem ? "Vai trò hệ thống" : "Vai trò tùy chỉnh"}
               </Badge>
-            )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleOpenEditRole(activeRole)}
+                className="h-7 text-[11px] gap-1 px-2 border-border hover:bg-accent"
+              >
+                <Edit2 className="h-3 w-3 text-blue-500" />
+                <span>Sửa vai trò</span>
+              </Button>
+
+              {!activeRole.isSystem && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDeletingRole(activeRole)}
+                  className="h-7 text-[11px] gap-1 px-2 border-border text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  <span>Xóa</span>
+                </Button>
+              )}
+            </div>
           </div>
         )}
 
@@ -341,6 +435,30 @@ export const RolesPage: React.FC = () => {
             </Button>
           )}
         </div>
+
+        {/* Dialog Thêm/Sửa vai trò */}
+        <RoleFormDialog
+          isOpen={isRoleModalOpen}
+          onClose={() => {
+            setIsRoleModalOpen(false);
+            setEditingRoleData(null);
+          }}
+          onSubmit={handleRoleSubmit}
+          editingRole={editingRoleData}
+          isSubmitting={createRole.isPending || updateRole.isPending}
+        />
+
+        {/* Confirm Xóa vai trò */}
+        <ConfirmDialog
+          isOpen={Boolean(deletingRole)}
+          onClose={() => setDeletingRole(null)}
+          onConfirm={handleConfirmDeleteRole}
+          title="Xác nhận xóa vai trò"
+          description={`Bạn có chắc chắn muốn xóa vai trò "${deletingRole?.name}"? Thao tác này sẽ loại bỏ hoàn toàn vai trò này khỏi ma trận phân quyền.`}
+          confirmText="Xác nhận xóa"
+          variant="destructive"
+          isLoading={deleteRole.isPending}
+        />
       </div>
     </PageContainer>
   );

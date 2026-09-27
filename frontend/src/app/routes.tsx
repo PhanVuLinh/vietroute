@@ -29,6 +29,7 @@ import { CargoLoadOptimizerPage } from "@/modules/dispatch/pages/CargoLoadOptimi
 import { AuditTrailPage } from "@/modules/audit/pages/AuditTrailPage";
 import { StaffPage } from "@/modules/staff/pages/StaffPage";
 import { RolesPage } from "@/modules/staff/pages/RolesPage";
+import { DepartmentsPage } from "@/modules/staff/pages/DepartmentsPage";
 
 export const router = createBrowserRouter([
   {
@@ -174,6 +175,14 @@ export const router = createBrowserRouter([
           {
             path: "personnel",
             element: <StaffPage />,
+          },
+          {
+            path: "departments",
+            element: <DepartmentsPage />,
+          },
+          {
+            path: "organization",
+            element: <DepartmentsPage />,
           },
           {
             path: "roles",

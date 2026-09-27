@@ -39,6 +39,33 @@ export class UsersController {
     return this.usersService.getRoles();
   }
 
+  @Post('roles')
+  @Roles('ADMIN')
+  createRole(
+    @Body('name') name: string,
+    @Body('description') description?: string,
+    @Body('permissions') permissions?: string[],
+  ) {
+    return this.usersService.createRole({ name, description, permissions });
+  }
+
+  @Put('roles/:id')
+  @Roles('ADMIN')
+  updateRole(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('name') name?: string,
+    @Body('description') description?: string,
+    @Body('permissions') permissions?: string[],
+  ) {
+    return this.usersService.updateRole(id, { name, description, permissions });
+  }
+
+  @Delete('roles/:id')
+  @Roles('ADMIN')
+  deleteRole(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usersService.deleteRole(id);
+  }
+
   @Put('roles/:id/permissions')
   @Roles('ADMIN')
   updateRolePermissions(

@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Plus, ShieldCheck, RefreshCw } from "lucide-react";
+import { Search, Plus, ShieldCheck, RefreshCw, Building2 } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/shared/components/ui/select";
 import { Link } from "react-router-dom";
 import type { StaffFilterParams } from "../types/staff";
+import { useDepartmentList } from "../hooks/useDepartments";
 
 interface StaffFilterBarProps {
   filters: StaffFilterParams;
@@ -27,6 +28,7 @@ export const StaffFilterBar: React.FC<StaffFilterBarProps> = ({
   onRefresh,
   isRefreshing,
 }) => {
+  const { data: departments = [] } = useDepartmentList();
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-3 rounded-xl border border-border shadow-2xs">
       <div className="flex items-center gap-2 flex-1 flex-wrap">
@@ -58,6 +60,28 @@ export const StaffFilterBar: React.FC<StaffFilterBarProps> = ({
               <SelectItem value="WAREHOUSE_STAFF">Thủ kho bến bãi</SelectItem>
               <SelectItem value="DRIVER">Tài xế vận tải</SelectItem>
               <SelectItem value="ACCOUNTANT">Kế toán đối soát</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Department Select */}
+        <div className="w-[180px]">
+          <Select
+            value={filters.department || "ALL"}
+            onValueChange={(val) =>
+              onFilterChange({ ...filters, department: val === "ALL" ? undefined : val })
+            }
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Tất cả phòng ban" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tất cả phòng ban</SelectItem>
+              {departments.map((d) => (
+                <SelectItem key={d.id} value={d.name}>
+                  {d.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -94,6 +118,18 @@ export const StaffFilterBar: React.FC<StaffFilterBarProps> = ({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        {/* Link to Departments Page */}
+        <Link to="/departments">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs gap-1.5 border-border hover:bg-accent text-foreground font-medium cursor-pointer"
+          >
+            <Building2 className="h-3.5 w-3.5 text-primary" />
+            <span>Phòng ban</span>
+          </Button>
+        </Link>
+
         {/* Link to Roles Page */}
         <Link to="/roles">
           <Button
