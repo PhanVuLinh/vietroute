@@ -342,6 +342,14 @@ const apiInternationalService = {
     httpClient.get<import("@/modules/international/types/international").AiImportAnalysisReport>(`/international/ai-analysis/${shipmentCode}`),
   runAiAutoDispatch: (shipmentCode: string) =>
     httpClient.post<{ dispatch: import("@/modules/international/types/international").ContainerDrayageDispatchItem; analysis: import("@/modules/international/types/international").AiImportAnalysisReport }>(`/international/ai-auto-dispatch/${shipmentCode}`),
+  createShippingDocument: (dto: Partial<import("@/modules/international/types/international").ShippingDocument>) =>
+    httpClient.post<import("@/modules/international/types/international").ShippingDocument>("/international/documents", dto),
+  deleteShippingDocument: (id: string) =>
+    httpClient.delete<boolean>(`/international/documents/${id}`),
+  createLocalCharge: (dto: import("@/modules/international/types/international").LocalChargeItem) =>
+    httpClient.post<import("@/modules/international/types/international").LocalChargeItem>("/international/local-charges", dto),
+  updateExchangeRates: (rates: import("@/modules/international/types/international").ExchangeRateItem[]) =>
+    httpClient.put<import("@/modules/international/types/international").ExchangeRateItem[]>("/international/exchange-rates", rates),
 };
 
 

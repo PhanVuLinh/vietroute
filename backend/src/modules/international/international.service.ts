@@ -1624,5 +1624,52 @@ export class InternationalService implements OnModuleInit {
     this.drayageDispatches.unshift(newDispatch);
     return { dispatch: newDispatch, analysis };
   }
+
+  async createShippingDocument(dto: Partial<ShippingDocument>) {
+    const newDoc: ShippingDocument = {
+      id: `doc-${Date.now()}`,
+      shipmentId: dto.shipmentId || 'shp-custom',
+      shipmentCode: dto.shipmentCode || 'EXP-2026-001',
+      documentType: dto.documentType || 'BILL_OF_LADING',
+      documentNumber: dto.documentNumber || `DOC-${Date.now().toString().slice(-6)}`,
+      issueDate: dto.issueDate || new Date().toISOString(),
+      issuer: dto.issuer || 'Đơn vị phát hành',
+      fileFormat: dto.fileFormat || 'PDF',
+      status: dto.status || 'ISSUED',
+      verificationNotes: dto.verificationNotes,
+      isMandatory: dto.isMandatory !== undefined ? dto.isMandatory : true,
+    };
+    this.shippingDocuments.unshift(newDoc);
+    return newDoc;
+  }
+
+  async deleteShippingDocument(id: string) {
+    const prev = this.shippingDocuments.length;
+    this.shippingDocuments = this.shippingDocuments.filter((d) => d.id !== id);
+    return this.shippingDocuments.length < prev;
+  }
+
+  async createLocalCharge(dto: LocalChargeItem) {
+    const existing = this.localCharges.find((c) => c.code === dto.code);
+    if (existing) {
+      existing.name = dto.name;
+      existing.description = dto.description;
+      existing.amount = dto.amount;
+      existing.currency = dto.currency;
+      existing.appliedUnit = dto.appliedUnit;
+      return existing;
+    }
+    this.localCharges.push(dto);
+    return dto;
+  }
+
+  async updateExchangeRates(rates: ExchangeRateItem[]) {
+    this.exchangeRates = rates.map((r) => ({
+      ...r,
+      updatedAt: new Date().toISOString(),
+    }));
+    return this.exchangeRates;
+  }
 }
+
 

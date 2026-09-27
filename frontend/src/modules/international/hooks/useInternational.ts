@@ -327,6 +327,58 @@ export function useInternationalMutations() {
     },
   });
 
+  const createShippingDocument = useMutation({
+    mutationFn: async (data: Partial<ShippingDocument>) => {
+      return await internationalService.createShippingDocument(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shipping-documents"] });
+      toast.success("Thêm chứng từ vận tải thành công");
+    },
+    onError: (err: any) => {
+      toast.error("Thêm chứng từ thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
+  const deleteShippingDocument = useMutation({
+    mutationFn: async (id: string) => {
+      return await internationalService.deleteShippingDocument(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shipping-documents"] });
+      toast.success("Đã xóa chứng từ");
+    },
+    onError: (err: any) => {
+      toast.error("Xóa chứng từ thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
+  const createLocalCharge = useMutation({
+    mutationFn: async (data: LocalChargeItem) => {
+      return await internationalService.createLocalCharge(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["local-charges"] });
+      toast.success("Lưu cấu hình phụ phí cảng thành công");
+    },
+    onError: (err: any) => {
+      toast.error("Lưu phụ phí thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
+  const updateExchangeRates = useMutation({
+    mutationFn: async (rates: ExchangeRateItem[]) => {
+      return await internationalService.updateExchangeRates(rates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exchange-rates"] });
+      toast.success("Cập nhật tỷ giá ngoại tệ thành công");
+    },
+    onError: (err: any) => {
+      toast.error("Cập nhật tỷ giá thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
   return {
     createShipment,
     updateShipment,
@@ -339,6 +391,10 @@ export function useInternationalMutations() {
     createDrayageDispatch,
     updateDrayageStatus,
     runAiAutoDispatch,
+    createShippingDocument,
+    deleteShippingDocument,
+    createLocalCharge,
+    updateExchangeRates,
   };
 }
 

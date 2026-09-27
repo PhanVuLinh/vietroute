@@ -229,4 +229,31 @@ export class InternationalController {
   runAiAutoDispatch(@Param('shipmentCode') shipmentCode: string) {
     return this.internationalService.runAiAutoDispatch(shipmentCode);
   }
+
+  // 11. Documents Management
+  @Post('documents')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  createShippingDocument(@Body() dto: any) {
+    return this.internationalService.createShippingDocument(dto);
+  }
+
+  @Delete('documents/:id')
+  @Roles('ADMIN', 'MANAGER')
+  deleteShippingDocument(@Param('id') id: string) {
+    return this.internationalService.deleteShippingDocument(id);
+  }
+
+  // 12. Local Charges & Exchange Rates Operations
+  @Post('local-charges')
+  @Roles('ADMIN', 'MANAGER', 'ACCOUNTANT')
+  createLocalCharge(@Body() dto: any) {
+    return this.internationalService.createLocalCharge(dto);
+  }
+
+  @Put('exchange-rates')
+  @Roles('ADMIN', 'MANAGER', 'ACCOUNTANT')
+  updateExchangeRates(@Body() rates: any[]) {
+    return this.internationalService.updateExchangeRates(rates);
+  }
 }
+

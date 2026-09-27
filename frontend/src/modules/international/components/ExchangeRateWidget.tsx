@@ -7,11 +7,21 @@ import {
   Anchor,
   FileSpreadsheet,
   Check,
+  Plus,
+  Sliders,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/shared/components/ui/dialog";
+import { useInternationalMutations } from "../hooks/useInternational";
 import { toast } from "@/shared/components/feedback/Toast";
 import type { ExchangeRateItem, LocalChargeItem } from "../types/international";
 
@@ -30,6 +40,23 @@ export const ExchangeRateWidget: React.FC<ExchangeRateWidgetProps> = ({
   const [calcCurrency, setCalcCurrency] = useState<string>("USD");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Dialog states
+  const [isAddChargeOpen, setIsAddChargeOpen] = useState(false);
+  const [isEditRatesOpen, setIsEditRatesOpen] = useState(false);
+
+  // Form states for new local charge
+  const [chargeCode, setChargeCode] = useState("");
+  const [chargeName, setChargeName] = useState("");
+  const [chargeDesc, setChargeDesc] = useState("");
+  const [chargeAmount, setChargeAmount] = useState<number>(50);
+  const [chargeCurrency, setChargeCurrency] = useState("USD");
+  const [chargeUnit, setChargeUnit] = useState("Per Container");
+
+  // Form states for editable exchange rates
+  const [editableRates, setEditableRates] = useState<ExchangeRateItem[]>([]);
+
+  const { createLocalCharge, updateExchangeRates } = useInternationalMutations();
+
   const selectedRate = rates.find((r) => r.currency === calcCurrency) || rates[0];
 
   const convertedVnd = selectedRate
@@ -45,6 +72,47 @@ export const ExchangeRateWidget: React.FC<ExchangeRateWidgetProps> = ({
         "Đã đồng bộ tỷ giá hối đoái liên ngân hàng Vietcombank/BIDV ngày hôm nay."
       );
     }, 600);
+  };
+
+  const handleOpenEditRates = () => {
+    setEditableRates(rates.map((r) => ({ ...r })));
+    setIsEditRatesOpen(true);
+  };
+
+  const handleRateFieldChange = (idx: number, field: keyof ExchangeRateItem, val: any) => {
+    setEditableRates((prev) => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], [field]: val };
+      return copy;
+    });
+  };
+
+  const handleSaveRates = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateExchangeRates.mutateAsync(editableRates);
+    setIsEditRatesOpen(false);
+  };
+
+  const handleAddChargeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chargeCode || !chargeName) {
+      toast.error("Vui lòng nhập mã phụ phí và tên phụ phí");
+      return;
+    }
+
+    await createLocalCharge.mutateAsync({
+      code: chargeCode.toUpperCase().trim(),
+      name: chargeName.trim(),
+      description: chargeDesc.trim() || chargeName.trim(),
+      amount: Number(chargeAmount) || 0,
+      currency: chargeCurrency,
+      appliedUnit: chargeUnit,
+    });
+
+    setIsAddChargeOpen(false);
+    setChargeCode("");
+    setChargeName("");
+    setChargeDesc("");
   };
 
   if (isLoading) {
@@ -72,16 +140,28 @@ export const ExchangeRateWidget: React.FC<ExchangeRateWidgetProps> = ({
                 Áp dụng tính thuế XNK, cước vận tải quốc tế và phí Local Charges
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefreshRates}
-              disabled={isRefreshing}
-              className="h-8 text-xs gap-1.5"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-              Đồng bộ tỷ giá
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenEditRates}
+                className="h-8 text-xs gap-1.5"
+                title="Điều chỉnh tỷ giá thủ công"
+              >
+                <Sliders className="h-3.5 w-3.5" /> Điều chỉnh
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshRates}
+                disabled={isRefreshing}
+                className="h-8 text-xs gap-1.5"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                Đồng bộ tỷ giá
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -195,7 +275,7 @@ export const ExchangeRateWidget: React.FC<ExchangeRateWidgetProps> = ({
 
       {/* Ocean Freight Local Charges Schedule */}
       <Card className="shadow-2xs border-border">
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Anchor className="h-4 w-4 text-primary" />
@@ -205,10 +285,21 @@ export const ExchangeRateWidget: React.FC<ExchangeRateWidgetProps> = ({
               Các khoản phụ phí địa phương tiêu chuẩn tại các cảng Hải Phòng, Đà Nẵng, Cát Lái, Cái Mép
             </p>
           </div>
-          <Badge variant="outline" className="text-xs gap-1 py-1">
-            <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
-            Biểu phí chuẩn 2026
-          </Badge>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => setIsAddChargeOpen(true)}
+              className="text-xs h-8 gap-1.5 bg-primary text-primary-foreground font-semibold shadow-xs"
+            >
+              <Plus className="h-3.5 w-3.5" /> Thêm Phụ Phí Cảng
+            </Button>
+
+            <Badge variant="outline" className="text-xs gap-1 py-1">
+              <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
+              Biểu phí chuẩn 2026
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -249,6 +340,191 @@ export const ExchangeRateWidget: React.FC<ExchangeRateWidgetProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialog: Thêm Phụ Phí Cảng Biển */}
+      <Dialog open={isAddChargeOpen} onOpenChange={setIsAddChargeOpen}>
+        <DialogContent className="max-w-md text-foreground">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold">
+              <Anchor className="h-5 w-5 text-primary" />
+              Thêm / Cập Nhật Phụ Phí Cảng Biển (Local Charge)
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleAddChargeSubmit} className="space-y-3.5 text-xs">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold block mb-1">Mã Phụ Phí</label>
+                <Input
+                  value={chargeCode}
+                  onChange={(e) => setChargeCode(e.target.value)}
+                  placeholder="Ví dụ: DEM, DET, CLEANING"
+                  className="h-8.5 font-mono uppercase"
+                  required
+                />
+              </div>
+              <div>
+                <label className="font-semibold block mb-1">Đồng Tiền</label>
+                <select
+                  value={chargeCurrency}
+                  onChange={(e) => setChargeCurrency(e.target.value)}
+                  className="w-full h-8.5 px-3 rounded-lg border border-border bg-background font-mono font-semibold"
+                >
+                  <option value="USD">USD</option>
+                  <option value="VND">VNĐ</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-semibold block mb-1">Tên Phụ Phí (Đầy Đủ)</label>
+              <Input
+                value={chargeName}
+                onChange={(e) => setChargeName(e.target.value)}
+                placeholder="Ví dụ: Phí lưu container tại bãi cảng (Demurrage)"
+                className="h-8.5"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="font-semibold block mb-1">Mục Đích Thu & Mô Tả Quy Định</label>
+              <Input
+                value={chargeDesc}
+                onChange={(e) => setChargeDesc(e.target.value)}
+                placeholder="Chi phí phát sinh khi container lưu bãi quá số ngày miễn phí"
+                className="h-8.5"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold block mb-1">Đơn Giá Quy Định</label>
+                <Input
+                  type="number"
+                  value={chargeAmount}
+                  onChange={(e) => setChargeAmount(Number(e.target.value))}
+                  placeholder="Ví dụ: 45"
+                  className="h-8.5 font-mono"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1">Đơn Vị Tính Áp Dụng</label>
+                <select
+                  value={chargeUnit}
+                  onChange={(e) => setChargeUnit(e.target.value)}
+                  className="w-full h-8.5 px-3 rounded-lg border border-border bg-background"
+                >
+                  <option value="Per Container">Per Container</option>
+                  <option value="Per Day">Per Day (Theo ngày)</option>
+                  <option value="Per Bill">Per Bill (Mỗi vận đơn)</option>
+                  <option value="Per 40HC">Per 40HC</option>
+                  <option value="Per 20GP">Per 20GP</option>
+                  <option value="Per CBM">Per CBM (Hàng lẻ)</option>
+                </select>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddChargeOpen(false)}
+                className="h-8.5 text-xs"
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                disabled={createLocalCharge.isPending}
+                className="h-8.5 text-xs bg-primary text-primary-foreground font-semibold"
+              >
+                {createLocalCharge.isPending ? "Đang lưu..." : "Lưu Phụ Phí Cảng"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Điều Chỉnh Tỷ Giá Ngoại Tệ */}
+      <Dialog open={isEditRatesOpen} onOpenChange={setIsEditRatesOpen}>
+        <DialogContent className="max-w-xl text-foreground">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold">
+              <DollarSign className="h-5 w-5 text-emerald-500" />
+              Điều Chỉnh Tỷ Giá Hối Đoái Ngoại Tệ
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveRates} className="space-y-4 text-xs">
+            <p className="text-muted-foreground text-[11px]">
+              Nhập tỷ giá mua tiền mặt, mua chuyển khoản và tỷ giá bán ra quy chuẩn của Hải quan / Ngân hàng:
+            </p>
+
+            <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+              {editableRates.map((r, idx) => (
+                <div key={r.currency} className="p-3 bg-muted/40 rounded-xl border border-border grid grid-cols-4 gap-2 items-center">
+                  <div>
+                    <span className="font-mono font-bold text-primary block">{r.currency}</span>
+                    <span className="text-[10px] text-muted-foreground">{r.name}</span>
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] text-muted-foreground block">Mua tiền mặt</label>
+                    <Input
+                      type="number"
+                      value={r.buyRateVnd}
+                      onChange={(e) => handleRateFieldChange(idx, "buyRateVnd", Number(e.target.value))}
+                      className="h-7 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] text-muted-foreground block">Chuyển khoản</label>
+                    <Input
+                      type="number"
+                      value={r.transferRateVnd}
+                      onChange={(e) => handleRateFieldChange(idx, "transferRateVnd", Number(e.target.value))}
+                      className="h-7 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] text-muted-foreground block">Bán ra (Hải quan)</label>
+                    <Input
+                      type="number"
+                      value={r.sellRateVnd}
+                      onChange={(e) => handleRateFieldChange(idx, "sellRateVnd", Number(e.target.value))}
+                      className="h-7 text-xs font-mono font-bold text-emerald-600"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditRatesOpen(false)}
+                className="h-8.5 text-xs"
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                disabled={updateExchangeRates.isPending}
+                className="h-8.5 text-xs bg-primary text-primary-foreground font-semibold"
+              >
+                {updateExchangeRates.isPending ? "Đang lưu..." : "Cập Nhật Tỷ Giá Thị Trường"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
