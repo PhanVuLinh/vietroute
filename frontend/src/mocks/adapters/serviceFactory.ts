@@ -332,6 +332,16 @@ const apiInternationalService = {
     dto: { status: 'VERIFIED' | 'REJECTED'; verificationNotes?: string }
   ) =>
     httpClient.patch<import("@/modules/international/types/international").ShippingDocument>(`/international/documents/${id}/verify`, dto),
+  getDrayageDispatches: (shipmentCode?: string) =>
+    httpClient.get<import("@/modules/international/types/international").ContainerDrayageDispatchItem[]>("/international/drayage-dispatches", { params: { shipmentCode } }),
+  createDrayageDispatch: (dto: any) =>
+    httpClient.post<import("@/modules/international/types/international").ContainerDrayageDispatchItem>("/international/drayage-dispatches", dto),
+  updateDrayageStatus: (id: string, status: string) =>
+    httpClient.patch<import("@/modules/international/types/international").ContainerDrayageDispatchItem>(`/international/drayage-dispatches/${id}/status`, { status }),
+  getAiImportAnalysis: (shipmentCode: string) =>
+    httpClient.get<import("@/modules/international/types/international").AiImportAnalysisReport>(`/international/ai-analysis/${shipmentCode}`),
+  runAiAutoDispatch: (shipmentCode: string) =>
+    httpClient.post<{ dispatch: import("@/modules/international/types/international").ContainerDrayageDispatchItem; analysis: import("@/modules/international/types/international").AiImportAnalysisReport }>(`/international/ai-auto-dispatch/${shipmentCode}`),
 };
 
 

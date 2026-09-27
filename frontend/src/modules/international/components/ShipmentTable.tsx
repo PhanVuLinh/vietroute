@@ -12,6 +12,7 @@ import {
   Edit2,
   Trash2,
   Globe2,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
@@ -27,6 +28,7 @@ interface ShipmentTableProps {
   shipments: InternationalShipment[];
   onEdit: (shipment: InternationalShipment) => void;
   onDelete: (shipment: InternationalShipment) => void;
+  onAnalyze?: (shipment: InternationalShipment) => void;
   isLoading?: boolean;
 }
 
@@ -34,6 +36,7 @@ export const ShipmentTable: React.FC<ShipmentTableProps> = ({
   shipments,
   onEdit,
   onDelete,
+  onAnalyze,
   isLoading = false,
 }) => {
   if (isLoading) {
@@ -239,26 +242,48 @@ export const ShipmentTable: React.FC<ShipmentTableProps> = ({
 
                   {/* Actions */}
                   <td className="py-3 px-4 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
-                          <MoreVertical className="h-3.5 w-3.5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="text-xs">
-                        <DropdownMenuItem onClick={() => onEdit(s)} className="gap-2">
-                          <Edit2 className="h-3.5 w-3.5 text-blue-500" />
-                          <span>Chỉnh sửa lô hàng</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onDelete(s)}
-                          className="gap-2 text-destructive focus:text-destructive"
+                    <div className="flex items-center justify-end gap-1">
+                      {onAnalyze && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onAnalyze(s)}
+                          className="h-7 w-7 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
+                          title="AI Phân Tích & Điều Độ Lô Hàng"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          <span>Xóa lô hàng</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          <Sparkles className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="text-xs">
+                          {onAnalyze && (
+                            <DropdownMenuItem
+                              onClick={() => onAnalyze(s)}
+                              className="gap-2 text-amber-600 focus:text-amber-600 font-semibold"
+                            >
+                              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                              <span>AI Phân Tích & Điều Độ</span>
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => onEdit(s)} className="gap-2">
+                            <Edit2 className="h-3.5 w-3.5 text-blue-500" />
+                            <span>Chỉnh sửa lô hàng</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onDelete(s)}
+                            className="gap-2 text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Xóa lô hàng</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
                 </tr>
               );

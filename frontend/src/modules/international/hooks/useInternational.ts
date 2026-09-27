@@ -15,6 +15,8 @@ import type {
   ContainerDepositItem,
   VesselAisTrackingItem,
   ShippingDocument,
+  ContainerDrayageDispatchItem,
+  AiImportAnalysisReport,
 } from "../types/international";
 import { toast } from "@/shared/components/feedback/Toast";
 
@@ -136,6 +138,29 @@ export function useShippingDocuments(shipmentCode?: string) {
       return Array.isArray(res) ? res : ((res as any)?.data || []);
     },
     staleTime: 30 * 1000,
+  });
+}
+
+export function useDrayageDispatches(shipmentCode?: string) {
+  return useQuery<ContainerDrayageDispatchItem[]>({
+    queryKey: ["drayage-dispatches", shipmentCode],
+    queryFn: async () => {
+      const res = await internationalService.getDrayageDispatches(shipmentCode);
+      return Array.isArray(res) ? res : ((res as any)?.data || []);
+    },
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useAiImportAnalysis(shipmentCode: string, enabled = true) {
+  return useQuery<AiImportAnalysisReport>({
+    queryKey: ["ai-import-analysis", shipmentCode],
+    queryFn: async () => {
+      const res = await internationalService.getAiImportAnalysis(shipmentCode);
+      return (res as any)?.data || res;
+    },
+    enabled: Boolean(shipmentCode) && enabled,
+    staleTime: 60 * 1000,
   });
 }
 
@@ -261,6 +286,47 @@ export function useInternationalMutations() {
     },
   });
 
+  const createDrayageDispatch = useMutation({
+    mutationFn: async (data: Partial<ContainerDrayageDispatchItem>) => {
+      return await internationalService.createDrayageDispatch(data);
+    },
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ["drayage-dispatches"] });
+      const code = res?.dispatchCode || "Lệnh mới";
+      toast.success("Tạo lệnh điều độ container thành công", `Mã lệnh: ${code}`);
+    },
+    onError: (err: any) => {
+      toast.error("Tạo lệnh điều xe thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
+  const updateDrayageStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      return await internationalService.updateDrayageStatus(id, status);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["drayage-dispatches"] });
+      toast.success("Cập nhật trạng thái điều độ container thành công");
+    },
+    onError: (err: any) => {
+      toast.error("Cập nhật thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
+  const runAiAutoDispatch = useMutation({
+    mutationFn: async (shipmentCode: string) => {
+      return await internationalService.runAiAutoDispatch(shipmentCode);
+    },
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ["drayage-dispatches"] });
+      queryClient.invalidateQueries({ queryKey: ["ai-import-analysis"] });
+      toast.success("AI Tự Động Điều Độ Xe Thành Công!", res?.message || "Đã khớp đầu kéo và tài xế phù hợp");
+    },
+    onError: (err: any) => {
+      toast.error("AI điều độ thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
   return {
     createShipment,
     updateShipment,
@@ -270,5 +336,9 @@ export function useInternationalMutations() {
     calculateFtaTaxes,
     refundContainerDeposit,
     verifyShippingDocument,
+    createDrayageDispatch,
+    updateDrayageStatus,
+    runAiAutoDispatch,
   };
 }
+

@@ -194,4 +194,39 @@ export class InternationalController {
   ) {
     return this.internationalService.verifyShippingDocument(id, dto);
   }
+
+  // 9. Container Drayage Dispatch
+  @Get('drayage-dispatches')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  getDrayageDispatches(@Query('shipmentCode') shipmentCode?: string) {
+    return this.internationalService.getDrayageDispatches(shipmentCode);
+  }
+
+  @Post('drayage-dispatches')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  createDrayageDispatch(@Body() dto: any) {
+    return this.internationalService.createDrayageDispatch(dto);
+  }
+
+  @Patch('drayage-dispatches/:id/status')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  updateDrayageStatus(
+    @Param('id') id: string,
+    @Body('status') status: any
+  ) {
+    return this.internationalService.updateDrayageStatus(id, status);
+  }
+
+  // 10. AI Import Analysis & Auto-Dispatch
+  @Get('ai-analysis/:shipmentCode')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER', 'ACCOUNTANT')
+  getAiImportAnalysis(@Param('shipmentCode') shipmentCode: string) {
+    return this.internationalService.getAiImportAnalysis(shipmentCode);
+  }
+
+  @Post('ai-auto-dispatch/:shipmentCode')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  runAiAutoDispatch(@Param('shipmentCode') shipmentCode: string) {
+    return this.internationalService.runAiAutoDispatch(shipmentCode);
+  }
 }

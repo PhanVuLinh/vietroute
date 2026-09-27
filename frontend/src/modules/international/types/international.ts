@@ -266,3 +266,63 @@ export interface ShippingDocument {
   isMandatory: boolean;
 }
 
+export interface ContainerDrayageDispatchItem {
+  id: string;
+  dispatchCode: string;
+  shipmentCode: string;
+  containerNo: string;
+  containerType: string;
+  dispatchType: 'PORT_TO_DOOR' | 'DOOR_TO_PORT' | 'EMPTY_RETURN_DEPOT' | 'EMPTY_PICKUP_DEPOT';
+  pickupLocation: string;
+  deliveryLocation: string;
+  tractorPlate: string;
+  trailerPlate: string;
+  driverName: string;
+  driverPhone: string;
+  driverLicenseGrade: 'FC';
+  appointmentTime: string;
+  status: 'PENDING_DISPATCH' | 'DISPATCHED' | 'PULLED_FROM_PORT' | 'DELIVERED_FACTORY' | 'COMPLETED';
+  tollFeeVnd: number;
+  fuelEstimatedLiters: number;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface AiImportAnalysisReport {
+  shipmentCode: string;
+  analyzedAt: string;
+  overallRiskScore: number;
+  riskLevel: 'LOW_SAFE' | 'MEDIUM_CAUTION' | 'HIGH_CRITICAL';
+  portCongestionPrediction: {
+    portCode: string;
+    portName: string;
+    congestionLevelPercent: number;
+    averageVesselWaitingTimeHours: number;
+    recommendedDrayageWindow: string;
+  };
+  customsRiskAssessment: {
+    channelPrediction: 'GREEN' | 'YELLOW' | 'RED';
+    auditProbabilityPercent: number;
+    complianceFlags: string[];
+    potentialPenaltyWarning?: string;
+  };
+  demurrageAvoidancePlan: {
+    freeTimeRemainingDays: number;
+    dailyPenaltyVnd: number;
+    maxSafeStorageDate: string;
+    recommendedAction: string;
+  };
+  landedCostBreakdown: {
+    fobValueVnd: number;
+    freightAndInsuranceVnd: number;
+    importTaxAndVatVnd: number;
+    portAndLocalChargesVnd: number;
+    inlandDrayageTruckingVnd: number;
+    totalLandedCostVnd: number;
+    costPerUnitVnd: number;
+    unitName: string;
+  };
+  aiRecommendations: string[];
+}
+
+

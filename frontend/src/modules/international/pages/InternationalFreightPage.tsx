@@ -13,6 +13,7 @@ import {
   FileText,
   Sparkles,
   Wallet,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -30,6 +31,7 @@ import {
   useInternationalContainers,
   useExchangeRates,
   useLocalCharges,
+  useDrayageDispatches,
   useInternationalMutations,
 } from "../hooks/useInternational";
 import type {
@@ -52,12 +54,15 @@ import { ShipmentPnlWidget } from "../components/ShipmentPnlWidget";
 import { ContainerDepositManager } from "../components/ContainerDepositManager";
 import { VesselAisTracker } from "../components/VesselAisTracker";
 import { ShippingDocumentsVault } from "../components/ShippingDocumentsVault";
+import { ContainerDrayageDispatch } from "../components/ContainerDrayageDispatch";
+import { AiImportAnalysisModal } from "../components/AiImportAnalysisModal";
 import { toast } from "@/shared/components/feedback/Toast";
 
 type ActiveTabType =
   | "SHIPMENTS"
   | "CUSTOMS"
   | "CONTAINERS"
+  | "DRAYAGE"
   | "VESSELS"
   | "PNL"
   | "DOCUMENTS"
@@ -101,6 +106,14 @@ export const InternationalFreightPage: React.FC = () => {
     data: localCharges = [],
     isLoading: isChargesLoading,
   } = useLocalCharges();
+
+  const {
+    data: drayages = [],
+  } = useDrayageDispatches();
+
+  // AI Modal states
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [analyzingShipmentCode, setAnalyzingShipmentCode] = useState<string | null>(null);
 
   // Mutations
   const {
@@ -200,6 +213,19 @@ export const InternationalFreightPage: React.FC = () => {
           </Button>
 
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setAnalyzingShipmentCode("IMP-2026-005");
+              setIsAiModalOpen(true);
+            }}
+            className="text-xs h-9 gap-1.5 border-primary/40 text-primary hover:bg-primary/10 font-semibold"
+            title="Trí tuệ nhân tạo phân tích luồng hàng nhập khẩu, dự báo rủi ro & điều độ container"
+          >
+            <Sparkles className="h-4 w-4 text-amber-500" /> AI Phân Tích Nhập Hàng
+          </Button>
+
+          <Button
             size="sm"
             onClick={handleOpenCreateShipment}
             className="text-xs h-9 gap-1.5 bg-primary text-primary-foreground font-semibold shadow-xs"
@@ -252,6 +278,18 @@ export const InternationalFreightPage: React.FC = () => {
         >
           <Container className="h-4 w-4" />
           Vỏ Container & Dem/Det ({containers.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab("DRAYAGE")}
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
+            activeTab === "DRAYAGE"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Truck className="h-4 w-4" />
+          Điều Độ Xe Container ({drayages.length})
         </button>
 
         <button
@@ -317,6 +355,10 @@ export const InternationalFreightPage: React.FC = () => {
             shipments={shipments}
             onEdit={handleEditShipment}
             onDelete={handleDeleteShipment}
+            onAnalyze={(s) => {
+              setAnalyzingShipmentCode(s.shipmentCode);
+              setIsAiModalOpen(true);
+            }}
             isLoading={isShipmentsLoading}
           />
         </div>
@@ -390,6 +432,16 @@ export const InternationalFreightPage: React.FC = () => {
             <ContainerDepositManager />
           )}
         </div>
+      )}
+
+      {/* Tab: Container Drayage Dispatching */}
+      {activeTab === "DRAYAGE" && (
+        <ContainerDrayageDispatch
+          onOpenAiAnalysis={(code) => {
+            setAnalyzingShipmentCode(code);
+            setIsAiModalOpen(true);
+          }}
+        />
       )}
 
       {/* Tab 4: Live Satellite AIS Vessel Tracking */}
@@ -475,6 +527,14 @@ export const InternationalFreightPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal: AI Import Analysis & Auto-Dispatch */}
+      <AiImportAnalysisModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        shipmentCode={analyzingShipmentCode}
+        onGoToDrayage={() => setActiveTab("DRAYAGE")}
+      />
     </div>
   );
 };

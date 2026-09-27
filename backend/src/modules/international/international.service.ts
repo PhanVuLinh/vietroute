@@ -184,6 +184,65 @@ export interface ShippingDocument {
   isMandatory: boolean;
 }
 
+export interface ContainerDrayageDispatchItem {
+  id: string;
+  dispatchCode: string;
+  shipmentCode: string;
+  containerNo: string;
+  containerType: string;
+  dispatchType: 'PORT_TO_DOOR' | 'DOOR_TO_PORT' | 'EMPTY_RETURN_DEPOT' | 'EMPTY_PICKUP_DEPOT';
+  pickupLocation: string;
+  deliveryLocation: string;
+  tractorPlate: string;
+  trailerPlate: string;
+  driverName: string;
+  driverPhone: string;
+  driverLicenseGrade: 'FC';
+  appointmentTime: string;
+  status: 'PENDING_DISPATCH' | 'DISPATCHED' | 'PULLED_FROM_PORT' | 'DELIVERED_FACTORY' | 'COMPLETED';
+  tollFeeVnd: number;
+  fuelEstimatedLiters: number;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface AiImportAnalysisReport {
+  shipmentCode: string;
+  analyzedAt: string;
+  overallRiskScore: number; // 0 - 100
+  riskLevel: 'LOW_SAFE' | 'MEDIUM_CAUTION' | 'HIGH_CRITICAL';
+  portCongestionPrediction: {
+    portCode: string;
+    portName: string;
+    congestionLevelPercent: number;
+    averageVesselWaitingTimeHours: number;
+    recommendedDrayageWindow: string;
+  };
+  customsRiskAssessment: {
+    channelPrediction: 'GREEN' | 'YELLOW' | 'RED';
+    auditProbabilityPercent: number;
+    complianceFlags: string[];
+    potentialPenaltyWarning?: string;
+  };
+  demurrageAvoidancePlan: {
+    freeTimeRemainingDays: number;
+    dailyPenaltyVnd: number;
+    maxSafeStorageDate: string;
+    recommendedAction: string;
+  };
+  landedCostBreakdown: {
+    fobValueVnd: number;
+    freightAndInsuranceVnd: number;
+    importTaxAndVatVnd: number;
+    portAndLocalChargesVnd: number;
+    inlandDrayageTruckingVnd: number;
+    totalLandedCostVnd: number;
+    costPerUnitVnd: number;
+    unitName: string;
+  };
+  aiRecommendations: string[];
+}
+
 @Injectable()
 export class InternationalService implements OnModuleInit {
   private shipments: InternationalShipment[] = [];
@@ -197,6 +256,7 @@ export class InternationalService implements OnModuleInit {
   private containerDeposits: ContainerDepositItem[] = [];
   private vessels: VesselAisTrackingItem[] = [];
   private shippingDocuments: ShippingDocument[] = [];
+  private drayageDispatches: ContainerDrayageDispatchItem[] = [];
 
   onModuleInit() {
     this.seedInitialData();
@@ -1001,6 +1061,73 @@ export class InternationalService implements OnModuleInit {
         isMandatory: true,
       },
     ];
+
+    // 10. Điều độ Xe Đầu Kéo Container Cảng - Kho (Port-to-Door Drayage)
+    this.drayageDispatches = [
+      {
+        id: 'dsp-01',
+        dispatchCode: 'DO-TRUCK-2601',
+        shipmentCode: 'EXP-2026-001',
+        containerNo: 'MSKU8841920',
+        containerType: '40HC',
+        dispatchType: 'DOOR_TO_PORT',
+        pickupLocation: 'Kho Vinatex - KCN Sóng Thần, Dĩ An, Bình Dương',
+        deliveryLocation: 'Cảng Tân Cảng Cát Lái - Cổng E (Hạ bãi xuất khẩu)',
+        tractorPlate: '51C-881.92',
+        trailerPlate: '51R-441.20',
+        driverName: 'Nguyễn Văn Hùng',
+        driverPhone: '0918.441.291',
+        driverLicenseGrade: 'FC',
+        appointmentTime: '2026-09-28T05:30:00.000Z',
+        status: 'DISPATCHED',
+        tollFeeVnd: 180000,
+        fuelEstimatedLiters: 48,
+        notes: 'Đã hoàn tất đóng hàng niêm phong chì seal ML-VN98412',
+        createdAt: '2026-09-27T10:00:00.000Z',
+      },
+      {
+        id: 'dsp-02',
+        dispatchCode: 'DO-TRUCK-2602',
+        shipmentCode: 'EXP-2026-003',
+        containerNo: 'ONEU7718923',
+        containerType: '40RF',
+        dispatchType: 'DOOR_TO_PORT',
+        pickupLocation: 'Kho Lạnh Minh Phú - KCN Sông Hậu, Hậu Giang',
+        deliveryLocation: 'Cảng Cái Mép (TCIT) - Cổng Container Lạnh',
+        tractorPlate: '50H-992.14',
+        trailerPlate: '50R-331.09',
+        driverName: 'Trần Đình Trọng',
+        driverPhone: '0903.882.119',
+        driverLicenseGrade: 'FC',
+        appointmentTime: '2026-09-28T02:00:00.000Z',
+        status: 'PULLED_FROM_PORT',
+        tollFeeVnd: 280000,
+        fuelEstimatedLiters: 92,
+        notes: 'Xe có gắn máy phát GenSet bảo đảm nhiệt độ âm sâu -18°C',
+        createdAt: '2026-09-27T11:00:00.000Z',
+      },
+      {
+        id: 'dsp-03',
+        dispatchCode: 'DO-TRUCK-2603',
+        shipmentCode: 'IMP-2026-005',
+        containerNo: 'HLXU4819201',
+        containerType: '40HC',
+        dispatchType: 'PORT_TO_DOOR',
+        pickupLocation: 'Bãi Cảng Cát Lái (Sau thông quan hải quan)',
+        deliveryLocation: 'Nhà máy Sơn BASF - KCN Amata, Đồng Nai',
+        tractorPlate: '60C-442.88',
+        trailerPlate: '60R-221.75',
+        driverName: 'Lê Hoàng Nam',
+        driverPhone: '0978.112.554',
+        driverLicenseGrade: 'FC',
+        appointmentTime: '2026-09-29T21:30:00.000Z',
+        status: 'PENDING_DISPATCH',
+        tollFeeVnd: 150000,
+        fuelEstimatedLiters: 42,
+        notes: 'Chạy khung giờ đêm tránh giờ cấm tải xe container trên Xa lộ Hà Nội',
+        createdAt: '2026-09-27T14:30:00.000Z',
+      },
+    ];
   }
 
   // ================= SHIPMENTS API =================
@@ -1365,6 +1492,137 @@ export class InternationalService implements OnModuleInit {
     doc.status = dto.status;
     if (dto.verificationNotes) doc.verificationNotes = dto.verificationNotes;
     return doc;
+  }
+
+  // ================= CONTAINER DRAYAGE DISPATCH =================
+  async getDrayageDispatches(shipmentCode?: string) {
+    if (shipmentCode) {
+      return this.drayageDispatches.filter((d) => d.shipmentCode === shipmentCode);
+    }
+    return this.drayageDispatches;
+  }
+
+  async createDrayageDispatch(dto: Partial<ContainerDrayageDispatchItem>) {
+    const newDispatch: ContainerDrayageDispatchItem = {
+      id: `dsp-${Date.now()}`,
+      dispatchCode: `DO-TRUCK-${Date.now().toString().slice(-4)}`,
+      shipmentCode: dto.shipmentCode || 'IMP-2026-005',
+      containerNo: dto.containerNo || 'HLXU4819201',
+      containerType: dto.containerType || '40HC',
+      dispatchType: dto.dispatchType || 'PORT_TO_DOOR',
+      pickupLocation: dto.pickupLocation || 'Cảng Tân Cảng Cát Lái',
+      deliveryLocation: dto.deliveryLocation || 'Kho Nhà Máy',
+      tractorPlate: dto.tractorPlate || '51C-881.92',
+      trailerPlate: dto.trailerPlate || '51R-441.20',
+      driverName: dto.driverName || 'Nguyễn Văn Hùng',
+      driverPhone: dto.driverPhone || '0918.441.291',
+      driverLicenseGrade: 'FC',
+      appointmentTime: dto.appointmentTime || new Date(Date.now() + 86400000).toISOString(),
+      status: 'DISPATCHED',
+      tollFeeVnd: dto.tollFeeVnd || 180000,
+      fuelEstimatedLiters: dto.fuelEstimatedLiters || 45,
+      notes: dto.notes,
+      createdAt: new Date().toISOString(),
+    };
+    this.drayageDispatches.unshift(newDispatch);
+    return newDispatch;
+  }
+
+  async updateDrayageStatus(
+    id: string,
+    status: 'PENDING_DISPATCH' | 'DISPATCHED' | 'PULLED_FROM_PORT' | 'DELIVERED_FACTORY' | 'COMPLETED'
+  ) {
+    const item = this.drayageDispatches.find((d) => d.id === id);
+    if (!item) throw new NotFoundException('Không tìm thấy lệnh điều độ xe');
+    item.status = status;
+    return item;
+  }
+
+  // ================= AI IMPORT ANALYSIS & AUTO-DISPATCH =================
+  async getAiImportAnalysis(shipmentCode: string): Promise<AiImportAnalysisReport> {
+    const shipment = this.shipments.find((s) => s.shipmentCode === shipmentCode) || this.shipments[0];
+    const isCustomsCleared = shipment.customsStatus === 'CLEARED';
+    const isReefer = shipment.containerType?.includes('RF');
+
+    return {
+      shipmentCode: shipment.shipmentCode,
+      analyzedAt: new Date().toISOString(),
+      overallRiskScore: isCustomsCleared ? 18 : 64,
+      riskLevel: isCustomsCleared ? 'LOW_SAFE' : 'MEDIUM_CAUTION',
+      portCongestionPrediction: {
+        portCode: 'VNSGN',
+        portName: shipment.podPort || 'Cảng Tân Cảng Cát Lái',
+        congestionLevelPercent: 78,
+        averageVesselWaitingTimeHours: 6.5,
+        recommendedDrayageWindow: '21:30 - 05:00 (Tránh giờ cấm tải container TP.HCM & kẹt cổng cảng)',
+      },
+      customsRiskAssessment: {
+        channelPrediction: isCustomsCleared ? 'GREEN' : 'YELLOW',
+        auditProbabilityPercent: isCustomsCleared ? 5 : 45,
+        complianceFlags: [
+          isReefer ? 'Hàng đông lạnh: Yêu cầu kiểm dịch thú y/thực vật trước khi mở tờ khai' : 'Mã HS hợp lệ, khớp mô tả hóa đơn',
+          'Doanh nghiệp có lịch sử tuân thủ pháp luật hải quan loại 2 (Trung bình)',
+        ],
+        potentialPenaltyWarning: isCustomsCleared ? undefined : 'Cần bổ sung chứng nhận C/O bản gốc để hưởng thuế suất ưu đãi 0%',
+      },
+      demurrageAvoidancePlan: {
+        freeTimeRemainingDays: 4,
+        dailyPenaltyVnd: isReefer ? 2150000 : 1250000,
+        maxSafeStorageDate: new Date(Date.now() + 4 * 86400000).toLocaleDateString('vi-VN'),
+        recommendedAction: 'Điều xe kéo container lấy hàng trong khung giờ đêm trước 05:00 sáng mai',
+      },
+      landedCostBreakdown: {
+        fobValueVnd: Math.round(shipment.freightAmount * 25450 * 5.2),
+        freightAndInsuranceVnd: Math.round(shipment.freightAmount * 25450),
+        importTaxAndVatVnd: Math.round(shipment.freightAmount * 25450 * 0.18),
+        portAndLocalChargesVnd: 5400000,
+        inlandDrayageTruckingVnd: 4200000,
+        totalLandedCostVnd: Math.round(shipment.freightAmount * 25450 * 6.6) + 9600000,
+        costPerUnitVnd: Math.round((shipment.freightAmount * 25450 * 6.6 + 9600000) / Math.max(1, shipment.packageCount)),
+        unitName: shipment.packageCount > 100 ? 'Carton' : 'Kiện / Unit',
+      },
+      aiRecommendations: [
+        'Khung giờ điều xe tối ưu nhất: 22:00 - 04:30 qua tuyến Xa lộ Hà Nội - Mai Chí Thọ để giảm 25% thời gian chờ cổng cảng.',
+        isReefer ? 'Lưu ý bắt buộc: Rơ-moóc kéo cont cần trang bị máy phát điện GenSet duy trì nhiệt độ âm -18°C suốt quá trình vận chuyển.' : 'Container 40HC khô: Kiểm tra kỹ tem niêm phong chì hãng tàu trước khi rời bãi cảng.',
+        'Kích hoạt lệnh điều độ tự động (Auto-Dispatch) để khóa xe đầu kéo 51C-881.92 và tài xế hạng FC sẵn sàng vào cảng.',
+      ],
+    };
+  }
+
+  async runAiAutoDispatch(shipmentCode: string) {
+    const analysis = await this.getAiImportAnalysis(shipmentCode);
+    const existing = this.drayageDispatches.find((d) => d.shipmentCode === shipmentCode);
+
+    if (existing) {
+      existing.status = 'DISPATCHED';
+      existing.appointmentTime = new Date().toISOString();
+      return { dispatch: existing, analysis };
+    }
+
+    const newDispatch: ContainerDrayageDispatchItem = {
+      id: `dsp-ai-${Date.now()}`,
+      dispatchCode: `DO-AI-${Date.now().toString().slice(-4)}`,
+      shipmentCode,
+      containerNo: 'AUTO-CONT-8819',
+      containerType: '40HC',
+      dispatchType: 'PORT_TO_DOOR',
+      pickupLocation: analysis.portCongestionPrediction.portName,
+      deliveryLocation: 'Kho Nhà Máy Consignee',
+      tractorPlate: '51C-881.92',
+      trailerPlate: '51R-441.20',
+      driverName: 'Nguyễn Văn Hùng (AI Matched)',
+      driverPhone: '0918.441.291',
+      driverLicenseGrade: 'FC',
+      appointmentTime: 'Khung giờ đêm: 22:00 - 04:30 (Tránh cấm tải)',
+      status: 'DISPATCHED',
+      tollFeeVnd: 180000,
+      fuelEstimatedLiters: 45,
+      notes: 'Được điều phối tự động bởi thuật toán AI Smart Drayage Dispatcher',
+      createdAt: new Date().toISOString(),
+    };
+
+    this.drayageDispatches.unshift(newDispatch);
+    return { dispatch: newDispatch, analysis };
   }
 }
 
