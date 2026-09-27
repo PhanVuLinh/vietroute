@@ -94,6 +94,96 @@ export interface LocalChargeItem {
   appliedUnit: string; // Per Container, Per Bill, Per CBM
 }
 
+export interface HsCodeItem {
+  hsCode: string;
+  descriptionVi: string;
+  descriptionEn: string;
+  unit: string;
+  standardDutyRate: number; // Thuế thông thường %
+  mfnRate: number;          // Thuế MFN %
+  evftaRate: number;        // Thuế EVFTA (Việt Nam - EU) %
+  cptppRate: number;        // Thuế CPTPP %
+  acftaRate: number;        // Thuế ACFTA Form E (Trung Quốc) %
+  atigaRate: number;        // Thuế ATIGA Form D (ASEAN) %
+  vkftaRate: number;        // Thuế VKFTA Form AK (Hàn Quốc) %
+  vatRate: number;          // Thuế GTGT %
+  specializedInspection: string; // Kiểm tra chuyên ngành
+  inspectionAgency?: string;
+  importConditions?: string;
+}
+
+export interface ShipmentFinancialPnl {
+  shipmentId: string;
+  shipmentCode: string;
+  shipperName: string;
+  carrierName: string;
+  currency: string;
+  sellingFreight: number;
+  sellingLocalCharges: number;
+  totalRevenueVnd: number;
+  buyingFreight: number;
+  buyingLocalCharges: number;
+  truckingCostVnd: number;
+  customsCostVnd: number;
+  portHandlingCostVnd: number;
+  totalCostVnd: number;
+  grossProfitVnd: number;
+  grossProfitUsd: number;
+  profitMarginPercent: number; // ROS %
+  fxGainLossVnd: number;
+  paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID';
+}
+
+export interface ContainerDepositItem {
+  id: string;
+  containerNo: string;
+  shipmentCode: string;
+  carrier: string;
+  depositAmountVnd: number;
+  receiptNumber: string; // Số phiếu thu cược EIR
+  depositedDate: string;
+  refundDueDate: string;
+  refundStatus: 'PENDING_REFUND' | 'REFUNDED_FULL' | 'DEDUCTED_REPAIR';
+  refundedAmountVnd?: number;
+  deductedReason?: string;
+  eirCondition: 'INTACT' | 'CLEANED' | 'DENTED' | 'HOLE_REPAIRED';
+}
+
+export interface VesselAisTrackingItem {
+  vesselName: string;
+  mmsi: string;
+  imo: string;
+  flag: string;
+  shipmentCodes: string[];
+  currentLatitude: number;
+  currentLongitude: number;
+  speedKnots: number;
+  headingDegrees: number;
+  departurePort: string;
+  destinationPort: string;
+  atdDate: string;
+  etaPredicted: string;
+  distanceCoveredNm: number;
+  distanceRemainingNm: number;
+  progressPercent: number;
+  weatherRisk: 'LOW_NORMAL' | 'MODERATE_SWELL' | 'HIGH_TYPHOON_WARNING';
+  navStatus: 'UNDERWAY_USING_ENGINE' | 'MOORED' | 'AT_ANCHOR';
+}
+
+export interface ShippingDocument {
+  id: string;
+  shipmentId: string;
+  shipmentCode: string;
+  documentType: 'BILL_OF_LADING' | 'COMMERCIAL_INVOICE' | 'PACKING_LIST' | 'CERTIFICATE_OF_ORIGIN' | 'PHYTOSANITARY' | 'VNACCS_DECLARATION';
+  documentNumber: string;
+  issueDate: string;
+  issuer: string;
+  fileFormat: string;
+  status: 'DRAFT' | 'ISSUED' | 'VERIFIED' | 'REJECTED';
+  verificationNotes?: string;
+  isMandatory: boolean;
+}
+
 @Injectable()
 export class InternationalService implements OnModuleInit {
   private shipments: InternationalShipment[] = [];
@@ -102,6 +192,11 @@ export class InternationalService implements OnModuleInit {
   private ports: InternationalPort[] = [];
   private exchangeRates: ExchangeRateItem[] = [];
   private localCharges: LocalChargeItem[] = [];
+  private hsCodes: HsCodeItem[] = [];
+  private shipmentFinancials: ShipmentFinancialPnl[] = [];
+  private containerDeposits: ContainerDepositItem[] = [];
+  private vessels: VesselAisTrackingItem[] = [];
+  private shippingDocuments: ShippingDocument[] = [];
 
   onModuleInit() {
     this.seedInitialData();
@@ -430,6 +525,482 @@ export class InternationalService implements OnModuleInit {
         status: 'AT_FACTORY',
       },
     ];
+
+    // 5. Biểu thuế XNK & Phân loại Mã HS Việt Nam chuẩn 2026
+    this.hsCodes = [
+      {
+        hsCode: '0306.17.21',
+        descriptionVi: 'Tôm thẻ chân trắng đông lạnh (Penaeus vannamei), bóc vỏ, bỏ đầu',
+        descriptionEn: 'Frozen whiteleg shrimp, peeled, headless',
+        unit: 'KG',
+        standardDutyRate: 15,
+        mfnRate: 10,
+        evftaRate: 0,
+        cptppRate: 0,
+        acftaRate: 0,
+        atigaRate: 0,
+        vkftaRate: 0,
+        vatRate: 0, // Hàng thủy sản nguyên liệu chưa chế biến sâu thuộc đối tượng không chịu VAT
+        specializedInspection: 'Bắt buộc Kiểm dịch động vật thủy sản nhập khẩu',
+        inspectionAgency: 'Cục Thú Y (Bộ NN&PTNT)',
+        importConditions: 'Cần có Health Certificate từ cơ quan thẩm quyền nước xuất khẩu',
+      },
+      {
+        hsCode: '0901.11.10',
+        descriptionVi: 'Cà phê Robusta nhân sống, chưa rang, chưa khử chất caffeine',
+        descriptionEn: 'Coffee, not roasted, not decaffeinated, Robusta',
+        unit: 'KG',
+        standardDutyRate: 30,
+        mfnRate: 20,
+        evftaRate: 0,
+        cptppRate: 0,
+        acftaRate: 5,
+        atigaRate: 0,
+        vkftaRate: 0,
+        vatRate: 5,
+        specializedInspection: 'Kiểm dịch thực vật tại cửa khẩu',
+        inspectionAgency: 'Cục Bảo vệ Thực vật',
+        importConditions: 'Chứng thư kiểm dịch Phytosanitary',
+      },
+      {
+        hsCode: '6109.10.10',
+        descriptionVi: 'Áo phông (T-shirts) dệt kim hoặc móc, bằng bông (cotton 100%)',
+        descriptionEn: 'T-shirts, knitted or crocheted, of cotton',
+        unit: 'PCE',
+        standardDutyRate: 30,
+        mfnRate: 20,
+        evftaRate: 2,
+        cptppRate: 0,
+        acftaRate: 0,
+        atigaRate: 0,
+        vkftaRate: 5,
+        vatRate: 8,
+        specializedInspection: 'Kiểm tra dư lượng Formaldehyt và Amin thơm chuyển hóa',
+        inspectionAgency: 'Viện Dệt May / Trung tâm Giám định',
+        importConditions: 'Quy chuẩn kỹ thuật quốc gia QCVN 01:2017/BCT',
+      },
+      {
+        hsCode: '8541.43.00',
+        descriptionVi: 'Tấm pin năng lượng mặt trời (Solar photovoltaic modules)',
+        descriptionEn: 'Photovoltaic cells assembled in modules or made up into panels',
+        unit: 'PCE',
+        standardDutyRate: 5,
+        mfnRate: 0,
+        evftaRate: 0,
+        cptppRate: 0,
+        acftaRate: 0,
+        atigaRate: 0,
+        vkftaRate: 0,
+        vatRate: 8,
+        specializedInspection: 'Kiểm tra hiệu suất năng lượng tối thiểu & an toàn điện',
+        inspectionAgency: 'Bộ Công Thương',
+        importConditions: 'Chứng nhận hợp quy dán nhãn năng lượng',
+      },
+      {
+        hsCode: '4011.20.10',
+        descriptionVi: 'Lốp xe tải loại bơm hơi bằng cao su, kết cấu bố tròn (Radial)',
+        descriptionEn: 'New pneumatic tyres, of rubber, of a kind used on buses or lorries (Radial)',
+        unit: 'PCE',
+        standardDutyRate: 35,
+        mfnRate: 25,
+        evftaRate: 5,
+        cptppRate: 0,
+        acftaRate: 0,
+        atigaRate: 0,
+        vkftaRate: 5,
+        vatRate: 8,
+        specializedInspection: 'Kiểm tra chất lượng nhà nước an toàn kỹ thuật linh kiện ô tô',
+        inspectionAgency: 'Cục Đăng Kiểm Việt Nam (Bộ GTVT)',
+        importConditions: 'Giấy chứng nhận thử nghiệm mẫu theo QCVN 34:2017/BGTVT',
+      },
+      {
+        hsCode: '0401.20.10',
+        descriptionVi: 'Sữa tươi tiệt trùng UHT, hàm lượng chất béo từ 1% đến 6%',
+        descriptionEn: 'Milk and cream, UHT, fat content exceeding 1% but not exceeding 6%',
+        unit: 'LTR',
+        standardDutyRate: 25,
+        mfnRate: 15,
+        evftaRate: 3.5,
+        cptppRate: 0,
+        acftaRate: 5,
+        atigaRate: 0,
+        vkftaRate: 0,
+        vatRate: 8,
+        specializedInspection: 'Kiểm tra an toàn thực phẩm nhập khẩu & Kiểm dịch động vật',
+        inspectionAgency: 'Cục An toàn Thực phẩm (Bộ Y Tế) & Cục Thú Y',
+        importConditions: 'Bản tự công bố sản phẩm và chứng thư vệ sinh thú y',
+      },
+      {
+        hsCode: '8471.30.20',
+        descriptionVi: 'Máy vi tính xách tay (Laptop), bao gồm cả notebook và subnotebook',
+        descriptionEn: 'Laptops, portable automatic data processing machines',
+        unit: 'PCE',
+        standardDutyRate: 0,
+        mfnRate: 0,
+        evftaRate: 0,
+        cptppRate: 0,
+        acftaRate: 0,
+        atigaRate: 0,
+        vkftaRate: 0,
+        vatRate: 8,
+        specializedInspection: 'Kiểm tra chất lượng hợp quy thiết bị viễn thông và CNTT',
+        inspectionAgency: 'Bộ Thông tin và Truyền thông (Cục Viễn Thông)',
+        importConditions: 'Giấy chứng nhận hợp quy (CR) và dấu hợp quy',
+      },
+      {
+        hsCode: '7208.39.90',
+        descriptionVi: 'Thép cuộn cán nóng (HRC), chưa phủ, mạ hoặc tráng, dạng cuộn',
+        descriptionEn: 'Flat-rolled products of iron or non-alloy steel, hot-rolled, in coils',
+        unit: 'TNE',
+        standardDutyRate: 10,
+        mfnRate: 5,
+        evftaRate: 0,
+        cptppRate: 0,
+        acftaRate: 0,
+        atigaRate: 0,
+        vkftaRate: 0,
+        vatRate: 8,
+        specializedInspection: 'Kiểm tra chất lượng thép nhập khẩu theo QCVN 16:2019/BXD',
+        inspectionAgency: 'Chi cục Tiêu chuẩn Đo lường Chất lượng',
+        importConditions: 'Có áp dụng thuế chống bán phá giá tạm thời nếu xuất xứ từ một số nước',
+      },
+    ];
+
+    // 6. Dữ liệu phân tích Tài chính & Lợi nhuận gộp P&L từng lô hàng
+    this.shipmentFinancials = [
+      {
+        shipmentId: 'shp-01',
+        shipmentCode: 'EXP-2026-001',
+        shipperName: 'Tập đoàn Dệt may Việt Nam (Vinatex)',
+        carrierName: 'Maersk Line',
+        currency: 'USD',
+        sellingFreight: 2200,
+        sellingLocalCharges: 350,
+        totalRevenueVnd: 65161000,
+        buyingFreight: 1750,
+        buyingLocalCharges: 260,
+        truckingCostVnd: 4500000,
+        customsCostVnd: 1200000,
+        portHandlingCostVnd: 1500000,
+        totalCostVnd: 58454500,
+        grossProfitVnd: 6706500,
+        grossProfitUsd: 263.5,
+        profitMarginPercent: 10.29,
+        fxGainLossVnd: 450000,
+        paymentStatus: 'PAID',
+      },
+      {
+        shipmentId: 'shp-02',
+        shipmentCode: 'IMP-2026-002',
+        shipperName: 'Samsung Electronics Gumi Plant',
+        carrierName: 'Korean Air Cargo',
+        currency: 'USD',
+        sellingFreight: 4850,
+        sellingLocalCharges: 420,
+        totalRevenueVnd: 134442600,
+        buyingFreight: 4100,
+        buyingLocalCharges: 310,
+        truckingCostVnd: 3800000,
+        customsCostVnd: 1500000,
+        portHandlingCostVnd: 2200000,
+        totalCostVnd: 119732500,
+        grossProfitVnd: 14710100,
+        grossProfitUsd: 577.9,
+        profitMarginPercent: 10.94,
+        fxGainLossVnd: 620000,
+        paymentStatus: 'PAID',
+      },
+      {
+        shipmentId: 'shp-03',
+        shipmentCode: 'EXP-2026-003',
+        shipperName: 'Công ty Cổ phần Thủy sản Minh Phú',
+        carrierName: 'Ocean Network Express (ONE)',
+        currency: 'USD',
+        sellingFreight: 3600,
+        sellingLocalCharges: 480,
+        totalRevenueVnd: 104037600,
+        buyingFreight: 2950,
+        buyingLocalCharges: 380,
+        truckingCostVnd: 6200000,
+        customsCostVnd: 1800000,
+        portHandlingCostVnd: 2800000,
+        totalCostVnd: 95548500,
+        grossProfitVnd: 8489100,
+        grossProfitUsd: 333.5,
+        profitMarginPercent: 8.16,
+        fxGainLossVnd: -210000,
+        paymentStatus: 'PARTIAL',
+      },
+      {
+        shipmentId: 'shp-04',
+        shipmentCode: 'CRB-2026-004',
+        shipperName: 'Vina T&T Fruit Export',
+        carrierName: 'VietRoute Cross-Border Fleet',
+        currency: 'USD',
+        sellingFreight: 1850,
+        sellingLocalCharges: 180,
+        totalRevenueVnd: 51866700,
+        buyingFreight: 1300,
+        buyingLocalCharges: 120,
+        truckingCostVnd: 4200000,
+        customsCostVnd: 950000,
+        portHandlingCostVnd: 800000,
+        totalCostVnd: 42139000,
+        grossProfitVnd: 9727700,
+        grossProfitUsd: 382.2,
+        profitMarginPercent: 18.75,
+        fxGainLossVnd: 180000,
+        paymentStatus: 'PAID',
+      },
+      {
+        shipmentId: 'shp-05',
+        shipmentCode: 'IMP-2026-005',
+        shipperName: 'BASF Coatings GmbH (Hamburg)',
+        carrierName: 'Hapag-Lloyd',
+        currency: 'EUR',
+        sellingFreight: 3100,
+        sellingLocalCharges: 390,
+        totalRevenueVnd: 96494000,
+        buyingFreight: 2600,
+        buyingLocalCharges: 310,
+        truckingCostVnd: 5500000,
+        customsCostVnd: 2200000,
+        portHandlingCostVnd: 2500000,
+        totalCostVnd: 90691500,
+        grossProfitVnd: 5802500,
+        grossProfitUsd: 206.5,
+        profitMarginPercent: 6.01,
+        fxGainLossVnd: -350000,
+        paymentStatus: 'UNPAID',
+      },
+    ];
+
+    // 7. Theo dõi Tiền cược vỏ Container & Biên bản giao nhận EIR
+    this.containerDeposits = [
+      {
+        id: 'dep-01',
+        containerNo: 'MSKU8923410',
+        shipmentCode: 'EXP-2026-001',
+        carrier: 'Maersk Line',
+        depositAmountVnd: 3000000,
+        receiptNumber: 'EIR-MSK-2026-8812',
+        depositedDate: '2026-09-24T08:30:00.000Z',
+        refundDueDate: '2026-10-10T17:00:00.000Z',
+        refundStatus: 'PENDING_REFUND',
+        eirCondition: 'INTACT',
+      },
+      {
+        id: 'dep-02',
+        containerNo: 'ONEU7718923',
+        shipmentCode: 'EXP-2026-003',
+        carrier: 'Ocean Network Express (ONE)',
+        depositAmountVnd: 5000000,
+        receiptNumber: 'EIR-ONE-2026-4419',
+        depositedDate: '2026-09-23T14:00:00.000Z',
+        refundDueDate: '2026-10-08T17:00:00.000Z',
+        refundStatus: 'PENDING_REFUND',
+        eirCondition: 'INTACT',
+      },
+      {
+        id: 'dep-03',
+        containerNo: 'HLXU4819201',
+        shipmentCode: 'IMP-2026-005',
+        carrier: 'Hapag-Lloyd',
+        depositAmountVnd: 3500000,
+        receiptNumber: 'EIR-HL-2026-9021',
+        depositedDate: '2026-09-21T10:00:00.000Z',
+        refundDueDate: '2026-09-28T17:00:00.000Z',
+        refundStatus: 'DEDUCTED_REPAIR',
+        refundedAmountVnd: 2800000,
+        deductedReason: 'Phát sinh vết móp sàn gỗ container (trừ 700.000 VNĐ theo biên bản EIR)',
+        eirCondition: 'DENTED',
+      },
+      {
+        id: 'dep-04',
+        containerNo: 'TEMU3391820',
+        shipmentCode: 'IMP-2026-002',
+        carrier: 'Evergreen Line',
+        depositAmountVnd: 3000000,
+        receiptNumber: 'EIR-EMC-2026-1102',
+        depositedDate: '2026-09-18T09:00:00.000Z',
+        refundDueDate: '2026-09-25T17:00:00.000Z',
+        refundStatus: 'REFUNDED_FULL',
+        refundedAmountVnd: 3000000,
+        eirCondition: 'INTACT',
+      },
+    ];
+
+    // 8. Tọa độ Hải trình Vệ tinh AIS thời gian thực (Live Vessel AIS)
+    this.vessels = [
+      {
+        vesselName: 'MAERSK MC-KINNEY MOLLER',
+        mmsi: '219018271',
+        imo: '9619907',
+        flag: 'Denmark',
+        shipmentCodes: ['EXP-2026-001'],
+        currentLatitude: 14.8512,
+        currentLongitude: 114.2831,
+        speedKnots: 19.4,
+        headingDegrees: 68,
+        departurePort: 'VNSGN - Tân Cảng Cát Lái',
+        destinationPort: 'USLAX - Port of Los Angeles',
+        atdDate: '2026-09-26T16:00:00.000Z',
+        etaPredicted: '2026-10-12T08:00:00.000Z',
+        distanceCoveredNm: 1240,
+        distanceRemainingNm: 6820,
+        progressPercent: 15.38,
+        weatherRisk: 'LOW_NORMAL',
+        navStatus: 'UNDERWAY_USING_ENGINE',
+      },
+      {
+        vesselName: 'ONE APUS',
+        mmsi: '353136000',
+        imo: '9806079',
+        flag: 'Japan',
+        shipmentCodes: ['EXP-2026-003'],
+        currentLatitude: 10.3541,
+        currentLongitude: 107.0189,
+        speedKnots: 0.1,
+        headingDegrees: 182,
+        departurePort: 'VNSGN - Tân Cảng Cái Mép (TCIT)',
+        destinationPort: 'DEHAM - Port of Hamburg',
+        atdDate: '2026-09-28T02:00:00.000Z',
+        etaPredicted: '2026-10-22T14:00:00.000Z',
+        distanceCoveredNm: 0,
+        distanceRemainingNm: 9200,
+        progressPercent: 0,
+        weatherRisk: 'LOW_NORMAL',
+        navStatus: 'MOORED',
+      },
+      {
+        vesselName: 'CMA CGM JACQUES SAADE',
+        mmsi: '228386700',
+        imo: '9839179',
+        flag: 'France',
+        shipmentCodes: ['IMP-2026-005'],
+        currentLatitude: 12.1124,
+        currentLongitude: 110.8932,
+        speedKnots: 17.8,
+        headingDegrees: 215,
+        departurePort: 'DEHAM - Port of Hamburg',
+        destinationPort: 'VNSGN - Cảng Tân Cảng Cát Lái',
+        atdDate: '2026-09-08T10:00:00.000Z',
+        etaPredicted: '2026-09-29T18:00:00.000Z',
+        distanceCoveredNm: 8940,
+        distanceRemainingNm: 380,
+        progressPercent: 95.92,
+        weatherRisk: 'MODERATE_SWELL',
+        navStatus: 'UNDERWAY_USING_ENGINE',
+      },
+    ];
+
+    // 9. Kho Chứng từ Xuất Nhập Khẩu Số Hóa
+    this.shippingDocuments = [
+      {
+        id: 'doc-01',
+        shipmentId: 'shp-01',
+        shipmentCode: 'EXP-2026-001',
+        documentType: 'BILL_OF_LADING',
+        documentNumber: 'MAEU-881920192',
+        issueDate: '2026-09-26T18:00:00.000Z',
+        issuer: 'Maersk Line Vietnam Agency',
+        fileFormat: 'PDF',
+        status: 'VERIFIED',
+        verificationNotes: 'Vận đơn gốc Seaway Bill sạch, đúng tên Shipper/Consignee',
+        isMandatory: true,
+      },
+      {
+        id: 'doc-02',
+        shipmentId: 'shp-01',
+        shipmentCode: 'EXP-2026-001',
+        documentType: 'COMMERCIAL_INVOICE',
+        documentNumber: 'INV-VTX-2026-091',
+        issueDate: '2026-09-25T10:00:00.000Z',
+        issuer: 'Vinatex Export Corp',
+        fileFormat: 'PDF',
+        status: 'VERIFIED',
+        verificationNotes: 'Khớp trị giá 42,000 USD điều kiện FOB',
+        isMandatory: true,
+      },
+      {
+        id: 'doc-03',
+        shipmentId: 'shp-01',
+        shipmentCode: 'EXP-2026-001',
+        documentType: 'PACKING_LIST',
+        documentNumber: 'PL-VTX-2026-091',
+        issueDate: '2026-09-25T10:30:00.000Z',
+        issuer: 'Vinatex Export Corp',
+        fileFormat: 'PDF',
+        status: 'VERIFIED',
+        verificationNotes: 'Đúng 480 cartons, Gross Weight 8,420 kg, 58.4 CBM',
+        isMandatory: true,
+      },
+      {
+        id: 'doc-04',
+        shipmentId: 'shp-01',
+        shipmentCode: 'EXP-2026-001',
+        documentType: 'CERTIFICATE_OF_ORIGIN',
+        documentNumber: 'CO-VCCI-2026-88192',
+        issueDate: '2026-09-26T14:00:00.000Z',
+        issuer: 'Phòng Thương Mại và Công Nghiệp Việt Nam (VCCI)',
+        fileFormat: 'PDF',
+        status: 'VERIFIED',
+        verificationNotes: 'C/O Form B xuất khẩu thị trường Mỹ hợp lệ',
+        isMandatory: false,
+      },
+      {
+        id: 'doc-05',
+        shipmentId: 'shp-03',
+        shipmentCode: 'EXP-2026-003',
+        documentType: 'CERTIFICATE_OF_ORIGIN',
+        documentNumber: 'CO-EUR1-2026-44102',
+        issueDate: '2026-09-27T09:00:00.000Z',
+        issuer: 'Bộ Công Thương (Cục Xuất Nhập Khẩu)',
+        fileFormat: 'PDF',
+        status: 'VERIFIED',
+        verificationNotes: 'C/O Form EUR.1 hưởng thuế suất ưu đãi EVFTA 0%',
+        isMandatory: true,
+      },
+      {
+        id: 'doc-06',
+        shipmentId: 'shp-03',
+        shipmentCode: 'EXP-2026-003',
+        documentType: 'PHYTOSANITARY',
+        documentNumber: 'HEALTH-NAFI-2026-119',
+        issueDate: '2026-09-27T11:00:00.000Z',
+        issuer: 'Cục Quản lý Chất lượng Nông lâm sản và Thủy sản (NAFIQPM)',
+        fileFormat: 'PDF',
+        status: 'ISSUED',
+        verificationNotes: 'Đạt chỉ tiêu vi sinh và an toàn thực phẩm tiêu chuẩn EU',
+        isMandatory: true,
+      },
+      {
+        id: 'doc-07',
+        shipmentId: 'shp-05',
+        shipmentCode: 'IMP-2026-005',
+        documentType: 'BILL_OF_LADING',
+        documentNumber: 'HLCU-HAM-2026-091',
+        issueDate: '2026-09-08T14:00:00.000Z',
+        issuer: 'Hapag-Lloyd AG',
+        fileFormat: 'PDF',
+        status: 'VERIFIED',
+        verificationNotes: 'Vận đơn Surrendered Bill đã nộp tiền cước đầu xuất',
+        isMandatory: true,
+      },
+      {
+        id: 'doc-08',
+        shipmentId: 'shp-05',
+        shipmentCode: 'IMP-2026-005',
+        documentType: 'CERTIFICATE_OF_ORIGIN',
+        documentNumber: 'CO-DE-2026-99120',
+        issueDate: '2026-09-09T08:00:00.000Z',
+        issuer: 'IHK Hamburg Chamber of Commerce',
+        fileFormat: 'PDF',
+        status: 'DRAFT',
+        verificationNotes: 'Bản scan mờ, đang yêu cầu gửi lại bản gốc có xác thực điện tử',
+        isMandatory: true,
+      },
+    ];
   }
 
   // ================= SHIPMENTS API =================
@@ -662,4 +1233,138 @@ export class InternationalService implements OnModuleInit {
   async getLocalCharges() {
     return this.localCharges;
   }
+
+  // ================= SMART HS CODE & FTA TAX ENGINE =================
+  async searchHsCodes(query?: string) {
+    if (!query || !query.trim()) return this.hsCodes;
+    const q = query.trim().toLowerCase();
+    return this.hsCodes.filter(
+      (item) =>
+        item.hsCode.toLowerCase().includes(q) ||
+        item.descriptionVi.toLowerCase().includes(q) ||
+        item.descriptionEn.toLowerCase().includes(q) ||
+        (item.specializedInspection && item.specializedInspection.toLowerCase().includes(q))
+    );
+  }
+
+  async calculateFtaTaxes(dto: {
+    hsCode: string;
+    invoiceValue: number;
+    currency: string;
+    originFta?: string;
+  }) {
+    const item = this.hsCodes.find((h) => h.hsCode === dto.hsCode) || this.hsCodes[0];
+    const rateUsd = 25450;
+    const valueVnd = (dto.currency === 'USD' ? dto.invoiceValue : dto.invoiceValue * 1.1) * rateUsd;
+
+    // Xác định thuế suất theo Hiệp định FTA
+    let applicableDutyRate = item.mfnRate;
+    let ftaName = 'MFN (Tối huệ quốc)';
+
+    switch (dto.originFta) {
+      case 'EVFTA':
+        applicableDutyRate = item.evftaRate;
+        ftaName = 'EVFTA (Việt Nam - Liên minh Châu Âu EU)';
+        break;
+      case 'CPTPP':
+        applicableDutyRate = item.cptppRate;
+        ftaName = 'CPTPP (Hiệp định Đối tác Toàn diện và Tiến bộ)';
+        break;
+      case 'ACFTA':
+        applicableDutyRate = item.acftaRate;
+        ftaName = 'ACFTA Form E (ASEAN - Trung Quốc)';
+        break;
+      case 'ATIGA':
+        applicableDutyRate = item.atigaRate;
+        ftaName = 'ATIGA Form D (Nội khối ASEAN)';
+        break;
+      case 'VKFTA':
+        applicableDutyRate = item.vkftaRate;
+        ftaName = 'VKFTA Form AK (Việt Nam - Hàn Quốc)';
+        break;
+      default:
+        applicableDutyRate = item.mfnRate;
+    }
+
+    const standardDutyVnd = (valueVnd * item.standardDutyRate) / 100;
+    const mfnDutyVnd = (valueVnd * item.mfnRate) / 100;
+    const applicableDutyVnd = (valueVnd * applicableDutyRate) / 100;
+    const vatVnd = ((valueVnd + applicableDutyVnd) * item.vatRate) / 100;
+    const totalTaxVnd = applicableDutyVnd + vatVnd;
+    const dutySavingsVnd = standardDutyVnd - applicableDutyVnd;
+
+    return {
+      hsCode: item.hsCode,
+      descriptionVi: item.descriptionVi,
+      ftaName,
+      applicableDutyRate,
+      mfnRate: item.mfnRate,
+      standardDutyRate: item.standardDutyRate,
+      vatRate: item.vatRate,
+      cifValueVnd: Math.round(valueVnd),
+      applicableDutyVnd: Math.round(applicableDutyVnd),
+      vatVnd: Math.round(vatVnd),
+      totalTaxVnd: Math.round(totalTaxVnd),
+      dutySavingsVnd: Math.round(dutySavingsVnd),
+      specializedInspection: item.specializedInspection,
+      inspectionAgency: item.inspectionAgency,
+      importConditions: item.importConditions,
+    };
+  }
+
+  // ================= SHIPMENT FINANCIALS P&L =================
+  async getShipmentFinancials() {
+    return this.shipmentFinancials;
+  }
+
+  // ================= CONTAINER DEPOSITS & EIR =================
+  async getContainerDeposits() {
+    return this.containerDeposits;
+  }
+
+  async refundContainerDeposit(
+    id: string,
+    dto: {
+      status: 'REFUNDED_FULL' | 'DEDUCTED_REPAIR';
+      refundedAmountVnd?: number;
+      deductedReason?: string;
+    }
+  ) {
+    const deposit = this.containerDeposits.find((d) => d.id === id);
+    if (!deposit) throw new NotFoundException('Không tìm thấy thông tin tiền cược vỏ');
+    deposit.refundStatus = dto.status;
+    deposit.refundedAmountVnd =
+      dto.refundedAmountVnd !== undefined
+        ? dto.refundedAmountVnd
+        : dto.status === 'REFUNDED_FULL'
+        ? deposit.depositAmountVnd
+        : deposit.depositAmountVnd - 500000;
+    if (dto.deductedReason) deposit.deductedReason = dto.deductedReason;
+    return deposit;
+  }
+
+  // ================= LIVE AIS VESSEL TRACKING =================
+  async getVesselTracking() {
+    return this.vessels;
+  }
+
+  // ================= SHIPPING DOCUMENTS VAULT =================
+  async getShippingDocuments(shipmentCode?: string) {
+    if (shipmentCode) {
+      return this.shippingDocuments.filter((d) => d.shipmentCode === shipmentCode);
+    }
+    return this.shippingDocuments;
+  }
+
+  async verifyShippingDocument(
+    id: string,
+    dto: { status: 'VERIFIED' | 'REJECTED'; verificationNotes?: string }
+  ) {
+    const doc = this.shippingDocuments.find((d) => d.id === id);
+    if (!doc) throw new NotFoundException('Không tìm thấy chứng từ xuất nhập khẩu');
+    doc.status = dto.status;
+    if (dto.verificationNotes) doc.verificationNotes = dto.verificationNotes;
+    return doc;
+  }
 }
+

@@ -310,6 +310,28 @@ const apiInternationalService = {
     httpClient.get<import("@/modules/international/types/international").ExchangeRateItem[]>("/international/exchange-rates"),
   getLocalCharges: () =>
     httpClient.get<import("@/modules/international/types/international").LocalChargeItem[]>("/international/local-charges"),
+  searchHsCodes: (q?: string) =>
+    httpClient.get<import("@/modules/international/types/international").HsCodeItem[]>("/international/hs-codes", { params: { q } }),
+  calculateFtaTaxes: (dto: { hsCode: string; invoiceValue: number; currency: string; originFta?: string }) =>
+    httpClient.post<import("@/modules/international/types/international").FtaTaxCalculationResult>("/international/hs-codes/calculate", dto),
+  getShipmentFinancials: () =>
+    httpClient.get<import("@/modules/international/types/international").ShipmentFinancialPnl[]>("/international/financials"),
+  getContainerDeposits: () =>
+    httpClient.get<import("@/modules/international/types/international").ContainerDepositItem[]>("/international/container-deposits"),
+  refundContainerDeposit: (
+    id: string,
+    dto: { status: 'REFUNDED_FULL' | 'DEDUCTED_REPAIR'; refundedAmountVnd?: number; deductedReason?: string }
+  ) =>
+    httpClient.patch<import("@/modules/international/types/international").ContainerDepositItem>(`/international/container-deposits/${id}/refund`, dto),
+  getVesselTracking: () =>
+    httpClient.get<import("@/modules/international/types/international").VesselAisTrackingItem[]>("/international/vessel-tracking"),
+  getShippingDocuments: (shipmentCode?: string) =>
+    httpClient.get<import("@/modules/international/types/international").ShippingDocument[]>("/international/documents", { params: { shipmentCode } }),
+  verifyShippingDocument: (
+    id: string,
+    dto: { status: 'VERIFIED' | 'REJECTED'; verificationNotes?: string }
+  ) =>
+    httpClient.patch<import("@/modules/international/types/international").ShippingDocument>(`/international/documents/${id}/verify`, dto),
 };
 
 

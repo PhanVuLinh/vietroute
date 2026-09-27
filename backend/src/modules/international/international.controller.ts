@@ -122,4 +122,76 @@ export class InternationalController {
   getLocalCharges() {
     return this.internationalService.getLocalCharges();
   }
+
+  // 4. Smart HS Code & FTA Tax Engine
+  @Get('hs-codes')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER', 'ACCOUNTANT')
+  searchHsCodes(@Query('q') q?: string) {
+    return this.internationalService.searchHsCodes(q);
+  }
+
+  @Post('hs-codes/calculate')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER', 'ACCOUNTANT')
+  calculateFtaTaxes(
+    @Body()
+    dto: {
+      hsCode: string;
+      invoiceValue: number;
+      currency: string;
+      originFta?: string;
+    }
+  ) {
+    return this.internationalService.calculateFtaTaxes(dto);
+  }
+
+  // 5. Shipment Financial P&L
+  @Get('financials')
+  @Roles('ADMIN', 'MANAGER', 'ACCOUNTANT')
+  getShipmentFinancials() {
+    return this.internationalService.getShipmentFinancials();
+  }
+
+  // 6. Container Deposits & EIR
+  @Get('container-deposits')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER', 'ACCOUNTANT')
+  getContainerDeposits() {
+    return this.internationalService.getContainerDeposits();
+  }
+
+  @Patch('container-deposits/:id/refund')
+  @Roles('ADMIN', 'MANAGER', 'ACCOUNTANT')
+  refundContainerDeposit(
+    @Param('id') id: string,
+    @Body()
+    dto: {
+      status: 'REFUNDED_FULL' | 'DEDUCTED_REPAIR';
+      refundedAmountVnd?: number;
+      deductedReason?: string;
+    }
+  ) {
+    return this.internationalService.refundContainerDeposit(id, dto);
+  }
+
+  // 7. Live AIS Vessel Tracking
+  @Get('vessel-tracking')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  getVesselTracking() {
+    return this.internationalService.getVesselTracking();
+  }
+
+  // 8. Shipping Documents Vault
+  @Get('documents')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER', 'ACCOUNTANT')
+  getShippingDocuments(@Query('shipmentCode') shipmentCode?: string) {
+    return this.internationalService.getShippingDocuments(shipmentCode);
+  }
+
+  @Patch('documents/:id/verify')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  verifyShippingDocument(
+    @Param('id') id: string,
+    @Body() dto: { status: 'VERIFIED' | 'REJECTED'; verificationNotes?: string }
+  ) {
+    return this.internationalService.verifyShippingDocument(id, dto);
+  }
 }

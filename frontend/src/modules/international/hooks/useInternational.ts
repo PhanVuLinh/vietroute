@@ -10,6 +10,11 @@ import type {
   InternationalFilterParams,
   CreateShipmentInput,
   CreateCustomsInput,
+  HsCodeItem,
+  ShipmentFinancialPnl,
+  ContainerDepositItem,
+  VesselAisTrackingItem,
+  ShippingDocument,
 } from "../types/international";
 import { toast } from "@/shared/components/feedback/Toast";
 
@@ -76,6 +81,61 @@ export function useLocalCharges() {
       return Array.isArray(res) ? res : ((res as any)?.data || []);
     },
     staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useHsCodes(query?: string) {
+  return useQuery<HsCodeItem[]>({
+    queryKey: ["hs-codes", query],
+    queryFn: async () => {
+      const res = await internationalService.searchHsCodes(query);
+      return Array.isArray(res) ? res : ((res as any)?.data || []);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useShipmentFinancials() {
+  return useQuery<ShipmentFinancialPnl[]>({
+    queryKey: ["shipment-financials"],
+    queryFn: async () => {
+      const res = await internationalService.getShipmentFinancials();
+      return Array.isArray(res) ? res : ((res as any)?.data || []);
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useContainerDeposits() {
+  return useQuery<ContainerDepositItem[]>({
+    queryKey: ["container-deposits"],
+    queryFn: async () => {
+      const res = await internationalService.getContainerDeposits();
+      return Array.isArray(res) ? res : ((res as any)?.data || []);
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useVesselTracking() {
+  return useQuery<VesselAisTrackingItem[]>({
+    queryKey: ["vessel-tracking"],
+    queryFn: async () => {
+      const res = await internationalService.getVesselTracking();
+      return Array.isArray(res) ? res : ((res as any)?.data || []);
+    },
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useShippingDocuments(shipmentCode?: string) {
+  return useQuery<ShippingDocument[]>({
+    queryKey: ["shipping-documents", shipmentCode],
+    queryFn: async () => {
+      const res = await internationalService.getShippingDocuments(shipmentCode);
+      return Array.isArray(res) ? res : ((res as any)?.data || []);
+    },
+    staleTime: 30 * 1000,
   });
 }
 
@@ -151,11 +211,64 @@ export function useInternationalMutations() {
     },
   });
 
+  const calculateFtaTaxes = useMutation({
+    mutationFn: async (dto: { hsCode: string; invoiceValue: number; currency: string; originFta?: string }) => {
+      return await internationalService.calculateFtaTaxes(dto);
+    },
+    onSuccess: () => {
+      toast.success("Tính toán thuế FTA thành công");
+    },
+    onError: (err: any) => {
+      toast.error("Tính thuế thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
+  const refundContainerDeposit = useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { status: 'REFUNDED_FULL' | 'DEDUCTED_REPAIR'; refundedAmountVnd?: number; deductedReason?: string };
+    }) => {
+      return await internationalService.refundContainerDeposit(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["container-deposits"] });
+      toast.success("Cập nhật tiền cược vỏ EIR thành công");
+    },
+    onError: (err: any) => {
+      toast.error("Thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
+  const verifyShippingDocument = useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { status: 'VERIFIED' | 'REJECTED'; verificationNotes?: string };
+    }) => {
+      return await internationalService.verifyShippingDocument(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shipping-documents"] });
+      toast.success("Đã cập nhật trạng thái thẩm tra chứng từ");
+    },
+    onError: (err: any) => {
+      toast.error("Cập nhật chứng từ thất bại", err?.response?.data?.message || err?.message);
+    },
+  });
+
   return {
     createShipment,
     updateShipment,
     deleteShipment,
     createCustoms,
     updateCustomsStatus,
+    calculateFtaTaxes,
+    refundContainerDeposit,
+    verifyShippingDocument,
   };
 }

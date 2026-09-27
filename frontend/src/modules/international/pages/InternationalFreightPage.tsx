@@ -8,6 +8,11 @@ import {
   Plus,
   RefreshCw,
   Download,
+  TrendingUp,
+  Navigation,
+  FileText,
+  Sparkles,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -42,20 +47,32 @@ import { ContainerDemDetTable } from "../components/ContainerDemDetTable";
 import { ExchangeRateWidget } from "../components/ExchangeRateWidget";
 import { CreateShipmentDialog } from "../components/CreateShipmentDialog";
 import { CustomsDeclarationDialog } from "../components/CustomsDeclarationDialog";
+import { SmartHsCodeAdvisor } from "../components/SmartHsCodeAdvisor";
+import { ShipmentPnlWidget } from "../components/ShipmentPnlWidget";
+import { ContainerDepositManager } from "../components/ContainerDepositManager";
+import { VesselAisTracker } from "../components/VesselAisTracker";
+import { ShippingDocumentsVault } from "../components/ShippingDocumentsVault";
 import { toast } from "@/shared/components/feedback/Toast";
 
-type ActiveTabType = "SHIPMENTS" | "CUSTOMS" | "CONTAINERS" | "RATES";
+type ActiveTabType =
+  | "SHIPMENTS"
+  | "CUSTOMS"
+  | "CONTAINERS"
+  | "VESSELS"
+  | "PNL"
+  | "DOCUMENTS"
+  | "RATES";
 
 export const InternationalFreightPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTabType>("SHIPMENTS");
+  const [customsSubTab, setCustomsSubTab] = useState<"DECLARATIONS" | "HS_ADVISOR">("DECLARATIONS");
+  const [containerSubTab, setContainerSubTab] = useState<"TRACKING" | "DEPOSITS">("TRACKING");
   const [filters, setFilters] = useState<InternationalFilterParams>({});
 
   // Dialog states
   const [isShipmentDialogOpen, setIsShipmentDialogOpen] = useState(false);
   const [editingShipment, setEditingShipment] = useState<InternationalShipment | null>(null);
-
   const [isCustomsDialogOpen, setIsCustomsDialogOpen] = useState(false);
-
   const [deletingShipment, setDeletingShipment] = useState<InternationalShipment | null>(null);
 
   // Queries
@@ -143,7 +160,7 @@ export const InternationalFreightPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-primary/10 text-primary">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
               <Globe2 className="h-6 w-6" />
             </div>
             <div>
@@ -152,11 +169,11 @@ export const InternationalFreightPage: React.FC = () => {
                   Vận Tải & Giao Nhận Quốc Tế
                 </h1>
                 <Badge variant="outline" className="border-primary/30 text-primary text-[11px] font-semibold">
-                  Freight Forwarding & Customs
+                  Enterprise Freight & Supply Chain
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Quản lý toàn diện Booking, Vận đơn đường biển (B/L) / Hàng không (AWB), Thông quan VNACCS & Bãi vỏ Container
+                Trung tâm điều hành Bookings, Hải quan VNACCS, Tối ưu thuế FTA, Vệ tinh AIS, Quản lý Vỏ Cont & Tài chính P&L
               </p>
             </div>
           </div>
@@ -199,11 +216,11 @@ export const InternationalFreightPage: React.FC = () => {
         containers={containers}
       />
 
-      {/* Main Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-border pb-px overflow-x-auto">
+      {/* Main Tabs Navigation (7 Core Enterprise Pillars) */}
+      <div className="flex items-center gap-1 border-b border-border pb-px overflow-x-auto">
         <button
           onClick={() => setActiveTab("SHIPMENTS")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
             activeTab === "SHIPMENTS"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -215,38 +232,74 @@ export const InternationalFreightPage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab("CUSTOMS")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
             activeTab === "CUSTOMS"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
           <FileCheck2 className="h-4 w-4" />
-          Tờ Khai Hải Quan VNACCS ({customs.length})
+          Hải Quan & Mã HS FTA ({customs.length})
         </button>
 
         <button
           onClick={() => setActiveTab("CONTAINERS")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
             activeTab === "CONTAINERS"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
           <Container className="h-4 w-4" />
-          Quản Lý Vỏ Container & Bãi Depot ({containers.length})
+          Vỏ Container & Dem/Det ({containers.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab("VESSELS")}
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
+            activeTab === "VESSELS"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Navigation className="h-4 w-4" />
+          Hải Trình Vệ Tinh AIS
+        </button>
+
+        <button
+          onClick={() => setActiveTab("PNL")}
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
+            activeTab === "PNL"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <TrendingUp className="h-4 w-4" />
+          Tài Chính Lợi Nhuận Gộp (P&L)
+        </button>
+
+        <button
+          onClick={() => setActiveTab("DOCUMENTS")}
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
+            activeTab === "DOCUMENTS"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <FileText className="h-4 w-4" />
+          Hồ Sơ Chứng Từ Số
         </button>
 
         <button
           onClick={() => setActiveTab("RATES")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all shrink-0 ${
             activeTab === "RATES"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
           <DollarSign className="h-4 w-4" />
-          Tỷ Giá Ngoại Tệ & Biểu Phí Cảng
+          Tỷ Giá & Phụ Phí Cảng
         </button>
       </div>
 
@@ -269,25 +322,86 @@ export const InternationalFreightPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 2: Customs Declarations */}
+      {/* Tab 2: Customs & Smart HS Code Advisor */}
       {activeTab === "CUSTOMS" && (
-        <CustomsDeclarationTable
-          declarations={customs}
-          onUpdateStatus={(id, status) => updateCustomsStatus.mutateAsync({ id, status })}
-          onOpenCreate={() => setIsCustomsDialogOpen(true)}
-          isLoading={isCustomsLoading}
-        />
+        <div className="space-y-4">
+          {/* Sub-tab toggle */}
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={customsSubTab === "DECLARATIONS" ? "default" : "outline"}
+              onClick={() => setCustomsSubTab("DECLARATIONS")}
+              className="text-xs h-8 gap-1.5"
+            >
+              <FileCheck2 className="h-3.5 w-3.5" /> Tờ Khai Hải Quan VNACCS
+            </Button>
+            <Button
+              size="sm"
+              variant={customsSubTab === "HS_ADVISOR" ? "default" : "outline"}
+              onClick={() => setCustomsSubTab("HS_ADVISOR")}
+              className="text-xs h-8 gap-1.5"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Trợ Lý Phân Loại Mã HS & Biểu Thuế FTA 2026
+            </Button>
+          </div>
+
+          {customsSubTab === "DECLARATIONS" ? (
+            <CustomsDeclarationTable
+              declarations={customs}
+              onUpdateStatus={(id, status) => updateCustomsStatus.mutateAsync({ id, status })}
+              onOpenCreate={() => setIsCustomsDialogOpen(true)}
+              isLoading={isCustomsLoading}
+            />
+          ) : (
+            <SmartHsCodeAdvisor />
+          )}
+        </div>
       )}
 
-      {/* Tab 3: Containers Tracking & Demurrage / Detention */}
+      {/* Tab 3: Container Dem/Det & EIR Deposit Tracking */}
       {activeTab === "CONTAINERS" && (
-        <ContainerDemDetTable
-          containers={containers}
-          isLoading={isContainersLoading}
-        />
+        <div className="space-y-4">
+          {/* Sub-tab toggle */}
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={containerSubTab === "TRACKING" ? "default" : "outline"}
+              onClick={() => setContainerSubTab("TRACKING")}
+              className="text-xs h-8 gap-1.5"
+            >
+              <Container className="h-3.5 w-3.5" /> Theo Dõi Vị Trí Vỏ & Cảnh Báo Free Time
+            </Button>
+            <Button
+              size="sm"
+              variant={containerSubTab === "DEPOSITS" ? "default" : "outline"}
+              onClick={() => setContainerSubTab("DEPOSITS")}
+              className="text-xs h-8 gap-1.5"
+            >
+              <Wallet className="h-3.5 w-3.5 text-emerald-500" /> Quản Lý Tiền Ký Cược Vỏ Hãng Tàu (EIR)
+            </Button>
+          </div>
+
+          {containerSubTab === "TRACKING" ? (
+            <ContainerDemDetTable
+              containers={containers}
+              isLoading={isContainersLoading}
+            />
+          ) : (
+            <ContainerDepositManager />
+          )}
+        </div>
       )}
 
-      {/* Tab 4: FX Rates & Local Charges */}
+      {/* Tab 4: Live Satellite AIS Vessel Tracking */}
+      {activeTab === "VESSELS" && <VesselAisTracker />}
+
+      {/* Tab 5: Shipment Financial Profitability (P&L) */}
+      {activeTab === "PNL" && <ShipmentPnlWidget />}
+
+      {/* Tab 6: Shipping Documents Vault & Readiness */}
+      {activeTab === "DOCUMENTS" && <ShippingDocumentsVault />}
+
+      {/* Tab 7: FX Rates & Local Charges */}
       {activeTab === "RATES" && (
         <ExchangeRateWidget
           rates={rates}

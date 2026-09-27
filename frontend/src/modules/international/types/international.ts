@@ -157,3 +157,112 @@ export interface CreateCustomsInput {
   vatTaxAmount?: number;
   status?: CustomsStatusType;
 }
+
+export interface HsCodeItem {
+  hsCode: string;
+  descriptionVi: string;
+  descriptionEn: string;
+  unit: string;
+  standardDutyRate: number; // Thuế thông thường %
+  mfnRate: number;          // Thuế MFN %
+  evftaRate: number;        // Thuế EVFTA %
+  cptppRate: number;        // Thuế CPTPP %
+  acftaRate: number;        // Thuế ACFTA Form E %
+  atigaRate: number;        // Thuế ATIGA Form D %
+  vkftaRate: number;        // Thuế VKFTA Form AK %
+  vatRate: number;          // Thuế GTGT %
+  specializedInspection: string; // Kiểm tra chuyên ngành
+  inspectionAgency?: string;
+  importConditions?: string;
+}
+
+export interface FtaTaxCalculationResult {
+  hsCode: string;
+  descriptionVi: string;
+  ftaName: string;
+  applicableDutyRate: number;
+  mfnRate: number;
+  standardDutyRate: number;
+  vatRate: number;
+  cifValueVnd: number;
+  applicableDutyVnd: number;
+  vatVnd: number;
+  totalTaxVnd: number;
+  dutySavingsVnd: number;
+  specializedInspection: string;
+  inspectionAgency?: string;
+  importConditions?: string;
+}
+
+export interface ShipmentFinancialPnl {
+  shipmentId: string;
+  shipmentCode: string;
+  shipperName: string;
+  carrierName: string;
+  currency: string;
+  sellingFreight: number;
+  sellingLocalCharges: number;
+  totalRevenueVnd: number;
+  buyingFreight: number;
+  buyingLocalCharges: number;
+  truckingCostVnd: number;
+  customsCostVnd: number;
+  portHandlingCostVnd: number;
+  totalCostVnd: number;
+  grossProfitVnd: number;
+  grossProfitUsd: number;
+  profitMarginPercent: number; // ROS %
+  fxGainLossVnd: number;
+  paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID';
+}
+
+export interface ContainerDepositItem {
+  id: string;
+  containerNo: string;
+  shipmentCode: string;
+  carrier: string;
+  depositAmountVnd: number;
+  receiptNumber: string; // Số phiếu cược EIR
+  depositedDate: string;
+  refundDueDate: string;
+  refundStatus: 'PENDING_REFUND' | 'REFUNDED_FULL' | 'DEDUCTED_REPAIR';
+  refundedAmountVnd?: number;
+  deductedReason?: string;
+  eirCondition: 'INTACT' | 'CLEANED' | 'DENTED' | 'HOLE_REPAIRED';
+}
+
+export interface VesselAisTrackingItem {
+  vesselName: string;
+  mmsi: string;
+  imo: string;
+  flag: string;
+  shipmentCodes: string[];
+  currentLatitude: number;
+  currentLongitude: number;
+  speedKnots: number;
+  headingDegrees: number;
+  departurePort: string;
+  destinationPort: string;
+  atdDate: string;
+  etaPredicted: string;
+  distanceCoveredNm: number;
+  distanceRemainingNm: number;
+  progressPercent: number;
+  weatherRisk: 'LOW_NORMAL' | 'MODERATE_SWELL' | 'HIGH_TYPHOON_WARNING';
+  navStatus: 'UNDERWAY_USING_ENGINE' | 'MOORED' | 'AT_ANCHOR';
+}
+
+export interface ShippingDocument {
+  id: string;
+  shipmentId: string;
+  shipmentCode: string;
+  documentType: 'BILL_OF_LADING' | 'COMMERCIAL_INVOICE' | 'PACKING_LIST' | 'CERTIFICATE_OF_ORIGIN' | 'PHYTOSANITARY' | 'VNACCS_DECLARATION';
+  documentNumber: string;
+  issueDate: string;
+  issuer: string;
+  fileFormat: string;
+  status: 'DRAFT' | 'ISSUED' | 'VERIFIED' | 'REJECTED';
+  verificationNotes?: string;
+  isMandatory: boolean;
+}
+
