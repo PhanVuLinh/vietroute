@@ -27,6 +27,8 @@ import { InvoicePaymentPortalPage } from "@/modules/finance/pages/InvoicePayment
 import { B2BShipperPortalPage } from "@/modules/customers/pages/B2BShipperPortalPage";
 import { CargoLoadOptimizerPage } from "@/modules/dispatch/pages/CargoLoadOptimizerPage";
 import { AuditTrailPage } from "@/modules/audit/pages/AuditTrailPage";
+import { StaffPage } from "@/modules/staff/pages/StaffPage";
+import { RolesPage } from "@/modules/staff/pages/RolesPage";
 
 export const router = createBrowserRouter([
   {
@@ -164,6 +166,22 @@ export const router = createBrowserRouter([
           {
             path: "audit",
             element: <AuditTrailPage />,
+          },
+          {
+            path: "staff",
+            element: <StaffPage />,
+          },
+          {
+            path: "personnel",
+            element: <StaffPage />,
+          },
+          {
+            path: "roles",
+            element: <RolesPage />,
+          },
+          {
+            path: "permissions",
+            element: <RolesPage />,
           },
           {
             path: "settings",

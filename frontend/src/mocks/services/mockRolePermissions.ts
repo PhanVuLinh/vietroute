@@ -1,0 +1,48 @@
+export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
+  ADMIN: [
+    "orders:view", "orders:create", "orders:edit", "orders:delete", "orders:pod",
+    "dispatch:view", "dispatch:auto", "dispatch:manual", "dispatch:3d_load",
+    "tracking:view", "tracking:telemetry", "tracking:geofence",
+    "fleet:view", "fleet:manage", "drivers:view", "drivers:manage", "drivers:ranking",
+    "warehouses:view", "warehouses:manage", "warehouses:kiosk", "warehouses:inventory",
+    "routes:view", "routes:create", "routes:optimize",
+    "finance:cod_view", "finance:cod_reconcile", "finance:billing_view", "finance:debt_remind",
+    "reports:view", "reports:export", "ai:assistant", "audit:view",
+    "staff:view", "staff:manage", "roles:manage",
+  ],
+  MANAGER: [
+    "orders:view", "orders:create", "orders:edit", "orders:pod",
+    "dispatch:view", "dispatch:auto", "dispatch:manual", "dispatch:3d_load",
+    "tracking:view", "tracking:telemetry",
+    "fleet:view", "drivers:view", "drivers:manage", "drivers:ranking",
+    "warehouses:view", "warehouses:manage", "warehouses:kiosk", "warehouses:inventory",
+    "routes:view", "routes:create", "routes:optimize",
+    "finance:cod_view", "finance:billing_view",
+    "reports:view", "ai:assistant", "audit:view",
+    "staff:view",
+  ],
+  DISPATCHER: [
+    "orders:view", "orders:create", "orders:edit",
+    "dispatch:view", "dispatch:auto", "dispatch:manual", "dispatch:3d_load",
+    "tracking:view", "tracking:telemetry",
+    "fleet:view", "drivers:view", "drivers:ranking",
+    "warehouses:view",
+    "routes:view", "routes:create", "routes:optimize",
+    "ai:assistant",
+  ],
+  WAREHOUSE_STAFF: [
+    "orders:view", "orders:pod",
+    "dispatch:view", "dispatch:3d_load",
+    "warehouses:view", "warehouses:kiosk", "warehouses:inventory",
+  ],
+  DRIVER: [
+    "orders:view", "orders:pod",
+    "tracking:view",
+    "routes:view",
+  ],
+  ACCOUNTANT: [
+    "orders:view",
+    "finance:cod_view", "finance:cod_reconcile", "finance:billing_view", "finance:debt_remind",
+    "reports:view", "reports:export",
+  ],
+};

@@ -9,6 +9,7 @@ import {
   User,
   ShieldCheck,
 } from "lucide-react";
+import { StaffSelect } from "@/modules/staff/components/StaffSelect";
 import {
   Dialog,
   DialogContent,
@@ -619,12 +620,39 @@ export const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
 
           {/* 5. Ban quản lý kho */}
           <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-3">
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5 text-emerald-500" />
-              <span>5. Thông tin Quản lý phụ trách</span>
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5 text-emerald-500" />
+                <span>5. Thông tin Quản lý phụ trách</span>
+              </h4>
+              <span className="text-[10px] text-muted-foreground">
+                Chọn nhân sự hệ thống hoặc tự nhập
+              </span>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Dropdown tìm kiếm chọn nhân sự vận hành */}
+            <div>
+              <label className="text-xs font-medium text-foreground block mb-1">
+                Chọn nhân sự phụ trách từ hệ thống (Quản lý kho / Thủ kho)
+              </label>
+              <StaffSelect
+                value={managerName}
+                roleFilter={["MANAGER", "WAREHOUSE_STAFF", "ADMIN"]}
+                placeholder="Tìm kiếm và chọn quản lý từ danh sách nhân sự..."
+                onSelectStaff={(staff) => {
+                  setManagerName(staff.fullName);
+                  if (staff.phone) setManagerPhone(staff.phone);
+                  if (staff.email) setManagerEmail(staff.email);
+                }}
+                onClear={() => {
+                  setManagerName("");
+                  setManagerPhone("");
+                  setManagerEmail("");
+                }}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               <div>
                 <label className="text-xs font-medium text-foreground block mb-1">Họ tên quản lý</label>
                 <Input

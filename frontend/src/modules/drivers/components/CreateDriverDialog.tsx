@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { StaffSelect } from "@/modules/staff/components/StaffSelect";
 import type { Driver, DriverStatus, Vehicle } from "@/core/types/logistics";
 import type { EnrichedDriver } from "../hooks/useDrivers";
 
@@ -165,6 +166,26 @@ export const CreateDriverDialog: React.FC<CreateDriverDialogProps> = ({
                 <User className="h-4 w-4 text-primary" />
                 1. Thông tin cá nhân & Định danh
               </h4>
+              <div className="space-y-1 mb-2">
+                <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                  <span>Chọn từ danh sách nhân sự nội bộ</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">Tự động điền họ tên & số điện thoại</span>
+                </label>
+                <StaffSelect
+                  value={fullName}
+                  roleFilter={["DRIVER", "DISPATCHER"]}
+                  placeholder="Tìm theo tên, email, SĐT hoặc mã nhân viên..."
+                  onSelectStaff={(staff) => {
+                    setFullName(staff.fullName);
+                    if (staff.phone) setPhone(staff.phone);
+                  }}
+                  onClear={() => {
+                    setFullName("");
+                    setPhone("");
+                  }}
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1 sm:col-span-2">
                   <label className="text-xs font-semibold text-foreground">

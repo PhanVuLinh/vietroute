@@ -45,9 +45,20 @@ const apiAuthService = {
     httpClient.post<LoginResponseData | null>("/auth/login", credentials),
 };
 
+import type { StaffMember, RolePermissionItem, StaffFilterParams } from "@/modules/staff/types/staff";
+
 const apiUserService = {
   getUsers: () => httpClient.get<AuthUser[]>("/users"),
   getUserById: (id: string) => httpClient.get<AuthUser>(`/users/${id}`),
+  getStaffList: (params?: StaffFilterParams) => httpClient.get<StaffMember[]>("/users", { params }),
+  getStaffById: (id: string) => httpClient.get<StaffMember>(`/users/${id}`),
+  createStaff: (data: any) => httpClient.post<StaffMember>("/users", data),
+  updateStaff: (id: string, data: any) => httpClient.put<StaffMember>(`/users/${id}`, data),
+  updateStaffStatus: (id: string, status: string) => httpClient.patch<StaffMember>(`/users/${id}/status`, { status }),
+  deleteStaff: (id: string) => httpClient.delete<{ success: boolean }>(`/users/${id}`),
+  getRoles: () => httpClient.get<RolePermissionItem[]>("/users/roles"),
+  updateRolePermissions: (roleId: string, permissions: string[], description?: string) =>
+    httpClient.put<RolePermissionItem>(`/users/roles/${roleId}/permissions`, { permissions, description }),
 };
 
 const apiDriverService = {

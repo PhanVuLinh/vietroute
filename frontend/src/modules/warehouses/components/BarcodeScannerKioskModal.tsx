@@ -33,6 +33,7 @@ import type {
   BarcodeLookupResult,
 } from "../types/wms-scanner";
 import { cn } from "@/shared/utils/cn";
+import { StaffSelect } from "@/modules/staff/components/StaffSelect";
 
 interface BarcodeScannerKioskModalProps {
   isOpen: boolean;
@@ -62,6 +63,7 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [activeTab, setActiveTab] = useState<"dock" | "inbound" | "lookup">("dock");
+  const [operatorStaffName, setOperatorStaffName] = useState<string>("Nguyễn Diệu Linh");
 
   // Kho đang chọn
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>(
@@ -252,7 +254,7 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
         warehouseId: selectedWarehouseId,
         dispatchCode: selectedDispatchCode,
         barcode: code,
-        scannedBy: "Thủ kho quét Kiosk",
+        scannedBy: operatorStaffName || "Thủ kho quét Kiosk",
       });
 
       const data: DockScanResult = (res as any)?.data || res;
@@ -688,19 +690,31 @@ export const BarcodeScannerKioskModal: React.FC<BarcodeScannerKioskModalProps> =
                 </button>
               </div>
 
-              {/* Nút bật/tắt Camera Scanner */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsCameraActive(!isCameraActive)}
-                className={cn(
-                  "h-8 text-xs gap-1.5 cursor-pointer",
-                  isCameraActive ? "border-primary text-primary bg-primary/10" : ""
-                )}
-              >
-                {isCameraActive ? <CameraOff className="h-3.5 w-3.5" /> : <Camera className="h-3.5 w-3.5" />}
-                <span className="hidden sm:inline">{isCameraActive ? "Tắt Camera" : "Bật Camera Quét"}</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* Chọn thủ kho trực Kiosk */}
+                <div className="w-[180px] hidden md:block">
+                  <StaffSelect
+                    value={operatorStaffName}
+                    roleFilter={["WAREHOUSE_STAFF", "MANAGER", "ADMIN"]}
+                    placeholder="Thủ kho trực Kiosk..."
+                    onSelectStaff={(staff) => setOperatorStaffName(staff.fullName)}
+                  />
+                </div>
+
+                {/* Nút bật/tắt Camera Scanner */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCameraActive(!isCameraActive)}
+                  className={cn(
+                    "h-8 text-xs gap-1.5 cursor-pointer",
+                    isCameraActive ? "border-primary text-primary bg-primary/10" : ""
+                  )}
+                >
+                  {isCameraActive ? <CameraOff className="h-3.5 w-3.5" /> : <Camera className="h-3.5 w-3.5" />}
+                  <span className="hidden sm:inline">{isCameraActive ? "Tắt Camera" : "Bật Camera Quét"}</span>
+                </Button>
+              </div>
             </div>
 
             {/* Khung Camera Stream nếu được bật */}

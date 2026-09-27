@@ -18,6 +18,7 @@ import {
 } from "@/shared/components/ui/select";
 import { toast } from "@/shared/components/feedback/Toast";
 import { incidentService } from "@/mocks/adapters/serviceFactory";
+import { StaffSelect } from "@/modules/staff/components/StaffSelect";
 import {
   type IncidentSeverity,
   type IncidentType,
@@ -163,13 +164,14 @@ export const CreateIncidentDialog: React.FC<CreateIncidentDialogProps> = ({
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground flex items-center gap-1">
                 <User className="h-3 w-3 text-muted-foreground" />
-                Tài xế
+                Tài xế phụ trách
               </label>
-              <Input
-                placeholder="Nguyễn Văn A"
+              <StaffSelect
                 value={form.driverName}
-                onChange={(e) => setForm((p) => ({ ...p, driverName: e.target.value }))}
-                className="h-8 text-xs"
+                roleFilter={["DRIVER"]}
+                placeholder="Chọn tài xế..."
+                onSelectStaff={(staff) => setForm((p) => ({ ...p, driverName: staff.fullName }))}
+                onClear={() => setForm((p) => ({ ...p, driverName: "" }))}
               />
             </div>
             <div className="space-y-1.5">

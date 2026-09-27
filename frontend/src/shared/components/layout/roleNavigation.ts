@@ -23,6 +23,7 @@ import {
   Building2,
   Boxes,
   ShieldCheck,
+  UserCog,
 } from "lucide-react";
 import type { UserRole } from "@/core/types/auth";
 
@@ -173,6 +174,23 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: "/audit-log",
         icon: ShieldCheck,
         allowedRoles: ["ADMIN", "MANAGER"],
+      },
+    ],
+  },
+  {
+    groupTitle: "Quản trị & Phân quyền",
+    items: [
+      {
+        label: "Nhân sự vận hành",
+        path: "/staff",
+        icon: UserCog,
+        allowedRoles: ["ADMIN", "MANAGER"],
+      },
+      {
+        label: "Phân quyền & Vai trò",
+        path: "/roles",
+        icon: ShieldCheck,
+        allowedRoles: ["ADMIN"],
       },
     ],
   },
