@@ -285,6 +285,34 @@ const apiFinanceService = {
 };
 
 
+const apiInternationalService = {
+  getShipments: (params?: import("@/modules/international/types/international").InternationalFilterParams) =>
+    httpClient.get<import("@/modules/international/types/international").InternationalShipment[]>("/international/shipments", { params }),
+  getShipmentById: (id: string) =>
+    httpClient.get<import("@/modules/international/types/international").InternationalShipment>(`/international/shipments/${id}`),
+  createShipment: (data: import("@/modules/international/types/international").CreateShipmentInput) =>
+    httpClient.post<import("@/modules/international/types/international").InternationalShipment>("/international/shipments", data),
+  updateShipment: (id: string, data: Partial<import("@/modules/international/types/international").CreateShipmentInput>) =>
+    httpClient.put<import("@/modules/international/types/international").InternationalShipment>(`/international/shipments/${id}`, data),
+  deleteShipment: (id: string) =>
+    httpClient.delete<{ success: boolean; message?: string }>(`/international/shipments/${id}`),
+  getCustomsDeclarations: (params?: { channel?: string; status?: string; search?: string }) =>
+    httpClient.get<import("@/modules/international/types/international").CustomsDeclaration[]>("/international/customs", { params }),
+  createCustomsDeclaration: (data: import("@/modules/international/types/international").CreateCustomsInput) =>
+    httpClient.post<import("@/modules/international/types/international").CustomsDeclaration>("/international/customs", data),
+  updateCustomsStatus: (id: string, status: string) =>
+    httpClient.patch<import("@/modules/international/types/international").CustomsDeclaration>(`/international/customs/${id}/status`, { status }),
+  getContainers: () =>
+    httpClient.get<import("@/modules/international/types/international").ContainerTrackingItem[]>("/international/containers"),
+  getPorts: () =>
+    httpClient.get<import("@/modules/international/types/international").InternationalPort[]>("/international/ports"),
+  getExchangeRates: () =>
+    httpClient.get<import("@/modules/international/types/international").ExchangeRateItem[]>("/international/exchange-rates"),
+  getLocalCharges: () =>
+    httpClient.get<import("@/modules/international/types/international").LocalChargeItem[]>("/international/local-charges"),
+};
+
+
 // ==========================================
 // 2. EXPORT 100% REAL BACKEND SERVICES (KHÔNG DÙNG MOCK)
 // ==========================================
@@ -304,4 +332,6 @@ export const inventoryService = apiInventoryService;
 export const incidentService = apiIncidentService;
 export const financeService = apiFinanceService;
 export const departmentService = apiDepartmentService;
+export const internationalService = apiInternationalService;
+
 

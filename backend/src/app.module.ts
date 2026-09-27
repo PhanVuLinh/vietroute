@@ -21,6 +21,7 @@ import { FinanceModule } from './modules/finance/finance.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { DepartmentsModule } from './modules/departments/departments.module.js';
+import { InternationalModule } from './modules/international/international.module.js';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { DepartmentsModule } from './modules/departments/departments.module.js';
     FinanceModule,
     AuditModule,
     DepartmentsModule,
+    InternationalModule,
   ],
   controllers: [AppController],
   providers: [AppService],

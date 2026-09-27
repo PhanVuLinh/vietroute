@@ -24,6 +24,7 @@ import {
   Boxes,
   ShieldCheck,
   UserCog,
+  Globe2,
 } from "lucide-react";
 import type { UserRole } from "@/core/types/auth";
 
@@ -92,6 +93,17 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         label: "Sự cố & Khiếu nại",
         path: "/incidents",
         icon: AlertTriangle,
+        allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER"],
+      },
+    ],
+  },
+  {
+    groupTitle: "Giao nhận Quốc tế",
+    items: [
+      {
+        label: "Vận tải Quốc tế",
+        path: "/international",
+        icon: Globe2,
         allowedRoles: ["ADMIN", "MANAGER", "DISPATCHER"],
       },
     ],

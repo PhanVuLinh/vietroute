@@ -30,6 +30,7 @@ import { AuditTrailPage } from "@/modules/audit/pages/AuditTrailPage";
 import { StaffPage } from "@/modules/staff/pages/StaffPage";
 import { RolesPage } from "@/modules/staff/pages/RolesPage";
 import { DepartmentsPage } from "@/modules/staff/pages/DepartmentsPage";
+import { InternationalFreightPage } from "@/modules/international/pages/InternationalFreightPage";
 
 export const router = createBrowserRouter([
   {
@@ -167,6 +168,18 @@ export const router = createBrowserRouter([
           {
             path: "audit",
             element: <AuditTrailPage />,
+          },
+          {
+            path: "international",
+            element: <InternationalFreightPage />,
+          },
+          {
+            path: "freight-forwarding",
+            element: <InternationalFreightPage />,
+          },
+          {
+            path: "customs",
+            element: <InternationalFreightPage />,
           },
           {
             path: "staff",
