@@ -10,13 +10,16 @@ import {
   VehicleStatus,
 } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
+import { AiService } from '../ai/ai.service.js';
 
 @Injectable()
 export class DispatchService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly realtimeGateway: RealtimeGateway,
+    private readonly aiService: AiService,
   ) {}
+
 
   async getAssignments() {
     const list = await this.prisma.driverAssignment.findMany({
@@ -239,26 +242,58 @@ export class DispatchService {
       let bestScore = -1;
       let selectedVehicle = vehicles[0];
 
-      for (const d of drivers) {
-        const dist = Math.hypot(
-          (d.current_location_lat || 21.0285) - order.receiver_latitude,
-          (d.current_location_lng || 105.8544) - order.receiver_longitude,
-        );
-        const distScore = Math.max(0, 40 - dist * 100);
-        const onTimeScore = ((d.on_time_rate || 100) / 100) * 30;
-        const workloadScore = Math.max(0, 30 - d.current_delivery_count * 5);
+      // 1. Ưu tiên sử dụng động cơ AI Match Score từ Python AI Microservice
+      try {
+        const pickupLat = order.warehouse?.latitude || 21.0285;
+        const pickupLng = order.warehouse?.longitude || 105.8542;
+        const aiMatch = await this.aiService.matchDriver({
+          orderId: order.id,
+          pickupLat,
+          pickupLng,
+          totalWeightKg: order.total_weight || 50,
+          priority: order.priority,
+        });
 
-        const totalScore = Math.round(distScore + onTimeScore + workloadScore);
-        if (totalScore > bestScore) {
-          bestScore = totalScore;
-          bestDriver = d;
+        if (aiMatch?.topMatches?.length > 0) {
+          const top = aiMatch.topMatches[0];
+          const foundDriver = drivers.find((d) => d.id === top.driverId);
+          if (foundDriver) {
+            bestDriver = foundDriver;
+            bestScore = top.matchScore;
+            if (top.recommendedVehicle?.id) {
+              const foundVeh = vehicles.find((v) => v.id === top.recommendedVehicle.id);
+              if (foundVeh) selectedVehicle = foundVeh;
+            }
+          }
         }
+      } catch {
+        // Fallback sang tính khoảng cách cơ bản
       }
 
-      if (bestDriver.current_vehicle) {
-        selectedVehicle = bestDriver.current_vehicle;
-      } else if (vehicles.length > 0) {
-        selectedVehicle = vehicles[bestDriver.current_delivery_count % vehicles.length];
+
+      // 2. Nếu AI chưa chấm điểm, dùng thuật toán nội bộ
+      if (bestScore === -1) {
+        for (const d of drivers) {
+          const dist = Math.hypot(
+            (d.current_location_lat || 21.0285) - order.receiver_latitude,
+            (d.current_location_lng || 105.8544) - order.receiver_longitude,
+          );
+          const distScore = Math.max(0, 40 - dist * 100);
+          const onTimeScore = ((d.on_time_rate || 100) / 100) * 30;
+          const workloadScore = Math.max(0, 30 - d.current_delivery_count * 5);
+
+          const totalScore = Math.round(distScore + onTimeScore + workloadScore);
+          if (totalScore > bestScore) {
+            bestScore = totalScore;
+            bestDriver = d;
+          }
+        }
+
+        if (bestDriver.current_vehicle) {
+          selectedVehicle = bestDriver.current_vehicle;
+        } else if (vehicles.length > 0) {
+          selectedVehicle = vehicles[bestDriver.current_delivery_count % vehicles.length];
+        }
       }
 
       let delivery = await this.prisma.delivery.findFirst({
@@ -296,7 +331,33 @@ export class DispatchService {
     return {
       assignedCount: assignmentsMade.length,
       assignments: assignmentsMade,
-      message: `Đã phân công tự động thành công ${assignmentsMade.length} đơn hàng!`,
+      message: `Đã phân công tự động thành công ${assignmentsMade.length} đơn hàng qua AI Matching!`,
     };
   }
+
+  /**
+   * Lấy danh sách tài xế & phương tiện đề xuất tốt nhất bằng AI Engine
+   */
+  async getAiDriverMatches(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { warehouse: true },
+    });
+    if (!order) {
+      throw new NotFoundException(`Không tìm thấy đơn hàng: ${orderId}`);
+    }
+
+    const pickupLat = order.warehouse?.latitude || 21.0285;
+    const pickupLng = order.warehouse?.longitude || 105.8542;
+
+    return this.aiService.matchDriver({
+      orderId: order.id,
+      pickupLat,
+      pickupLng,
+      totalWeightKg: order.total_weight || 50,
+      priority: order.priority,
+    });
+
+  }
 }
+

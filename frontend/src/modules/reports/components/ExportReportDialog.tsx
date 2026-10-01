@@ -74,9 +74,10 @@ export const ExportReportDialog: React.FC<ExportReportDialogProps> = ({
 
     setTimeout(() => {
       const nowStr = new Date().toLocaleDateString("vi-VN");
-      const kpis = analytics?.kpis;
+      const kpis = (analytics as any)?.kpis || (analytics as any)?.summary;
 
       if (format === "EXCEL") {
+
         let csvContent = "";
 
         if (scope === "ALL") {

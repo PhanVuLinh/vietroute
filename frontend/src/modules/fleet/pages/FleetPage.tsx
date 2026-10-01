@@ -11,7 +11,9 @@ import { VehiclesTable } from "../components/VehiclesTable";
 import { VehiclesMobileList } from "../components/VehiclesMobileList";
 import { VehicleDetailDrawer } from "../components/VehicleDetailDrawer";
 import { CreateVehicleDialog } from "../components/CreateVehicleDialog";
+import { FleetAiAnomalyBanner } from "../components/FleetAiAnomalyBanner";
 import type { Vehicle, VehicleStatus } from "@/core/types/logistics";
+
 
 export const FleetPage: React.FC = () => {
   usePageTitle("Quản lý phương tiện");
@@ -139,8 +141,12 @@ export const FleetPage: React.FC = () => {
           />
         )}
 
+        {/* 2.5. Cảnh báo bất thường AI Telemetry & Nhiên liệu */}
+        <FleetAiAnomalyBanner />
+
         {/* 3. Danh sách phương tiện */}
         {isLoading ? (
+
           <div className="space-y-3">
             <Skeleton className="h-12 w-full rounded-xl" />
             <Skeleton className="h-96 w-full rounded-xl" />

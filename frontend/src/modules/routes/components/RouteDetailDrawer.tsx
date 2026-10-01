@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   X,
   Route as RouteIcon,
@@ -20,10 +21,14 @@ import {
   XCircle,
   Check,
   ShieldAlert,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { toast } from "@/shared/components/feedback";
+import { routeService } from "@/mocks/adapters/serviceFactory";
+
 import {
   RouteStatusBadge,
   RouteStopStatusBadge,
@@ -52,6 +57,31 @@ export const RouteDetailDrawer: React.FC<RouteDetailDrawerProps> = ({
   onFocusMap,
 }) => {
   const [activeTab, setActiveTab] = useState<string>("stops");
+  const [isOptimizing, setIsOptimizing] = useState<boolean>(false);
+  const queryClient = useQueryClient();
+
+  const handleAiOptimize = async () => {
+    if (!route) return;
+    try {
+      setIsOptimizing(true);
+      const res = await routeService.aiOptimizeRoute(route.id);
+      const aiOpt = res.data?.aiOptimization;
+      if (aiOpt && aiOpt.savedKm > 0) {
+        toast.success(
+          "AI đã tối ưu tuyến thành công!",
+          `Rút ngắn ${aiOpt.savedKm} km (-${aiOpt.savedPercent}%), tiết kiệm ${aiOpt.fuelSavedLiters}L dầu (~${aiOpt.costSavedVND?.toLocaleString()}đ).`
+        );
+      } else {
+        toast.success("Tuyến đã được tối ưu", "Thứ tự các chặng dừng đã được AI sắp xếp tối ưu nhất.");
+      }
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+    } catch (err: any) {
+      toast.error("Không thể tối ưu", err?.message || "Đã xảy ra lỗi khi gọi AI.");
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
 
   if (!isOpen || !route) return null;
 
@@ -604,11 +634,22 @@ export const RouteDetailDrawer: React.FC<RouteDetailDrawerProps> = ({
 
             <Button
               variant="default"
+              disabled={isOptimizing || stops.length <= 1}
+              onClick={handleAiOptimize}
+              className="h-9 text-xs gap-1.5 cursor-pointer font-semibold bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-xs"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>{isOptimizing ? "AI đang tối ưu..." : "Tối ưu hóa TSP"}</span>
+            </Button>
+
+            <Button
+              variant="outline"
               onClick={onClose}
               className="h-9 px-4 text-xs cursor-pointer"
             >
               Đóng
             </Button>
+
           </div>
         </div>
       </div>

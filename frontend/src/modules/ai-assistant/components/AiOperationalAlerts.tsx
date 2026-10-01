@@ -5,11 +5,11 @@ import {
   Lightbulb,
   Info,
   ArrowRight,
-  ShieldAlert,
   Sparkles,
   RefreshCw,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
+
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import type { AiRecommendation } from "@/mocks/adapters/serviceFactory";

@@ -96,4 +96,11 @@ export class RoutesController {
   ) {
     return this.routesService.optimizeStops(originCoords, stops);
   }
+
+  @Post(':id/ai-optimize')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  aiOptimizeRoute(@Param('id') id: string) {
+    return this.routesService.aiOptimizeRoute(id);
+  }
 }
+

@@ -1,10 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, ArrowRight, CheckCircle2, TrendingUp, Cpu } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Sparkles, ArrowRight, CheckCircle2, TrendingUp, Cpu, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { cn } from "@/shared/utils/cn";
+import { aiService, type AiRecommendation } from "@/mocks/adapters/serviceFactory";
 
 interface AiInsightCardProps {
   className?: string;
@@ -12,6 +14,17 @@ interface AiInsightCardProps {
 
 export const AiInsightCard: React.FC<AiInsightCardProps> = ({ className }) => {
   const navigate = useNavigate();
+
+  const { data: recommendations } = useQuery<AiRecommendation[]>({
+    queryKey: ["ai-recommendations"],
+    queryFn: async () => {
+      const res = await aiService.getRecommendations();
+      return res.data || [];
+    },
+    staleTime: 60000,
+  });
+
+  const topRec = recommendations && recommendations.length > 0 ? recommendations[0] : null;
 
   return (
     <Card
@@ -31,28 +44,36 @@ export const AiInsightCard: React.FC<AiInsightCardProps> = ({ className }) => {
           <div className="space-y-1.5 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                <span>Phân tích từ AI</span>
-                <span className="text-muted-foreground font-normal text-xs">• Thuật toán tối ưu tuyến</span>
+                <span>Phân tích từ VietRoute AI Engine</span>
+                <span className="text-muted-foreground font-normal text-xs">• Khuyến nghị vận hành</span>
               </span>
               <Badge
                 variant="outline"
                 className="gap-1 border-primary/40 bg-primary/10 text-primary text-[10px] font-semibold py-0"
               >
                 <Cpu className="h-3 w-3" />
-                Độ tin cậy: 87%
+                Python AI Engine: Online
               </Badge>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs text-foreground/90 font-medium">
               <div className="flex items-center gap-1.5">
-                <TrendingUp className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span>Khối lượng đơn trong 2 giờ tới dự kiến tăng 18%.</span>
+                {topRec?.type === "WARNING" ? (
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                ) : (
+                  <TrendingUp className="h-3.5 w-3.5 text-primary shrink-0" />
+                )}
+                <span>{topRec?.title || "Mạng lưới vận tải đang vận hành ở trạng thái tối ưu."}</span>
               </div>
-              <span className="hidden sm:inline text-muted-foreground">•</span>
-              <div className="flex items-center gap-1.5 text-foreground font-semibold">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>Khuyến nghị bổ sung 3 tài xế tại Kho Quảng Ngãi.</span>
-              </div>
+              {topRec?.impact && (
+                <>
+                  <span className="hidden sm:inline text-muted-foreground">•</span>
+                  <div className="flex items-center gap-1.5 text-foreground font-semibold">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>{topRec.impact}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -62,11 +83,11 @@ export const AiInsightCard: React.FC<AiInsightCardProps> = ({ className }) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate("/ai-assistant")}
+            onClick={() => navigate(topRec?.actionUrl || "/ai-assistant")}
             className="flex-1 sm:flex-none h-8 text-xs font-semibold cursor-pointer hover:border-primary/50"
             id="btn-view-ai-analysis"
           >
-            <span>Xem phân tích</span>
+            <span>{topRec?.actionLabel || "Xem phân tích AI"}</span>
           </Button>
           <Button
             size="sm"
@@ -82,3 +103,4 @@ export const AiInsightCard: React.FC<AiInsightCardProps> = ({ className }) => {
     </Card>
   );
 };
+

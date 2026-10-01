@@ -5,17 +5,22 @@ import {
   AlertCircle,
   Layers,
   Send,
+  Cpu,
 } from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { toast } from "@/shared/components/feedback";
+import { dispatchService } from "@/mocks/adapters/serviceFactory";
 import type { Order, Driver, Vehicle, Warehouse } from "@/core/types/logistics";
 import { scoreDriversForOrder, type DriverCandidate } from "../utils/driverScoring";
 import { DriverRecommendationCard } from "./DriverRecommendationCard";
 import { DriverLoadIndicator } from "./DriverLoadIndicator";
 
 interface DriverRecommendationPanelProps {
+
   selectedOrder: Order | null;
   drivers: Driver[];
   vehicles: Vehicle[];
@@ -35,16 +40,57 @@ export const DriverRecommendationPanel: React.FC<DriverRecommendationPanelProps>
 }) => {
   const navigate = useNavigate();
   const [tab, setTab] = useState<"RECOMMENDED" | "ALL">("RECOMMENDED");
+  const [aiMatches, setAiMatches] = useState<any[] | null>(null);
+  const [isLoadingAi, setIsLoadingAi] = useState<boolean>(false);
 
   const vehicleMap = new Map<string, Vehicle>();
   for (const v of vehicles) {
     vehicleMap.set(v.id, v);
   }
 
+  const handleRunAiMatch = async () => {
+    if (!selectedOrder) return;
+    try {
+      setIsLoadingAi(true);
+      const res = await dispatchService.getAiDriverMatches(selectedOrder.id);
+      if (res.data?.topMatches?.length) {
+        setAiMatches(res.data.topMatches);
+        toast.success(
+          "AI Match Engine Hoàn Tất!",
+          `Đã chấm điểm ${res.data.totalCandidates} tài xế qua thuật toán Python AI.`
+        );
+      }
+    } catch {
+      toast.error("Không thể kết nối AI", "Đang dùng thuật toán nội bộ.");
+    } finally {
+      setIsLoadingAi(false);
+    }
+  };
+
   // Chấm điểm đề xuất cho đơn đang chọn
-  const candidates: DriverCandidate[] = selectedOrder
+  let candidates: DriverCandidate[] = selectedOrder
     ? scoreDriversForOrder(selectedOrder, drivers, vehicles, warehouses)
     : [];
+
+  // Nếu có kết quả từ AI Python Microservice, tăng cường điểm số
+  if (aiMatches && aiMatches.length > 0) {
+    candidates = candidates.map((c) => {
+      const match = aiMatches.find((m) => m.driverId === c.driver.id);
+      if (match) {
+        return {
+          ...c,
+          matchScore: match.matchScore,
+          reasons: match.reasoningTags?.length > 0 ? match.reasoningTags : c.reasons,
+        };
+      }
+      return c;
+    });
+    candidates.sort((a, b) => b.matchScore - a.matchScore);
+    if (candidates.length > 0) {
+      candidates[0].isBestMatch = true;
+    }
+  }
+
 
   const eligibleCandidates = candidates.filter((c) => c.isEligible);
   const bestCandidate = candidates.find((c) => c.isBestMatch);
@@ -53,7 +99,7 @@ export const DriverRecommendationPanel: React.FC<DriverRecommendationPanelProps>
     <Card className={`flex flex-col h-[680px] lg:h-[720px] overflow-hidden border-border/80 shadow-xs ${className || ""}`}>
       {/* Header */}
       <CardHeader className="py-2.5 px-4 border-b border-border/60 shrink-0 bg-card/70 backdrop-blur-xs flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <CardTitle className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             <span>Đề xuất tài xế</span>
@@ -63,7 +109,19 @@ export const DriverRecommendationPanel: React.FC<DriverRecommendationPanelProps>
               {selectedOrder.orderCode}
             </Badge>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!selectedOrder || isLoadingAi}
+            onClick={handleRunAiMatch}
+            className="h-6 text-[11px] px-2 font-semibold gap-1 border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary cursor-pointer"
+            id="btn-ai-match-drivers"
+          >
+            <Cpu className="h-3 w-3 text-primary animate-pulse" />
+            <span>{isLoadingAi ? "AI đang quét..." : aiMatches ? "AI Đã Chấm" : "Chấm điểm AI"}</span>
+          </Button>
         </div>
+
 
         {/* Tab switch giữa Đề xuất & Toàn bộ tài xế */}
         <Tabs value={tab} onValueChange={(v) => setTab(v as "RECOMMENDED" | "ALL")}>

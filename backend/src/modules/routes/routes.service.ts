@@ -3,10 +3,15 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateRouteDto } from './dto/create-route.dto.js';
 import { RouteStatus, RouteStopStatus } from '@prisma/client';
 import { mapRoute } from '../../common/utils/mappers.js';
+import { AiService } from '../ai/ai.service.js';
 
 @Injectable()
 export class RoutesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly aiService: AiService,
+  ) {}
+
 
   async findAll(query?: { status?: string; driverId?: string; search?: string }) {
     const where: any = {};
@@ -190,11 +195,46 @@ export class RoutesService {
   }
 
   /**
-   * Thuật toán Nearest Neighbor Tối ưu hóa thứ tự các điểm dừng (Stop Optimization)
+   * Thuật toán AI Tối ưu hóa thứ tự các điểm dừng (2-Opt TSP & Nearest Neighbor qua Python AI Microservice)
    */
-  optimizeStops(originCoords: [number, number], stops: any[]) {
+  async optimizeStops(originCoords: [number, number], stops: any[]) {
     if (!stops || stops.length <= 1) return stops;
 
+    try {
+      const aiResult = await this.aiService.optimizeRoute({
+        originLat: originCoords[1],
+        originLng: originCoords[0],
+        stops: stops.map((s, idx) => ({
+          id: s.id || `stop-${idx}`,
+          name: s.customerName || s.name || s.address || `Điểm ${idx + 1}`,
+          lat: s.latitude || s.lat || 21.0285,
+          lng: s.longitude || s.lng || 105.8542,
+          demandKg: s.demandKg || s.total_weight || 0,
+        })),
+        returnToOrigin: true,
+      });
+
+      if (aiResult?.optimizedStops?.length) {
+        const stopMap = new Map<string, any>();
+        stops.forEach((s: any, idx: number) => stopMap.set(s.id || `stop-${idx}`, s));
+
+        const ordered = aiResult.optimizedStops.map((opt: any, idx: number) => {
+          const original = stopMap.get(opt.id) || stops[idx];
+          return {
+            ...original,
+            sequence: idx + 1,
+            distanceFromPreviousKm: opt.distanceFromPreviousKm,
+            cumulativeDistanceKm: opt.cumulativeDistanceKm,
+            estimatedEtaMinutes: opt.estimatedEtaMinutes,
+          };
+        });
+        return ordered;
+      }
+    } catch {
+      // Fallback nếu có sự cố
+    }
+
+    // Dự phòng Nearest Neighbor nội bộ
     const remaining = [...stops];
     const optimized: any[] = [];
     let currentPos = { lng: originCoords[0], lat: originCoords[1] };
@@ -205,7 +245,10 @@ export class RoutesService {
 
       for (let i = 0; i < remaining.length; i++) {
         const s = remaining[i];
-        const dist = Math.hypot(s.longitude - currentPos.lng, s.latitude - currentPos.lat);
+        const dist = Math.hypot(
+          (s.longitude || s.lng) - currentPos.lng,
+          (s.latitude || s.lat) - currentPos.lat,
+        );
         if (dist < minDistance) {
           minDistance = dist;
           nearestIdx = i;
@@ -215,11 +258,80 @@ export class RoutesService {
       const [selected] = remaining.splice(nearestIdx, 1);
       selected.sequence = optimized.length + 1;
       optimized.push(selected);
-      currentPos = { lng: selected.longitude, lat: selected.latitude };
+      currentPos = { lng: selected.longitude || selected.lng, lat: selected.latitude || selected.lat };
     }
 
     return optimized;
   }
+
+  /**
+   * Tối ưu hóa toàn diện một tuyến đường đang lưu trong Database bằng AI Engine
+   */
+  async aiOptimizeRoute(routeId: string) {
+    const route = await this.prisma.route.findUnique({
+      where: { id: routeId },
+      include: {
+        warehouse: true,
+        stops: { orderBy: { sequence: 'asc' } },
+      },
+    });
+
+    if (!route) {
+      throw new NotFoundException(`Không tìm thấy tuyến đường: ${routeId}`);
+    }
+
+    if (!route.stops || route.stops.length <= 1) {
+      return this.findOne(routeId);
+    }
+
+    const originLat = route.warehouse?.latitude || 21.0285;
+    const originLng = route.warehouse?.longitude || 105.8542;
+
+    const res = await this.aiService.optimizeRoute({
+      originLat,
+      originLng,
+      stops: route.stops.map((s) => ({
+        id: s.id,
+        name: s.customer_name || s.address || 'Điểm giao',
+        lat: s.latitude,
+        lng: s.longitude,
+      })),
+      returnToOrigin: true,
+    });
+
+
+    // Cập nhật lại số thứ tự chặng dừng trong Database
+    for (const optStop of res.optimizedStops) {
+      await this.prisma.routeStop.update({
+        where: { id: optStop.id },
+        data: {
+          sequence: optStop.sequence,
+          distance_from_last_km: optStop.distanceFromPreviousKm,
+        },
+      });
+    }
+
+    // Cập nhật cự ly và nhiên liệu của Tuyến
+    await this.prisma.route.update({
+      where: { id: routeId },
+      data: {
+        total_distance: res.optimizedDistanceKm,
+        fuel_est_liters: res.fuelSavedLiters > 0 ? Number((res.optimizedDistanceKm * 0.145).toFixed(1)) : route.fuel_est_liters,
+      },
+    });
+
+    return {
+      ...(await this.findOne(routeId)),
+      aiOptimization: {
+        savedKm: res.savedKm,
+        savedPercent: res.savedPercent,
+        fuelSavedLiters: res.fuelSavedLiters,
+        costSavedVND: res.costSavedVND,
+        timeSavedMinutes: res.timeSavedMinutes,
+      },
+    };
+  }
+
 
   // ================= ROUTE TEMPLATES =================
   private mapRouteTemplate(r: any) {

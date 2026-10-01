@@ -2,19 +2,16 @@ import React, { useState } from "react";
 import {
   Navigation,
   Sparkles,
-  ArrowRight,
   TrendingDown,
   Fuel,
   Clock,
   CheckCircle2,
   RotateCw,
-  Plus,
   Trash2,
   Layers,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
 import {
   aiService,
@@ -32,9 +29,10 @@ const SAMPLE_STOPS = [
 ];
 
 export const AiRouteOptimizer: React.FC = () => {
-  const [originLat, setOriginLat] = useState<number>(10.7769);
-  const [originLng, setOriginLng] = useState<number>(106.7009);
+  const [originLat] = useState<number>(10.7769);
+  const [originLng] = useState<number>(106.7009);
   const [stops, setStops] = useState(SAMPLE_STOPS);
+
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<RouteOptimizationResponse | null>(null);
 

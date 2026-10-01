@@ -8,8 +8,8 @@ import {
   Zap,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/components/ui/sheet";
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/components/ui/tabs";
 import { useAiAssistant } from "@/modules/ai-assistant/hooks/useAiAssistant";
 import { AiChatConsole } from "@/modules/ai-assistant/components/AiChatConsole";

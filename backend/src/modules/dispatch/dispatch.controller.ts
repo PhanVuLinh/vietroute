@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { DispatchService } from './dispatch.service.js';
 import { AssignDeliveryDto } from './dto/assign-delivery.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
@@ -22,4 +22,10 @@ export class DispatchController {
   autoDispatchBatch() {
     return this.dispatchService.autoDispatchBatch();
   }
+
+  @Get('ai-match/:orderId')
+  getAiDriverMatches(@Param('orderId') orderId: string) {
+    return this.dispatchService.getAiDriverMatches(orderId);
+  }
 }
+

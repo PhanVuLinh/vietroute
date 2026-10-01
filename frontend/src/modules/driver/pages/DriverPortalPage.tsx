@@ -146,7 +146,8 @@ export const DriverPortalPage: React.FC = () => {
     return INITIAL_SHIFT;
   });
 
-  const [isLoadingShift, setIsLoadingShift] = useState(false);
+  const [_isLoadingShift, setIsLoadingShift] = useState(false);
+
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "DELIVERED">("ALL");
   const [activePodStop, setActivePodStop] = useState<DriverStop | null>(null);
   const [viewingPodStop, setViewingPodStop] = useState<DriverStop | null>(null);

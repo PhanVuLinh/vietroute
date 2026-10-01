@@ -50,4 +50,10 @@ export class AiController {
   async getAnomalies() {
     return this.aiService.detectAnomalies();
   }
+
+  @Post('forecast-demand')
+  async forecastDemand(@Body() dto: { forecastDays?: number; warehouseId?: string }) {
+    return this.aiService.forecastDemand(dto);
+  }
 }
+
