@@ -219,6 +219,9 @@ export const ReportsPage: React.FC = () => {
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
         timeRange={timeRange}
+        analytics={analytics}
+        enrichedDriverRanking={enrichedDriverRanking}
+        costAndFuelTrends={costAndFuelTrends}
       />
     </PageContainer>
   );
