@@ -21,6 +21,7 @@ import { ProofOfDeliveryModal } from "../components/ProofOfDeliveryModal";
 import type { DriverShift, DriverStop, PodData } from "../types/driverPortal";
 import { orderService, driverService } from "@/mocks/adapters/serviceFactory";
 import { toast } from "@/shared/components/feedback/Toast";
+import { socketManager } from "@/core/socket/client";
 
 // Dữ liệu ca chạy mẫu ban đầu
 const INITIAL_SHIFT: DriverShift = {
@@ -173,6 +174,40 @@ export const DriverPortalPage: React.FC = () => {
   useEffect(() => {
     localStorage.setItem("vietroute_driver_shift", JSON.stringify(shift));
   }, [shift]);
+
+  // Phát sóng vị trí xe thời gian thực tới Bản đồ Điều phối qua WebSocket
+  useEffect(() => {
+    if (!shift.driverId) return;
+    socketManager.connect();
+
+    const activeStop = shift.stops.find((s) => s.status === "DELIVERING") || shift.stops[0];
+    const baseLat = activeStop?.lat || 21.0285;
+    const baseLng = activeStop?.lng || 105.8544;
+
+    socketManager.emit("driver:location", {
+      driverId: shift.driverId,
+      vehicleId: shift.vehiclePlate,
+      latitude: baseLat,
+      longitude: baseLng,
+      speed: 38,
+      heading: 45,
+    });
+
+    const interval = setInterval(() => {
+      const deltaLat = (Math.random() - 0.5) * 0.0004;
+      const deltaLng = (Math.random() - 0.5) * 0.0004;
+      socketManager.emit("driver:location", {
+        driverId: shift.driverId,
+        vehicleId: shift.vehiclePlate,
+        latitude: baseLat + deltaLat,
+        longitude: baseLng + deltaLng,
+        speed: Math.floor(25 + Math.random() * 20),
+        heading: Math.floor(Math.random() * 360),
+      });
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [shift.driverId, shift.stops, shift.vehiclePlate]);
 
   // Cập nhật trạng thái điểm dừng
   const handleUpdateStatus = (stopId: string, newStatus: DriverStop["status"]) => {

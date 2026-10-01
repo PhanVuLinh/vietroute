@@ -274,4 +274,32 @@ export class RealtimeGateway
     client.join(`vehicle:${vehicleId}`);
     return { subscribed: vehicleId };
   }
+
+  @SubscribeMessage('telemetry:update')
+  handleTelemetryUpdate(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: VehicleTelemetryPayload,
+  ) {
+    this.emitTelemetryUpdate(data);
+    return { received: true };
+  }
+
+  @SubscribeMessage('driver:location')
+  handleDriverLocation(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { driverId: string; vehicleId?: string; latitude: number; longitude: number; speed?: number; heading?: number },
+  ) {
+    const payload: VehicleTelemetryPayload = {
+      vehicleId: data.vehicleId || 'v-active',
+      driverId: data.driverId,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      speed: data.speed || 35,
+      heading: data.heading || 0,
+      engineStatus: 'RUNNING',
+      timestamp: new Date().toISOString(),
+    };
+    this.emitTelemetryUpdate(payload);
+    return { received: true };
+  }
 }
