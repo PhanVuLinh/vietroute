@@ -10,10 +10,11 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
-import { OrderStatus } from '@prisma/client';
+import { AuditAction, OrderStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from '../../common/guards/permissions.guard.js';
 import { Permissions } from '../../common/decorators/permissions.decorator.js';
+import { Audit } from '../../common/decorators/audit.decorator.js';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -49,12 +50,14 @@ export class OrdersController {
 
   @Post()
   @Permissions('orders:create')
+  @Audit({ action: AuditAction.CREATE, entityType: 'Order', summary: 'Tạo đơn hàng vận tải mới' })
   create(@Body() dto: CreateOrderDto) {
     return this.ordersService.create(dto);
   }
 
   @Patch(':id/status')
   @Permissions('orders:edit')
+  @Audit({ action: AuditAction.UPDATE, entityType: 'Order', summary: 'Cập nhật trạng thái đơn hàng' })
   updateStatus(
     @Param('id') id: string,
     @Body('status') status: OrderStatus,
@@ -64,6 +67,7 @@ export class OrdersController {
 
   @Post(':id/pod')
   @Permissions('orders:pod')
+  @Audit({ action: AuditAction.UPDATE, entityType: 'Order', summary: 'Ký nhận biên bản giao hàng e-POD' })
   completePod(
     @Param('id') id: string,
     @Body() podDto: any,

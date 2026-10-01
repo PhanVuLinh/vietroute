@@ -15,7 +15,8 @@ import { AddIncidentCommentDto } from './dto/add-comment.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
-import { IncidentSeverity, IncidentStatus, IncidentType } from '@prisma/client';
+import { Audit } from '../../common/decorators/audit.decorator.js';
+import { AuditAction, IncidentSeverity, IncidentStatus, IncidentType } from '@prisma/client';
 
 @Controller('incidents')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,12 +40,14 @@ export class IncidentsController {
 
   @Post()
   @Roles('ADMIN', 'MANAGER', 'DISPATCHER', 'DRIVER', 'WAREHOUSE_STAFF')
+  @Audit({ action: AuditAction.CREATE, entityType: 'Incident', summary: 'Báo cáo sự cố logistics mới', severity: 'WARNING' })
   create(@Body() dto: CreateIncidentDto) {
     return this.incidentsService.create(dto);
   }
 
   @Patch(':id/status')
   @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  @Audit({ action: AuditAction.UPDATE, entityType: 'Incident', summary: 'Cập nhật tiến trình xử lý sự cố' })
   updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateIncidentStatusDto,
