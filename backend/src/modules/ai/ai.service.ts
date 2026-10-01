@@ -36,7 +36,29 @@ export interface AiRecommendation {
 
 @Injectable()
 export class AiService {
+  private readonly pythonAiUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000/api/v1';
+
   constructor(private readonly prisma: PrismaService) {}
+
+  private async callPythonAi<T>(path: string, method: string = 'POST', body?: any): Promise<T | null> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch(`${this.pythonAiUrl}${path}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        return (await res.json()) as T;
+      }
+    } catch {
+      // Graceful fallback to internal engine
+    }
+    return null;
+  }
 
   async chatWithCopilot(dto: ChatPromptDto, userId?: string): Promise<AiChatMessageResponse> {
     const promptText = (dto.prompt || '').trim();
@@ -364,6 +386,11 @@ export class AiService {
   }
 
   async predictEta(dto: PredictEtaDto) {
+    // 1. Thử ủy quyền tính toán cho Python AI Microservice nếu đang chạy
+    const pyRes = await this.callPythonAi<any>('/predict-eta', 'POST', dto);
+    if (pyRes) return pyRes;
+
+    // 2. Dự phòng nội bộ (Internal Fallback)
     // Tính khoảng cách bề mặt Trái Đất (Haversine Formula) theo km
     const R = 6371; // Bán kính Trái Đất theo km
     const dLat = ((dto.destLat - dto.originLat) * Math.PI) / 180;
@@ -423,6 +450,11 @@ export class AiService {
 
   // 4. Thuật toán tối ưu hóa tuyến đường đa điểm dừng (2-Opt TSP & Nearest Neighbor)
   async optimizeRoute(dto: OptimizeRouteDto) {
+    // 1. Thử ủy quyền tính toán cho Python AI Microservice nếu đang chạy
+    const pyRes = await this.callPythonAi<any>('/optimize-route', 'POST', dto);
+    if (pyRes) return pyRes;
+
+    // 2. Dự phòng nội bộ (Internal Fallback)
     const stops = [...(dto.stops || [])];
     const returnToOrigin = dto.returnToOrigin !== false;
     const origin = { id: 'origin', name: 'Điểm xuất phát', lat: dto.originLat, lng: dto.originLng };
@@ -559,6 +591,11 @@ export class AiService {
 
   // 5. Động cơ chấm điểm & gợi ý gán tài xế + phương tiện tối ưu (AI Driver Matching Engine)
   async matchDriver(dto: MatchDriverDto) {
+    // 1. Thử ủy quyền tính toán cho Python AI Microservice nếu đang chạy
+    const pyRes = await this.callPythonAi<any>('/match-driver', 'POST', dto);
+    if (pyRes) return pyRes;
+
+    // 2. Dự phòng nội bộ (Internal Fallback)
     const [drivers, vehicles] = await Promise.all([
       this.prisma.driver.findMany({
         include: { user: true },
@@ -659,6 +696,11 @@ export class AiService {
 
   // 6. Giám sát an ninh & phát hiện bất thường nhiên liệu, dừng đỗ và lệch tuyến (AI Anomaly Detection)
   async detectAnomalies() {
+    // 1. Thử ủy quyền tính toán cho Python AI Microservice nếu đang chạy
+    const pyRes = await this.callPythonAi<any>('/anomalies', 'GET');
+    if (pyRes) return pyRes;
+
+    // 2. Dự phòng nội bộ (Internal Fallback)
     const [vehicles, pendingOrders, warehouses] = await Promise.all([
       this.prisma.vehicle.findMany({ take: 10 }),
       this.prisma.order.findMany({
