@@ -30,6 +30,23 @@ export class RoutesController {
     return this.routesService.findAll({ status, driverId, search });
   }
 
+  @Get('templates')
+  getTemplates() {
+    return this.routesService.getTemplates();
+  }
+
+  @Post('templates')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  createTemplate(@Body() data: any) {
+    return this.routesService.createTemplate(data);
+  }
+
+  @Delete('templates/:id')
+  @Roles('ADMIN', 'MANAGER', 'DISPATCHER')
+  deleteTemplate(@Param('id') id: string) {
+    return this.routesService.deleteTemplate(id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.routesService.findOne(id);

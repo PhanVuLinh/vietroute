@@ -149,6 +149,8 @@ const apiRouteService = {
   updateStopStatus: (routeId: string, stopId: string, status: RouteStopStatus) => httpClient.patch<Route>(`/routes/${routeId}/stops/${stopId}/status`, { status }),
   deleteRoute: (id: string) => httpClient.delete<boolean>(`/routes/${id}`),
   optimizeStops: (originCoords: [number, number], stops: RouteStop[]) => httpClient.post<RouteStop[]>("/routes/optimize", { originCoords, stops }),
+  getRouteTemplates: () => httpClient.get<import("@/mocks/data/routeTemplates").RouteTemplate[]>("/routes/templates"),
+  createRouteTemplate: (data: any) => httpClient.post<import("@/mocks/data/routeTemplates").RouteTemplate>("/routes/templates", data),
 };
 
 const apiNotificationService = {

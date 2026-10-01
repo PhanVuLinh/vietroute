@@ -220,4 +220,216 @@ export class RoutesService {
 
     return optimized;
   }
+
+  // ================= ROUTE TEMPLATES =================
+  private mapRouteTemplate(r: any) {
+    return {
+      id: r.id,
+      name: r.name,
+      category: r.category,
+      description: r.description,
+      warehouseId: r.warehouse_id,
+      totalDistance: r.total_distance,
+      estimatedDuration: r.estimated_duration,
+      fuelEstLiters: r.fuel_est_liters,
+      tollFeeEstVND: r.toll_fee_est_vnd,
+      totalWeightKg: r.total_weight_kg,
+      totalVolumeM3: r.total_volume_m3,
+      trafficAlerts: r.traffic_alerts || [],
+      stops: r.stops || [],
+    };
+  }
+
+  async getTemplates() {
+    const count = await this.prisma.routeTemplateRecord.count();
+    if (count === 0) {
+      await this.seedDefaultRouteTemplates();
+    }
+    const list = await this.prisma.routeTemplateRecord.findMany({
+      orderBy: { created_at: 'asc' },
+    });
+    return list.map((r) => this.mapRouteTemplate(r));
+  }
+
+  async createTemplate(data: any) {
+    const created = await this.prisma.routeTemplateRecord.create({
+      data: {
+        name: data.name,
+        category: data.category || 'RETAIL',
+        description: data.description || '',
+        warehouse_id: data.warehouseId || '',
+        total_distance: data.totalDistance || 0,
+        estimated_duration: data.estimatedDuration || 0,
+        fuel_est_liters: data.fuelEstLiters || 0,
+        toll_fee_est_vnd: data.tollFeeEstVND || 0,
+        total_weight_kg: data.totalWeightKg || 0,
+        total_volume_m3: data.totalVolumeM3 || 0,
+        traffic_alerts: data.trafficAlerts || [],
+        stops: data.stops || [],
+      },
+    });
+    return this.mapRouteTemplate(created);
+  }
+
+  async deleteTemplate(id: string) {
+    await this.prisma.routeTemplateRecord.delete({ where: { id } });
+    return true;
+  }
+
+  private async seedDefaultRouteTemplates() {
+    const defaultTemplates = [
+      {
+        id: 'tpl-hn-retail',
+        name: 'Tuyến Phân phối Siêu thị & Đại lý Nội thành Hà Nội',
+        category: 'RETAIL',
+        description: 'Cung ứng định kỳ hàng ngày cho chuỗi siêu thị BigC, Aeon Mall, Vincom nội thành',
+        warehouse_id: 'wh-hn-lb',
+        total_distance: 38.5,
+        estimated_duration: 110,
+        fuel_est_liters: 9.6,
+        toll_fee_est_vnd: 35000,
+        total_weight_kg: 1850,
+        total_volume_m3: 8.5,
+        traffic_alerts: ['Mật độ cao giờ cao điểm tại nút giao Khuất Duy Tiến'],
+        stops: [
+          {
+            sequence: 1,
+            latitude: 21.0365,
+            longitude: 105.789,
+            customerName: 'Công ty Công nghệ FPT Cầu Giấy',
+            customerPhone: '0912.345.678',
+            address: 'Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội',
+            orderCode: 'ORD-TPL-01',
+            weightKg: 650,
+            packageCount: 12,
+            timeWindowStart: '08:15',
+            timeWindowEnd: '09:00',
+            estimatedArrival: '08:30',
+            status: 'PENDING',
+            notes: 'Giao sảnh lễ tân tầng 1',
+          },
+          {
+            sequence: 2,
+            latitude: 21.025,
+            longitude: 105.772,
+            customerName: 'Đại siêu thị Big C Thăng Long',
+            customerPhone: '0934.567.890',
+            address: '222 Trần Duy Hưng, Trung Hòa, Cầu Giấy, Hà Nội',
+            orderCode: 'ORD-TPL-02',
+            weightKg: 800,
+            packageCount: 25,
+            timeWindowStart: '09:15',
+            timeWindowEnd: '10:30',
+            estimatedArrival: '09:45',
+            status: 'PENDING',
+            notes: 'Cửa nhập hàng B2, liên hệ thủ kho A. Tuấn',
+          },
+          {
+            sequence: 3,
+            latitude: 20.978,
+            longitude: 105.778,
+            customerName: 'Trung tâm TM Aeon Mall Hà Đông',
+            customerPhone: '0988.776.655',
+            address: 'Khu đô thị Dương Nội, Hà Đông, Hà Nội',
+            orderCode: 'ORD-TPL-03',
+            weightKg: 400,
+            packageCount: 8,
+            timeWindowStart: '10:45',
+            timeWindowEnd: '11:45',
+            estimatedArrival: '11:00',
+            status: 'PENDING',
+            notes: 'Giao cổng sau khu bốc dỡ hàng',
+          },
+        ],
+      },
+      {
+        id: 'tpl-hcm-south',
+        name: 'Tuyến Tiếp tế Chuỗi Bách Hóa Xanh Nam Sài Gòn',
+        category: 'RETAIL',
+        description: 'Cung ứng thực phẩm và hàng tiêu dùng Cát Lái -> Q7 -> Phú Mỹ Hưng -> Nhà Bè',
+        warehouse_id: 'wh-hcm-cl',
+        total_distance: 46.8,
+        estimated_duration: 130,
+        fuel_est_liters: 12.4,
+        toll_fee_est_vnd: 40000,
+        total_weight_kg: 2400,
+        total_volume_m3: 11.2,
+        traffic_alerts: ['Cầu Kênh Tẻ ùn tắc hướng vào trung tâm'],
+        stops: [
+          {
+            sequence: 1,
+            latitude: 10.7325,
+            longitude: 106.7188,
+            customerName: 'Bách Hóa Xanh Huỳnh Tấn Phát',
+            customerPhone: '0901.223.344',
+            address: '789 Huỳnh Tấn Phát, P. Tân Phú, Quận 7, TP.HCM',
+            orderCode: 'ORD-TPL-04',
+            weightKg: 1100,
+            packageCount: 30,
+            timeWindowStart: '07:30',
+            timeWindowEnd: '08:30',
+            estimatedArrival: '08:00',
+            status: 'PENDING',
+            notes: 'Hàng đông lạnh cần dỡ trước',
+          },
+          {
+            sequence: 2,
+            latitude: 10.7289,
+            longitude: 106.7082,
+            customerName: 'Cửa hàng Tiện lợi Circle K Phú Mỹ Hưng',
+            customerPhone: '0908.112.233',
+            address: 'Số 15 Nguyễn Đức Cảnh, Tân Phong, Quận 7, TP.HCM',
+            orderCode: 'ORD-TPL-05',
+            weightKg: 500,
+            packageCount: 15,
+            timeWindowStart: '08:45',
+            timeWindowEnd: '09:45',
+            estimatedArrival: '09:15',
+            status: 'PENDING',
+            notes: 'Giao trước 10:00 sáng',
+          },
+        ],
+      },
+      {
+        id: 'tpl-dn-industrial',
+        name: 'Tuyến Hàng Dự án & Vật tư KCN Hòa Khánh Đà Nẵng',
+        category: 'INDUSTRIAL',
+        description: 'Vận chuyển linh kiện cơ khí, máy móc từ Cảng Tiên Sa đến các nhà xưởng Hòa Khánh',
+        warehouse_id: 'wh-dn-ts',
+        total_distance: 28.2,
+        estimated_duration: 65,
+        fuel_est_liters: 8.5,
+        toll_fee_est_vnd: 25000,
+        total_weight_kg: 4200,
+        total_volume_m3: 14.0,
+        traffic_alerts: [],
+        stops: [
+          {
+            sequence: 1,
+            latitude: 16.0754,
+            longitude: 108.1456,
+            customerName: 'Nhà máy Cơ khí Chính xác Hòa Khánh',
+            customerPhone: '0935.123.456',
+            address: 'Đường số 3, KCN Hòa Khánh, Liên Chiểu, Đà Nẵng',
+            orderCode: 'ORD-TPL-07',
+            weightKg: 2500,
+            packageCount: 5,
+            timeWindowStart: '08:30',
+            timeWindowEnd: '10:00',
+            estimatedArrival: '09:15',
+            status: 'PENDING',
+            notes: 'Cần xe nâng hỗ trợ hạ hàng pallet thép',
+          },
+        ],
+      },
+    ];
+
+    for (const tpl of defaultTemplates) {
+      await this.prisma.routeTemplateRecord.upsert({
+        where: { id: tpl.id },
+        update: {},
+        create: tpl,
+      });
+    }
+  }
 }

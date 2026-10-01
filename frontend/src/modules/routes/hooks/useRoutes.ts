@@ -91,6 +91,21 @@ export function useRoutes() {
     staleTime: 60 * 1000,
   });
 
+  // 6. Fetch Route Templates từ backend API / database
+  const routeTemplatesQuery = useQuery({
+    queryKey: ["route-templates"],
+    queryFn: async () => {
+      try {
+        const res = await routeService.getRouteTemplates();
+        if (Array.isArray(res) && res.length > 0) return res;
+      } catch (e) {
+        console.warn("Lỗi tải tuyến mẫu từ database, dùng dữ liệu dự phòng", e);
+      }
+      return MOCK_ROUTE_TEMPLATES;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const rawRoutes = useMemo(() => (Array.isArray(routesQuery.data) ? routesQuery.data : []), [routesQuery.data]);
   const rawDrivers = useMemo(() => (Array.isArray(driversQuery.data) ? driversQuery.data : []), [driversQuery.data]);
   const rawVehicles = useMemo(() => (Array.isArray(vehiclesQuery.data) ? vehiclesQuery.data : []), [vehiclesQuery.data]);
@@ -352,7 +367,7 @@ export function useRoutes() {
     warehouses: rawWarehouses,
     orders: rawOrders,
     pendingOrders,
-    routeTemplates: MOCK_ROUTE_TEMPLATES,
+    routeTemplates: routeTemplatesQuery.data || MOCK_ROUTE_TEMPLATES,
     isLoading: routesQuery.isLoading,
     isError: routesQuery.isError,
     searchQuery,
