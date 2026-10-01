@@ -1,9 +1,47 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
+import { NotificationType, NotificationPriority } from '@prisma/client';
+
+import { CreateNotificationDto } from './dto/create-notification.dto.js';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {}
+
+  async create(dto: CreateNotificationDto) {
+    const created = await this.prisma.notification.create({
+      data: {
+        title: dto.title,
+        message: dto.message,
+        type: dto.type || NotificationType.ORDER_CREATED,
+        priority: dto.priority || NotificationPriority.NORMAL,
+        reference_id: dto.referenceId,
+      },
+    });
+
+    const payload = {
+      id: created.id,
+      title: created.title,
+      message: created.message,
+      type: created.type,
+      read: created.read,
+      priority: created.priority,
+      referenceId: created.reference_id ?? undefined,
+      createdAt: created.created_at.toISOString(),
+    };
+
+    if (dto.userId) {
+      this.realtimeGateway.emitUserNotification(dto.userId, payload);
+    } else {
+      this.realtimeGateway.emitBroadcastNotification(payload);
+    }
+
+    return payload;
+  }
 
   async findAll(query?: { unreadOnly?: boolean | string }) {
     const where: any = {};

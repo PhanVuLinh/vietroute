@@ -208,6 +208,14 @@ export class RealtimeGateway
   }
 
   /**
+   * Phát sóng thông báo đẩy đến toàn bộ người dùng đang online trong hệ thống
+   */
+  emitBroadcastNotification(notification: any) {
+    if (!this.server) return;
+    this.server.emit('notification:new', notification);
+  }
+
+  /**
    * Phát sóng cảnh báo chung toàn hệ thống
    */
   broadcastAlert(alert: {

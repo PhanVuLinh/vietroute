@@ -24,6 +24,7 @@ import {
 } from "@/shared/components/ui/popover";
 import { cn } from "@/shared/utils/cn";
 import { useAuthStore } from "@/shared/stores/authStore";
+import { socketManager } from "@/core/socket/client";
 
 const getNotificationMeta = (type: NotificationType) => {
   switch (type) {
@@ -97,8 +98,29 @@ export const NotificationDropdown: React.FC = () => {
         }
       });
 
+    // Lắng nghe sự kiện thông báo đẩy thời gian thực từ WebSocket
+    const unbindNotification = socketManager.on("notification:new", (newNotif) => {
+      if (!newNotif) return;
+      const formattedNotif: NotificationItem = {
+        id: newNotif.id || `notif-${Date.now()}`,
+        title: newNotif.title,
+        message: newNotif.message,
+        type: newNotif.type || "ORDER_CREATED",
+        read: false,
+        priority: newNotif.priority || "NORMAL",
+        referenceId: newNotif.referenceId,
+        createdAt: newNotif.createdAt || new Date().toISOString(),
+      };
+
+      setNotifications((prev) => [
+        formattedNotif,
+        ...prev.filter((n) => n.id !== formattedNotif.id),
+      ]);
+    });
+
     return () => {
       isMounted = false;
+      unbindNotification();
     };
   }, [isAuthenticated]);
 
@@ -109,11 +131,24 @@ export const NotificationDropdown: React.FC = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
-  const handleItemClick = async (id: string) => {
-    await notificationService.markAsRead(id);
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+  const handleItemClick = async (notif: NotificationItem) => {
+    if (!notif.read) {
+      await notificationService.markAsRead(notif.id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
+      );
+    }
+    setIsOpen(false);
+
+    if (notif.referenceId) {
+      if (notif.referenceId.startsWith("VR-")) {
+        navigate(`/orders?search=${encodeURIComponent(notif.referenceId)}`);
+      } else if (notif.referenceId.startsWith("INC-")) {
+        navigate(`/incidents?search=${encodeURIComponent(notif.referenceId)}`);
+      } else if (notif.referenceId.startsWith("DEL-")) {
+        navigate(`/dispatch`);
+      }
+    }
   };
 
   return (
@@ -181,7 +216,7 @@ export const NotificationDropdown: React.FC = () => {
               return (
                 <div
                   key={notif.id}
-                  onClick={() => handleItemClick(notif.id)}
+                  onClick={() => handleItemClick(notif)}
                   className={cn(
                     "group px-4 py-3 flex items-start gap-3 hover:bg-accent/50 transition-all cursor-pointer relative",
                     !notif.read && "bg-primary/[0.04]",

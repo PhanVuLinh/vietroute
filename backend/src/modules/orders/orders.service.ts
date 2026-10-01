@@ -178,6 +178,31 @@ export class OrdersService {
       },
     });
 
+    // Tự động lưu thông báo và phát sóng WebSocket
+    try {
+      const notif = await this.prisma.notification.create({
+        data: {
+          title: 'Đơn hàng mới',
+          message: `Đơn hàng ${order.order_code} đã được tạo thành công cho khách hàng ${order.customer?.name || order.receiver_name}.`,
+          type: 'ORDER_CREATED',
+          priority: order.priority === 'URGENT' ? 'URGENT' : 'NORMAL',
+          reference_id: order.order_code,
+        },
+      });
+      this.realtimeGateway.emitBroadcastNotification({
+        id: notif.id,
+        title: notif.title,
+        message: notif.message,
+        type: notif.type,
+        read: false,
+        priority: notif.priority,
+        referenceId: notif.reference_id,
+        createdAt: notif.created_at.toISOString(),
+      });
+    } catch (e) {
+      console.warn('Lỗi tạo thông báo đơn hàng mới:', e);
+    }
+
     return mapOrder(order);
   }
 
@@ -218,6 +243,53 @@ export class OrdersService {
       updatedAt: updated.updated_at.toISOString(),
       message: `Đơn hàng ${updated.order_code} đã chuyển sang trạng thái: ${updated.status}`,
     });
+
+    // Tự động lưu thông báo và phát sóng notification:new
+    try {
+      if (status === OrderStatus.IN_TRANSIT) {
+        const notif = await this.prisma.notification.create({
+          data: {
+            title: 'Đơn hàng đang giao',
+            message: `Đơn hàng ${updated.order_code} đã bắt đầu rời kho và đang trên đường giao tới ${updated.receiver_address}.`,
+            type: 'ORDER_ASSIGNED',
+            priority: 'NORMAL',
+            reference_id: updated.order_code,
+          },
+        });
+        this.realtimeGateway.emitBroadcastNotification({
+          id: notif.id,
+          title: notif.title,
+          message: notif.message,
+          type: notif.type,
+          read: false,
+          priority: notif.priority,
+          referenceId: notif.reference_id,
+          createdAt: notif.created_at.toISOString(),
+        });
+      } else if (status === OrderStatus.DELIVERED) {
+        const notif = await this.prisma.notification.create({
+          data: {
+            title: 'Giao hàng thành công',
+            message: `Đơn hàng ${updated.order_code} đã hoàn tất giao hàng thành công tới ${updated.receiver_name}.`,
+            type: 'DELIVERY_SUCCESS',
+            priority: 'NORMAL',
+            reference_id: updated.order_code,
+          },
+        });
+        this.realtimeGateway.emitBroadcastNotification({
+          id: notif.id,
+          title: notif.title,
+          message: notif.message,
+          type: notif.type,
+          read: false,
+          priority: notif.priority,
+          referenceId: notif.reference_id,
+          createdAt: notif.created_at.toISOString(),
+        });
+      }
+    } catch (e) {
+      console.warn('Lỗi tạo thông báo trạng thái đơn hàng:', e);
+    }
 
     return mapOrder(updated);
   }
@@ -365,7 +437,32 @@ export class OrdersService {
       message: `Đơn hàng ${updatedOrder.order_code} đã giao thành công và hoàn tất ký nhận e-POD!`,
     });
 
-    // 6. Trả về Order đã hoàn tất
+    // 6. Tự động lưu thông báo hoàn tất e-POD
+    try {
+      const notif = await this.prisma.notification.create({
+        data: {
+          title: 'Đã hoàn tất e-POD',
+          message: `Biên bản giao hàng điện tử đơn ${updatedOrder.order_code} đã được tài xế xác nhận thành công kèm chữ ký.`,
+          type: 'DELIVERY_SUCCESS',
+          priority: 'NORMAL',
+          reference_id: updatedOrder.order_code,
+        },
+      });
+      this.realtimeGateway.emitBroadcastNotification({
+        id: notif.id,
+        title: notif.title,
+        message: notif.message,
+        type: notif.type,
+        read: false,
+        priority: notif.priority,
+        referenceId: notif.reference_id,
+        createdAt: notif.created_at.toISOString(),
+      });
+    } catch (e) {
+      console.warn('Lỗi tạo thông báo hoàn tất e-POD:', e);
+    }
+
+    // 7. Trả về Order đã hoàn tất
     return this.findOne(id);
   }
 

@@ -172,6 +172,31 @@ export class IncidentsService {
       driverName: result.driverName,
     });
 
+    // Tự động lưu thông báo cảnh báo sự cố vào CSDL và phát sóng tới Header
+    try {
+      const notif = await this.prisma.notification.create({
+        data: {
+          title: `Cảnh báo sự cố: ${result.title}`,
+          message: `Sự cố ${result.incidentCode} (${result.severity}) vừa được báo cáo bởi ${result.reportedBy}.`,
+          type: 'VEHICLE_ALERT',
+          priority: result.severity === 'CRITICAL' ? 'URGENT' : 'HIGH',
+          reference_id: result.incidentCode,
+        },
+      });
+      this.realtimeGateway.emitBroadcastNotification({
+        id: notif.id,
+        title: notif.title,
+        message: notif.message,
+        type: notif.type,
+        read: false,
+        priority: notif.priority,
+        referenceId: notif.reference_id,
+        createdAt: notif.created_at.toISOString(),
+      });
+    } catch (e) {
+      console.warn('Lỗi tạo thông báo sự cố mới:', e);
+    }
+
     return result;
   }
 

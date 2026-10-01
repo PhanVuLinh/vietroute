@@ -148,13 +148,24 @@ export class DispatchService {
     });
 
     // 7. Tạo thông báo trong CSDL
-    await this.prisma.notification.create({
+    const notif = await this.prisma.notification.create({
       data: {
         title: 'Đã phân công tài xế',
         message: `Đơn hàng ${delivery.order?.order_code} đã được gán cho tài xế ${updatedDelivery.driver?.full_name || ''}`,
         type: NotificationType.ORDER_ASSIGNED,
         reference_id: delivery.order_id,
       },
+    });
+
+    this.realtimeGateway.emitBroadcastNotification({
+      id: notif.id,
+      title: notif.title,
+      message: notif.message,
+      type: notif.type,
+      read: false,
+      priority: notif.priority,
+      referenceId: delivery.order?.order_code,
+      createdAt: notif.created_at.toISOString(),
     });
 
     // 8. Bắn sự kiện realtime Socket.IO
