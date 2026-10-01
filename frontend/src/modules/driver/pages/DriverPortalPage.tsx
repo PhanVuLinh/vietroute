@@ -14,10 +14,12 @@ import {
   RefreshCw,
   Database,
   X,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { ProofOfDeliveryModal } from "../components/ProofOfDeliveryModal";
+import { WaybillPrintModal } from "@/modules/orders/components/WaybillPrintModal";
 import type { DriverShift, DriverStop, PodData } from "../types/driverPortal";
 import { orderService, driverService } from "@/mocks/adapters/serviceFactory";
 import { toast } from "@/shared/components/feedback/Toast";
@@ -149,6 +151,7 @@ export const DriverPortalPage: React.FC = () => {
   const [activePodStop, setActivePodStop] = useState<DriverStop | null>(null);
   const [viewingPodStop, setViewingPodStop] = useState<DriverStop | null>(null);
   const [isPhoneFrame, setIsPhoneFrame] = useState(false);
+  const [printingOrder, setPrintingOrder] = useState<any | null>(null);
 
   // Tải ca chạy thực tế từ PostgreSQL
   const fetchActiveShift = async () => {
@@ -604,6 +607,32 @@ export const DriverPortalPage: React.FC = () => {
                         <span className="hidden sm:inline">Chỉ đường</span>
                       </a>
 
+                      {/* Nút in vận đơn / phiếu gửi */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrintingOrder({
+                            orderCode: stop.orderCode,
+                            receiverName: stop.customerName,
+                            receiverPhone: stop.customerPhone,
+                            receiverAddress: stop.address,
+                            warehouseName: "Tổng kho VietRoute Hub",
+                            weightKg: stop.weightKg,
+                            packageCount: stop.packagesCount,
+                            codAmount: stop.codAmount,
+                            priority: stop.priority,
+                            itemsSummary: stop.itemsSummary,
+                            driverName: shift.driverName,
+                            vehiclePlate: shift.vehiclePlate,
+                          });
+                        }}
+                        className="flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        title="In phiếu gửi hàng (Waybill)"
+                      >
+                        <Printer className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+                        <span className="hidden sm:inline">In phiếu</span>
+                      </button>
+
                       {/* Nút thao tác hoàn tất hoặc xem biên bản e-POD */}
                       {isDelivered ? (
                         <Button
@@ -728,15 +757,49 @@ export const DriverPortalPage: React.FC = () => {
               )}
             </div>
 
-            <Button
-              className="w-full text-xs h-9 cursor-pointer"
-              onClick={() => setViewingPodStop(null)}
-            >
-              Đóng biên bản
-            </Button>
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                variant="outline"
+                className="flex-1 text-xs h-9 cursor-pointer gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                onClick={() => {
+                  setPrintingOrder({
+                    orderCode: viewingPodStop.orderCode,
+                    receiverName: viewingPodStop.customerName,
+                    receiverPhone: viewingPodStop.customerPhone,
+                    receiverAddress: viewingPodStop.address,
+                    warehouseName: "Tổng kho VietRoute Hub",
+                    weightKg: viewingPodStop.weightKg,
+                    packageCount: viewingPodStop.packagesCount,
+                    codAmount: viewingPodStop.codAmount,
+                    priority: viewingPodStop.priority,
+                    itemsSummary: viewingPodStop.itemsSummary,
+                    driverName: shift.driverName,
+                    vehiclePlate: shift.vehiclePlate,
+                    createdAt: viewingPodStop.pod?.completedAt,
+                    pod: viewingPodStop.pod,
+                  });
+                }}
+              >
+                <Printer className="h-3.5 w-3.5" />
+                <span>In biên bản e-POD</span>
+              </Button>
+              <Button
+                className="flex-1 text-xs h-9 cursor-pointer"
+                onClick={() => setViewingPodStop(null)}
+              >
+                Đóng
+              </Button>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Modal In Vận Đơn / Phiếu Giao Hàng */}
+      <WaybillPrintModal
+        order={printingOrder}
+        open={!!printingOrder}
+        onOpenChange={(open) => !open && setPrintingOrder(null)}
+      />
     </div>
   );
 };
