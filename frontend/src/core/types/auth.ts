@@ -22,6 +22,7 @@ export interface AuthUser {
   full_name: string;
   phone?: string;
   role: UserRole;
+  permissions?: string[];
   status?: UserStatus;
 }
 

@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Send, RefreshCw, Download } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
+import { Can } from "@/shared/components/auth/Can";
 
 interface OrdersHeaderProps {
   onCreateOrder?: () => void;
@@ -73,15 +74,17 @@ export const OrdersHeader: React.FC<OrdersHeaderProps> = ({
           <span>Điều phối</span>
         </Button>
 
-        <Button
-          size="sm"
-          onClick={handleCreate}
-          className="h-9 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
-          id="btn-open-create-order"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          <span>Tạo đơn hàng</span>
-        </Button>
+        <Can permission="orders:create">
+          <Button
+            size="sm"
+            onClick={handleCreate}
+            className="h-9 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
+            id="btn-open-create-order"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>Tạo đơn hàng</span>
+          </Button>
+        </Can>
       </div>
     </div>
   );

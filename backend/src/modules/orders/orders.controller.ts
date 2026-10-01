@@ -12,13 +12,16 @@ import { OrdersService } from './orders.service.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { OrderStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { PermissionsGuard } from '../../common/guards/permissions.guard.js';
+import { Permissions } from '../../common/decorators/permissions.decorator.js';
 
 @Controller('orders')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
+  @Permissions('orders:view')
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -39,16 +42,19 @@ export class OrdersController {
   }
 
   @Get(':id')
+  @Permissions('orders:view')
   findOne(@Param('id') id: string) {
     return this.ordersService.findOne(id);
   }
 
   @Post()
+  @Permissions('orders:create')
   create(@Body() dto: CreateOrderDto) {
     return this.ordersService.create(dto);
   }
 
   @Patch(':id/status')
+  @Permissions('orders:edit')
   updateStatus(
     @Param('id') id: string,
     @Body('status') status: OrderStatus,
@@ -57,6 +63,7 @@ export class OrdersController {
   }
 
   @Post(':id/pod')
+  @Permissions('orders:pod')
   completePod(
     @Param('id') id: string,
     @Body() podDto: any,

@@ -27,6 +27,7 @@ import { DriverRankingTable } from "../components/DriverRankingTable";
 import { FleetUtilizationCard } from "../components/FleetUtilizationCard";
 import { RegionalVolumeChart } from "../components/RegionalVolumeChart";
 import { ExportReportDialog } from "../components/ExportReportDialog";
+import { Can } from "@/shared/components/auth/Can";
 
 type ReportTab = "OVERVIEW" | "OTD" | "COSTS" | "FLEET";
 
@@ -100,14 +101,16 @@ export const ReportsPage: React.FC = () => {
           </Button>
 
           {/* 4. Nút Xuất Báo Cáo */}
-          <Button
-            size="sm"
-            onClick={() => setIsExportOpen(true)}
-            className="h-9 text-xs font-semibold gap-1.5 shadow-xs shadow-primary/20"
-          >
-            <Download className="h-3.5 w-3.5" />
-            <span>Xuất báo cáo</span>
-          </Button>
+          <Can permission="reports:export">
+            <Button
+              size="sm"
+              onClick={() => setIsExportOpen(true)}
+              className="h-9 text-xs font-semibold gap-1.5 shadow-xs shadow-primary/20"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Xuất báo cáo</span>
+            </Button>
+          </Can>
         </div>
       }
     >

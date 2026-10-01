@@ -35,6 +35,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role.name,
+      permissions: user.role.permissions || [],
     };
 
     return {
@@ -44,6 +45,7 @@ export class AuthService {
         email: user.email,
         full_name: user.full_name,
         role: user.role.name,
+        permissions: user.role.permissions || [],
       },
     };
   }
@@ -64,6 +66,7 @@ export class AuthService {
       full_name: user.full_name,
       phone: user.phone || undefined,
       role: user.role.name,
+      permissions: user.role.permissions || [],
       status: user.status,
     };
   }
