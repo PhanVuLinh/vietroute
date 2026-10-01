@@ -7,7 +7,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AiService } from './ai.service.js';
-import { ChatPromptDto, PredictEtaDto } from './dto/chat-prompt.dto.js';
+import {
+  ChatPromptDto,
+  PredictEtaDto,
+  OptimizeRouteDto,
+  MatchDriverDto,
+} from './dto/chat-prompt.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 
 @Controller('ai')
@@ -29,5 +34,20 @@ export class AiController {
   @Post('predict-eta')
   async predictEta(@Body() dto: PredictEtaDto) {
     return this.aiService.predictEta(dto);
+  }
+
+  @Post('optimize-route')
+  async optimizeRoute(@Body() dto: OptimizeRouteDto) {
+    return this.aiService.optimizeRoute(dto);
+  }
+
+  @Post('match-driver')
+  async matchDriver(@Body() dto: MatchDriverDto) {
+    return this.aiService.matchDriver(dto);
+  }
+
+  @Get('anomalies')
+  async getAnomalies() {
+    return this.aiService.detectAnomalies();
   }
 }

@@ -5,6 +5,7 @@ import { Header } from "./Header";
 import { BreadcrumbNavigation } from "./BreadcrumbNavigation";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/components/ui/sheet";
 import { ToastContainer } from "@/shared/components/feedback/Toast";
+import { FloatingAiDrawer } from "./FloatingAiDrawer";
 
 export const AppLayout: React.FC = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -45,6 +46,9 @@ export const AppLayout: React.FC = () => {
 
       {/* Global Toast Notification Container */}
       <ToastContainer />
+
+      {/* Global Floating AI Assistant Drawer */}
+      <FloatingAiDrawer />
     </div>
   );
 };

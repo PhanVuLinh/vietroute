@@ -451,6 +451,98 @@ export interface PredictEtaResponse {
   confidenceScore: number;
 }
 
+export interface RouteOptimizationStop {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  demandKg?: number;
+  timeWindow?: string;
+  sequence?: number;
+  distanceFromPreviousKm?: number;
+  cumulativeDistanceKm?: number;
+  estimatedEtaMinutes?: number;
+}
+
+export interface RouteOptimizationRequest {
+  originLat: number;
+  originLng: number;
+  stops: Array<{
+    id: string;
+    name: string;
+    lat: number;
+    lng: number;
+    demandKg?: number;
+    timeWindow?: string;
+  }>;
+  returnToOrigin?: boolean;
+}
+
+export interface RouteOptimizationResponse {
+  originalDistanceKm: number;
+  optimizedDistanceKm: number;
+  savedKm: number;
+  savedPercent: number;
+  fuelSavedLiters: number;
+  costSavedVND: number;
+  timeSavedMinutes: number;
+  optimizedStops: RouteOptimizationStop[];
+}
+
+export interface DriverMatchRequest {
+  orderId?: string;
+  pickupLat: number;
+  pickupLng: number;
+  totalWeightKg: number;
+  requiredVehicleType?: string;
+  priority?: string;
+}
+
+export interface DriverMatchCandidate {
+  driverId: string;
+  driverName: string;
+  phone: string;
+  status: string;
+  onTimeRate: number;
+  rating: number;
+  distanceToPickupKm: number;
+  matchScore: number;
+  reasoningTags: string[];
+  recommendedVehicle?: {
+    id: string;
+    plateNumber: string;
+    model: string;
+    type: string;
+    maxPayloadKg: number;
+    utilizationPercent: number;
+  };
+}
+
+export interface DriverMatchResponse {
+  totalCandidates: number;
+  topMatches: DriverMatchCandidate[];
+  evaluatedAt: string;
+}
+
+export interface AiAnomalyItem {
+  id: string;
+  type: "FUEL_LEAK" | "ROUTE_DEVIATION" | "UNPLANNED_STOP" | "SLA_RISK" | "WAREHOUSE_OVERLOAD";
+  severity: "CRITICAL" | "HIGH" | "MEDIUM";
+  title: string;
+  description: string;
+  entityRef: string;
+  detectedAt: string;
+  recommendedAction: string;
+  actionUrl: string;
+}
+
+export interface AiAnomaliesResponse {
+  totalAnomalies: number;
+  criticalCount: number;
+  anomalies: AiAnomalyItem[];
+  scannedAt: string;
+}
+
 const apiAiService = {
   chat: (prompt: string, conversationId?: string) =>
     httpClient.post<AiChatMessageResponse>("/ai/chat", { prompt, conversationId }),
@@ -458,6 +550,12 @@ const apiAiService = {
     httpClient.get<AiRecommendation[]>("/ai/recommendations"),
   predictEta: (dto: PredictEtaRequest) =>
     httpClient.post<PredictEtaResponse>("/ai/predict-eta", dto),
+  optimizeRoute: (dto: RouteOptimizationRequest) =>
+    httpClient.post<RouteOptimizationResponse>("/ai/optimize-route", dto),
+  matchDriver: (dto: DriverMatchRequest) =>
+    httpClient.post<DriverMatchResponse>("/ai/match-driver", dto),
+  getAnomalies: () =>
+    httpClient.get<AiAnomaliesResponse>("/ai/anomalies"),
 };
 
 export const aiService = apiAiService;
