@@ -88,6 +88,8 @@ const apiDepartmentService = {
 const apiDriverService = {
   getDrivers: (params?: DriverFilterParams) => httpClient.get<Driver[]>("/drivers", { params }),
   getDriverById: (id: string) => httpClient.get<Driver>(`/drivers/${id}`),
+  getActiveShift: (identifier?: string) =>
+    httpClient.get<any>(identifier ? `/drivers/active-shift/${identifier}` : "/drivers/active-shift"),
   updateDriverStatus: (id: string, status: string) => httpClient.patch<Driver>(`/drivers/${id}/status`, { status }),
   createDriver: (data: Omit<Driver, "id">) => httpClient.post<Driver>("/drivers", data),
   updateDriver: (id: string, data: Partial<Driver>) => httpClient.patch<Driver>(`/drivers/${id}`, data),

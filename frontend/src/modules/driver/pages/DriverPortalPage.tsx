@@ -19,7 +19,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { ProofOfDeliveryModal } from "../components/ProofOfDeliveryModal";
 import type { DriverShift, DriverStop, PodData } from "../types/driverPortal";
-import { orderService } from "@/mocks/adapters/serviceFactory";
+import { orderService, driverService } from "@/mocks/adapters/serviceFactory";
 import { toast } from "@/shared/components/feedback/Toast";
 
 // Dữ liệu ca chạy mẫu ban đầu
@@ -143,10 +143,31 @@ export const DriverPortalPage: React.FC = () => {
     return INITIAL_SHIFT;
   });
 
+  const [isLoadingShift, setIsLoadingShift] = useState(false);
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "DELIVERED">("ALL");
   const [activePodStop, setActivePodStop] = useState<DriverStop | null>(null);
   const [viewingPodStop, setViewingPodStop] = useState<DriverStop | null>(null);
   const [isPhoneFrame, setIsPhoneFrame] = useState(false);
+
+  // Tải ca chạy thực tế từ PostgreSQL
+  const fetchActiveShift = async () => {
+    setIsLoadingShift(true);
+    try {
+      const res = await driverService.getActiveShift();
+      const shiftData = res?.data || res;
+      if (shiftData && shiftData.stops && shiftData.stops.length > 0) {
+        setShift(shiftData);
+      }
+    } catch {
+      // Giữ shift hiện tại
+    } finally {
+      setIsLoadingShift(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchActiveShift();
+  }, []);
 
   // Lưu trạng thái vào localStorage
   useEffect(() => {

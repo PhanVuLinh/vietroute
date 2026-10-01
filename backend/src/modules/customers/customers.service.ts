@@ -52,6 +52,12 @@ export class CustomersService {
         include: {
           addresses: true,
           pricing_rules: true,
+          orders: {
+            select: { id: true, status: true, cod_amount: true, total_weight: true },
+          },
+          invoices: {
+            select: { id: true, total_amount: true },
+          },
           _count: {
             select: { orders: true },
           },
@@ -60,48 +66,58 @@ export class CustomersService {
     ]);
 
     // Format theo response enriched cho frontend
-    const enriched = customers.map((c) => ({
-      id: c.id,
-      name: c.name,
-      phone: c.phone,
-      email: c.email || '',
-      address: c.address,
-      latitude: c.latitude,
-      longitude: c.longitude,
-      type: c.type,
-      tier: c.tier,
-      taxCode: c.tax_code || undefined,
-      contactPerson: c.contact_person || undefined,
-      website: c.website || undefined,
-      notes: c.notes || undefined,
-      addresses: c.addresses.map((a) => ({
-        id: a.id,
-        label: a.label,
-        address: a.address,
-        city: a.city || 'Việt Nam',
-        latitude: a.latitude,
-        longitude: a.longitude,
-        isDefault: a.is_default,
-        contactName: a.contact_name || c.name,
-        contactPhone: a.contact_phone || c.phone,
-      })),
-      contractPricing: c.pricing_rules.map((p) => ({
-        id: p.id,
-        routeType: p.route_type,
-        pricePerKm: p.price_per_km,
-        pricePerKg: p.price_per_kg,
-        discountPercent: p.discount_percent,
-      })),
-      stats: {
-        totalOrders: c._count.orders,
-        totalRevenue: c._count.orders * 2500000,
-        activeOrders: 1,
-        completedOrders: c._count.orders,
-        avgOrderValue: 2500000,
-      },
-      createdAt: c.created_at.toISOString(),
-      updatedAt: c.updated_at.toISOString(),
-    }));
+    const enriched = customers.map((c) => {
+      const invoiceRev = c.invoices?.reduce((acc: number, inv: any) => acc + inv.total_amount, 0) || 0;
+      const orderRev = c.orders?.reduce((acc: number, ord: any) => acc + (ord.cod_amount > 0 ? ord.cod_amount : ord.total_weight * 50000), 0) || 0;
+      const totalRevenue = invoiceRev > 0 ? invoiceRev : (orderRev > 0 ? orderRev : c._count.orders * 1500000);
+
+      const activeOrders = c.orders?.filter((o: any) => ['IN_TRANSIT', 'ASSIGNED', 'PICKING_UP', 'PENDING'].includes(o.status)).length || 0;
+      const completedOrders = c.orders?.filter((o: any) => o.status === 'DELIVERED').length || c._count.orders;
+      const avgOrderValue = c._count.orders > 0 ? Math.round(totalRevenue / c._count.orders) : 0;
+
+      return {
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        email: c.email || '',
+        address: c.address,
+        latitude: c.latitude,
+        longitude: c.longitude,
+        type: c.type,
+        tier: c.tier,
+        taxCode: c.tax_code || undefined,
+        contactPerson: c.contact_person || undefined,
+        website: c.website || undefined,
+        notes: c.notes || undefined,
+        addresses: c.addresses.map((a) => ({
+          id: a.id,
+          label: a.label,
+          address: a.address,
+          city: a.city || 'Việt Nam',
+          latitude: a.latitude,
+          longitude: a.longitude,
+          isDefault: a.is_default,
+          contactName: a.contact_name || c.name,
+          contactPhone: a.contact_phone || c.phone,
+        })),
+        contractPricing: c.pricing_rules.map((p) => ({
+          id: p.id,
+          routeType: p.route_type,
+          pricePerKm: p.price_per_km,
+          pricePerKg: p.price_per_kg,
+          discountPercent: p.discount_percent,
+        })),
+        stats: {
+          totalOrders: c._count.orders,
+          totalRevenue,
+          activeOrders,
+          completedOrders,
+          avgOrderValue,
+        },
+        createdAt: c.created_at.toISOString(),
+        updatedAt: c.updated_at.toISOString(),
+      };
+    });
 
     return {
       items: enriched,

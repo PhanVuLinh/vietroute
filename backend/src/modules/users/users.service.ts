@@ -266,7 +266,7 @@ export class UsersService {
     const SYSTEM_ROLE_NAMES = ['ADMIN', 'MANAGER', 'DISPATCHER', 'DRIVER', 'WAREHOUSE_STAFF', 'ACCOUNTANT'];
 
     return roles.map((r) => {
-      const perms = rolePermissionsCache.get(r.id) || DEFAULT_ROLE_PERMISSIONS[r.name] || [];
+      const perms = (r.permissions && r.permissions.length > 0) ? r.permissions : (DEFAULT_ROLE_PERMISSIONS[r.name] || []);
       return {
         id: r.id,
         name: r.name,
@@ -289,22 +289,19 @@ export class UsersService {
       data: {
         name: roleCode,
         description: dto.description || `Vai trò ${dto.name}`,
+        permissions: dto.permissions || [],
       },
       include: {
         _count: { select: { users: true } },
       },
     });
 
-    if (dto.permissions && dto.permissions.length > 0) {
-      rolePermissionsCache.set(created.id, dto.permissions);
-    }
-
     return {
       id: created.id,
       name: created.name,
       description: created.description,
       userCount: 0,
-      permissions: dto.permissions || [],
+      permissions: created.permissions,
       isSystem: false,
     };
   }
@@ -321,6 +318,9 @@ export class UsersService {
     const updateData: any = {};
     if (dto.description !== undefined) {
       updateData.description = dto.description;
+    }
+    if (dto.permissions !== undefined) {
+      updateData.permissions = dto.permissions;
     }
     if (dto.name && dto.name.trim()) {
       const newCode = dto.name.toUpperCase().trim().replace(/\s+/g, '_');
@@ -340,16 +340,12 @@ export class UsersService {
       },
     });
 
-    if (dto.permissions !== undefined) {
-      rolePermissionsCache.set(id, dto.permissions);
-    }
-
     return {
       id: updated.id,
       name: updated.name,
       description: updated.description,
       userCount: updated._count.users,
-      permissions: rolePermissionsCache.get(id) || DEFAULT_ROLE_PERMISSIONS[updated.name] || [],
+      permissions: (updated.permissions && updated.permissions.length > 0) ? updated.permissions : (DEFAULT_ROLE_PERMISSIONS[updated.name] || []),
       isSystem,
     };
   }
@@ -375,8 +371,7 @@ export class UsersService {
     }
 
     await this.prisma.role.delete({ where: { id } });
-    rolePermissionsCache.delete(id);
-    return { success: true, message: `Đã xóa vai trò ${role.name} thành công` };
+    return { success: true, message: `Đã xóa vai trò ${role.name} thành công khỏi PostgreSQL` };
   }
 
   async updateRolePermissions(roleId: string, permissions: string[], description?: string) {
@@ -385,21 +380,20 @@ export class UsersService {
       throw new NotFoundException('Không tìm thấy vai trò này');
     }
 
-    rolePermissionsCache.set(roleId, permissions);
-
-    if (description !== undefined) {
-      await this.prisma.role.update({
-        where: { id: roleId },
-        data: { description },
-      });
-    }
+    const updated = await this.prisma.role.update({
+      where: { id: roleId },
+      data: {
+        permissions,
+        ...(description !== undefined && { description }),
+      },
+    });
 
     return {
-      id: role.id,
-      name: role.name,
-      description: description || role.description,
-      permissions,
-      message: 'Đã cập nhật ma trận phân quyền thành công',
+      id: updated.id,
+      name: updated.name,
+      description: updated.description,
+      permissions: updated.permissions,
+      message: 'Đã lưu quyền vai trò thành công vào PostgreSQL',
     };
   }
 
@@ -408,15 +402,29 @@ export class UsersService {
    */
   private async ensureSeedStaff() {
     try {
-      // 1. Đảm bảo vai trò ACCOUNTANT tồn tại
+      // 1. Đảm bảo vai trò ACCOUNTANT tồn tại và nạp permissions cho các role nếu chưa có
       let accountantRole = await this.prisma.role.findUnique({ where: { name: 'ACCOUNTANT' } });
       if (!accountantRole) {
         accountantRole = await this.prisma.role.create({
           data: {
             name: 'ACCOUNTANT',
             description: 'Kế toán viên đối soát COD & thu hồi công nợ',
+            permissions: DEFAULT_ROLE_PERMISSIONS['ACCOUNTANT'] || [],
           },
         });
+      }
+
+      const allRoles = await this.prisma.role.findMany();
+      for (const r of allRoles) {
+        if (!r.permissions || r.permissions.length === 0) {
+          const defaultPerms = DEFAULT_ROLE_PERMISSIONS[r.name];
+          if (defaultPerms && defaultPerms.length > 0) {
+            await this.prisma.role.update({
+              where: { id: r.id },
+              data: { permissions: defaultPerms },
+            });
+          }
+        }
       }
 
       const managerRole = await this.prisma.role.findUnique({ where: { name: 'MANAGER' } });

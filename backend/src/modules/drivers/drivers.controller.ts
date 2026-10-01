@@ -30,6 +30,16 @@ export class DriversController {
     return this.driversService.findAll({ status, search, licenseType });
   }
 
+  @Get('active-shift')
+  getActiveShiftDefault() {
+    return this.driversService.getActiveShift();
+  }
+
+  @Get('active-shift/:identifier')
+  getActiveShift(@Param('identifier') identifier: string) {
+    return this.driversService.getActiveShift(identifier);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.driversService.findOne(id);

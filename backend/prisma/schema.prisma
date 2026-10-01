@@ -21,6 +21,7 @@ model Role {
   id          String   @id @default(uuid())
   name        String   @unique // ADMIN, MANAGER, DISPATCHER, DRIVER, WAREHOUSE_STAFF
   description String?
+  permissions String[] @default([])
   users       User[]
 
   @@map("roles")
@@ -973,4 +974,320 @@ model AuditLog {
   @@index([action])
   @@index([created_at])
   @@map("audit_logs")
+}
+
+// ==========================================
+// 13. CƠ CẤU TỔ CHỨC & PHÒNG BAN (DEPARTMENTS)
+// ==========================================
+
+enum DepartmentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Department {
+  id          String           @id @default(uuid())
+  code        String           @unique
+  name        String
+  description String?
+  head_id     String?
+  head_name   String?
+  head_phone  String?
+  head_email  String?
+  location    String?          @default("Trụ sở chính")
+  status      DepartmentStatus @default(ACTIVE)
+  created_at  DateTime         @default(now())
+  updated_at  DateTime         @updatedAt
+
+  @@map("departments")
+}
+
+// ==========================================
+// 14. VẬN TẢI QUỐC TẾ & HẢI QUAN (INTERNATIONAL LOGISTICS)
+// ==========================================
+
+enum ShipmentDirection {
+  EXPORT
+  IMPORT
+  CROSS_BORDER
+}
+
+enum TransportMode {
+  OCEAN_FCL
+  OCEAN_LCL
+  AIR_FREIGHT
+  ROAD_CROSS_BORDER
+}
+
+enum CustomsChannel {
+  GREEN
+  YELLOW
+  RED
+}
+
+model InternationalShipment {
+  id               String            @id @default(uuid())
+  shipment_code    String            @unique
+  direction        ShipmentDirection @default(EXPORT)
+  transport_mode   TransportMode     @default(OCEAN_FCL)
+  incoterm         String            @default("FOB")
+  carrier_name     String
+  vessel_flight_no String
+  pol_port         String
+  pod_port         String
+  etd_date         DateTime
+  eta_date         DateTime
+  bl_awb_number    String
+  container_number String?
+  seal_number      String?
+  container_type   String?
+  gross_weight_kg  Float
+  cbm_volume       Float
+  package_count    Int               @default(1)
+  shipper_name     String
+  consignee_name   String
+  currency         String            @default("USD")
+  freight_amount   Float             @default(0)
+  customs_status   String            @default("NOT_FILED")
+  status           String            @default("BOOKING_CONFIRMED")
+  notes            String?
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+
+  @@map("international_shipments")
+}
+
+model CustomsDeclaration {
+  id                    String         @id @default(uuid())
+  declaration_no        String         @unique
+  shipment_id           String
+  shipment_code         String
+  customs_branch        String
+  declaration_type      String
+  channel               CustomsChannel @default(GREEN)
+  hs_code               String
+  commodity_description String
+  invoice_value         Float
+  currency              String         @default("USD")
+  import_tax_amount     Float          @default(0)
+  vat_tax_amount        Float          @default(0)
+  status                String         @default("DRAFT")
+  registered_date       DateTime       @default(now())
+  cleared_date          DateTime?
+  created_at            DateTime       @default(now())
+  updated_at            DateTime       @updatedAt
+
+  @@map("customs_declarations")
+}
+
+model ContainerTracking {
+  id                           String   @id @default(uuid())
+  container_no                 String   @unique
+  type                         String   @default("40HC")
+  carrier                      String
+  shipment_code                String
+  seal_no                      String
+  current_location             String
+  temperature_required         String?
+  dem_det_free_days            Int      @default(7)
+  gate_in_date                 DateTime @default(now())
+  free_time_expiry_date        DateTime
+  overdue_days                 Int      @default(0)
+  estimated_penalty_amount_vnd Float    @default(0)
+  status                       String   @default("IN_DEPOT")
+  created_at                   DateTime @default(now())
+  updated_at                   DateTime @updatedAt
+
+  @@map("container_trackings")
+}
+
+model InternationalPort {
+  code       String   @id
+  name       String
+  country    String
+  city       String
+  type       String   // SEAPORT, AIRPORT, BORDER_GATE
+  created_at DateTime @default(now())
+
+  @@map("international_ports")
+}
+
+model ExchangeRate {
+  currency          String   @id
+  name              String
+  buy_rate_vnd      Float
+  transfer_rate_vnd Float
+  sell_rate_vnd     Float
+  updated_at        DateTime @default(now())
+
+  @@map("exchange_rates")
+}
+
+model LocalCharge {
+  code         String   @id
+  name         String
+  description  String
+  amount       Float
+  currency     String   @default("USD")
+  applied_unit String   @default("Per Container")
+  created_at   DateTime @default(now())
+
+  @@map("local_charges")
+}
+
+model HsCode {
+  hs_code                String   @id
+  description_vi         String
+  description_en         String
+  unit                   String
+  standard_duty_rate     Float    @default(0)
+  mfn_rate               Float    @default(0)
+  evfta_rate             Float    @default(0)
+  cptpp_rate             Float    @default(0)
+  acfta_rate             Float    @default(0)
+  atiga_rate             Float    @default(0)
+  vkfta_rate             Float    @default(0)
+  vat_rate               Float    @default(8)
+  specialized_inspection String?
+  inspection_agency      String?
+  import_conditions      String?
+  created_at             DateTime @default(now())
+
+  @@map("hs_codes")
+}
+
+model ShipmentFinancial {
+  id                     String   @id @default(uuid())
+  shipment_id            String
+  shipment_code          String
+  shipper_name           String
+  carrier_name           String
+  currency               String   @default("USD")
+  selling_freight        Float    @default(0)
+  selling_local_charges  Float    @default(0)
+  total_revenue_vnd      Float    @default(0)
+  buying_freight         Float    @default(0)
+  buying_local_charges   Float    @default(0)
+  trucking_cost_vnd      Float    @default(0)
+  customs_cost_vnd       Float    @default(0)
+  port_handling_cost_vnd Float    @default(0)
+  total_cost_vnd         Float    @default(0)
+  gross_profit_vnd       Float    @default(0)
+  gross_profit_usd       Float    @default(0)
+  profit_margin_percent  Float    @default(0)
+  fx_gain_loss_vnd       Float    @default(0)
+  payment_status         String   @default("PAID")
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  @@map("shipment_financials")
+}
+
+model ContainerDeposit {
+  id                  String    @id @default(uuid())
+  container_no        String
+  shipment_code       String
+  carrier             String
+  deposit_amount_vnd  Float
+  receipt_number      String
+  deposited_date      DateTime  @default(now())
+  refund_due_date     DateTime
+  refund_status       String    @default("PENDING_REFUND")
+  refunded_amount_vnd Float?
+  deducted_reason     String?
+  eir_condition       String    @default("INTACT")
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  @@map("container_deposits")
+}
+
+model VesselAisTracking {
+  mmsi                  String   @id
+  vessel_name           String
+  imo                   String
+  flag                  String
+  shipment_codes        String[]
+  current_latitude      Float
+  current_longitude     Float
+  speed_knots           Float
+  heading_degrees       Float
+  departure_port        String
+  destination_port      String
+  atd_date              DateTime
+  eta_predicted         DateTime
+  distance_covered_nm   Float
+  distance_remaining_nm Float
+  progress_percent      Float
+  weather_risk          String   @default("LOW_NORMAL")
+  nav_status            String   @default("UNDERWAY_USING_ENGINE")
+  updated_at            DateTime @default(now())
+
+  @@map("vessel_ais_trackings")
+}
+
+model ShippingDocumentRecord {
+  id                 String   @id @default(uuid())
+  shipment_id        String
+  shipment_code      String
+  document_type      String
+  document_number    String
+  issue_date         DateTime @default(now())
+  issuer             String
+  file_format        String   @default("PDF")
+  status             String   @default("ISSUED")
+  verification_notes String?
+  is_mandatory       Boolean  @default(true)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  @@map("shipping_documents")
+}
+
+model ContainerDrayageDispatch {
+  id                    String   @id @default(uuid())
+  dispatch_code         String   @unique
+  shipment_code         String
+  container_no          String
+  container_type        String
+  dispatch_type         String
+  pickup_location       String
+  delivery_location     String
+  tractor_plate         String
+  trailer_plate         String
+  driver_name           String
+  driver_phone          String
+  driver_license_grade  String   @default("FC")
+  appointment_time      DateTime
+  status                String   @default("PENDING_DISPATCH")
+  toll_fee_vnd          Float    @default(0)
+  fuel_estimated_liters Float    @default(0)
+  notes                 String?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  @@map("container_drayage_dispatches")
+}
+
+// ==========================================
+// 15. MẪU LỘ TRÌNH TUYẾN ĐƯỜNG (ROUTE TEMPLATES)
+// ==========================================
+
+model RouteTemplateRecord {
+  id                 String   @id @default(uuid())
+  name               String
+  category           String   @default("RETAIL")
+  description        String
+  warehouse_id       String
+  total_distance     Float
+  estimated_duration Int
+  fuel_est_liters    Float    @default(0)
+  toll_fee_est_vnd   Float    @default(0)
+  total_weight_kg    Float    @default(0)
+  total_volume_m3    Float    @default(0)
+  traffic_alerts     Json?
+  stops              Json?
+  created_at         DateTime @default(now())
+
+  @@map("route_templates")
 }
