@@ -22,6 +22,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { DepartmentsModule } from './modules/departments/departments.module.js';
 import { InternationalModule } from './modules/international/international.module.js';
+import { UploadModule } from './modules/upload/upload.module.js';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { InternationalModule } from './modules/international/international.modul
     AuditModule,
     DepartmentsModule,
     InternationalModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],

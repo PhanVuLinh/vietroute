@@ -1,12 +1,21 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
 import { VersioningType, ValidationPipe } from '@nestjs/common';
+import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  const uploadDir = join(process.cwd(), 'uploads');
+  if (!existsSync(uploadDir)) {
+    mkdirSync(uploadDir, { recursive: true });
+  }
+  app.useStaticAssets(uploadDir, { prefix: '/uploads/' });
 
   app.enableCors({
     origin: process.env.CORS_ORIGIN

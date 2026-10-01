@@ -13,10 +13,12 @@ import {
   Sparkles,
   Package,
   FileText,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
+import { uploadService } from "@/mocks/adapters/serviceFactory";
 import type { DriverStop, PodData } from "../types/driverPortal";
 
 interface ProofOfDeliveryModalProps {
@@ -43,6 +45,8 @@ export const ProofOfDeliveryModal: React.FC<ProofOfDeliveryModalProps> = ({
   const [isCodConfirmed, setIsCodConfirmed] = useState(stop.codAmount === 0);
   const [notes, setNotes] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Setup Canvas kích thước
@@ -165,7 +169,7 @@ export const ProofOfDeliveryModal: React.FC<ProofOfDeliveryModalProps> = ({
   };
 
   // Xử lý ảnh tải lên hoặc chụp ảnh
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -173,6 +177,19 @@ export const ProofOfDeliveryModal: React.FC<ProofOfDeliveryModalProps> = ({
         setPhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+
+      // Lưu trữ ảnh lên máy chủ VietRoute
+      try {
+        setIsUploadingPhoto(true);
+        const res = await uploadService.uploadFile(file);
+        if (res && (res.relativePath || res.url)) {
+          setPhotoPreview(res.relativePath || res.url);
+        }
+      } catch (err) {
+        console.warn("Upload file lên máy chủ thất bại, giữ lại bản xem trước cục bộ:", err);
+      } finally {
+        setIsUploadingPhoto(false);
+      }
     }
   };
 
@@ -181,7 +198,7 @@ export const ProofOfDeliveryModal: React.FC<ProofOfDeliveryModalProps> = ({
     setPhotoPreview(url);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!hasSignature) {
       setErrorMsg("Vui lòng yêu cầu khách hàng ký tên xác nhận vào ô chữ ký bên dưới.");
       return;
@@ -198,27 +215,44 @@ export const ProofOfDeliveryModal: React.FC<ProofOfDeliveryModalProps> = ({
     }
 
     const canvas = canvasRef.current;
-    const signatureUrl = canvas ? canvas.toDataURL("image/png") : "";
+    let signatureUrl = canvas ? canvas.toDataURL("image/png") : "";
 
-    const podData: PodData = {
-      signatureUrl,
-      photoUrl: photoPreview || undefined,
-      codCollected: stop.codAmount > 0 ? isCodConfirmed : true,
-      codAmount: stop.codAmount,
-      codPaymentMethod: paymentMethod,
-      receiverName: receiverName.trim(),
-      receiverPhone: receiverPhone.trim(),
-      receiverRelation,
-      notes: notes.trim() || undefined,
-      completedAt: new Date().toISOString(),
-      gpsCoords: {
-        lat: stop.lat,
-        lng: stop.lng,
-      },
-    };
+    setIsSubmitting(true);
+    try {
+      // Tự động lưu chữ ký lên máy chủ nếu là Base64 Data URL
+      if (signatureUrl && signatureUrl.startsWith("data:image")) {
+        try {
+          const sigRes = await uploadService.uploadBase64(signatureUrl, `sig-${stop.orderCode}`);
+          if (sigRes && (sigRes.relativePath || sigRes.url)) {
+            signatureUrl = sigRes.relativePath || sigRes.url;
+          }
+        } catch (e) {
+          console.warn("Lưu chữ ký lên server thất bại, sử dụng base64 cục bộ:", e);
+        }
+      }
 
-    onConfirmPod(stop.id, podData);
-    onClose();
+      const podData: PodData = {
+        signatureUrl,
+        photoUrl: photoPreview || undefined,
+        codCollected: stop.codAmount > 0 ? isCodConfirmed : true,
+        codAmount: stop.codAmount,
+        codPaymentMethod: paymentMethod,
+        receiverName: receiverName.trim(),
+        receiverPhone: receiverPhone.trim(),
+        receiverRelation,
+        notes: notes.trim() || undefined,
+        completedAt: new Date().toISOString(),
+        gpsCoords: {
+          lat: stop.lat,
+          lng: stop.lng,
+        },
+      };
+
+      onConfirmPod(stop.id, podData);
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -514,11 +548,15 @@ export const ProofOfDeliveryModal: React.FC<ProofOfDeliveryModalProps> = ({
           <Button
             size="sm"
             onClick={handleSave}
-            disabled={!hasSignature || (stop.codAmount > 0 && !isCodConfirmed)}
+            disabled={isSubmitting || isUploadingPhoto || !hasSignature || (stop.codAmount > 0 && !isCodConfirmed)}
             className="h-9 px-5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <CheckCircle2 className="h-4 w-4" />
-            <span>Xác nhận hoàn tất giao hàng</span>
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+            <span>{isSubmitting ? "Đang lưu e-POD..." : "Xác nhận hoàn tất giao hàng"}</span>
           </Button>
         </div>
       </div>

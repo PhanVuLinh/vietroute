@@ -378,4 +378,32 @@ export const financeService = apiFinanceService;
 export const departmentService = apiDepartmentService;
 export const internationalService = apiInternationalService;
 
+export interface UploadResponse {
+  url: string;
+  relativePath: string;
+  filename: string;
+  originalName?: string;
+  mimetype?: string;
+  size?: number;
+  uploadedAt: string;
+}
+
+export const uploadService = {
+  uploadFile: async (file: File): Promise<UploadResponse> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await httpClient.post<UploadResponse>("/uploads", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+  uploadBase64: async (base64Data: string, prefix?: string): Promise<UploadResponse> => {
+    const res = await httpClient.post<UploadResponse>("/uploads/base64", {
+      data: base64Data,
+      prefix,
+    });
+    return res.data;
+  },
+};
+
 
