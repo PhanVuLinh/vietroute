@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, OnModuleInit, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateInternationalShipmentDto } from './dto/create-shipment.dto.js';
 import { CreateCustomsDeclarationDto } from './dto/create-customs.dto.js';
 
@@ -91,7 +92,7 @@ export interface LocalChargeItem {
   description: string;
   amount: number;
   currency: string;
-  appliedUnit: string; // Per Container, Per Bill, Per CBM
+  appliedUnit: string;
 }
 
 export interface HsCodeItem {
@@ -99,15 +100,15 @@ export interface HsCodeItem {
   descriptionVi: string;
   descriptionEn: string;
   unit: string;
-  standardDutyRate: number; // Thuế thông thường %
-  mfnRate: number;          // Thuế MFN %
-  evftaRate: number;        // Thuế EVFTA (Việt Nam - EU) %
-  cptppRate: number;        // Thuế CPTPP %
-  acftaRate: number;        // Thuế ACFTA Form E (Trung Quốc) %
-  atigaRate: number;        // Thuế ATIGA Form D (ASEAN) %
-  vkftaRate: number;        // Thuế VKFTA Form AK (Hàn Quốc) %
-  vatRate: number;          // Thuế GTGT %
-  specializedInspection: string; // Kiểm tra chuyên ngành
+  standardDutyRate: number;
+  mfnRate: number;
+  evftaRate: number;
+  cptppRate: number;
+  acftaRate: number;
+  atigaRate: number;
+  vkftaRate: number;
+  vatRate: number;
+  specializedInspection: string;
   inspectionAgency?: string;
   importConditions?: string;
 }
@@ -129,7 +130,7 @@ export interface ShipmentFinancialPnl {
   totalCostVnd: number;
   grossProfitVnd: number;
   grossProfitUsd: number;
-  profitMarginPercent: number; // ROS %
+  profitMarginPercent: number;
   fxGainLossVnd: number;
   paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID';
 }
@@ -140,7 +141,7 @@ export interface ContainerDepositItem {
   shipmentCode: string;
   carrier: string;
   depositAmountVnd: number;
-  receiptNumber: string; // Số phiếu thu cược EIR
+  receiptNumber: string;
   depositedDate: string;
   refundDueDate: string;
   refundStatus: 'PENDING_REFUND' | 'REFUNDED_FULL' | 'DEDUCTED_REPAIR';
@@ -209,7 +210,7 @@ export interface ContainerDrayageDispatchItem {
 export interface AiImportAnalysisReport {
   shipmentCode: string;
   analyzedAt: string;
-  overallRiskScore: number; // 0 - 100
+  overallRiskScore: number;
   riskLevel: 'LOW_SAFE' | 'MEDIUM_CAUTION' | 'HIGH_CRITICAL';
   portCongestionPrediction: {
     portCode: string;
@@ -245,889 +246,909 @@ export interface AiImportAnalysisReport {
 
 @Injectable()
 export class InternationalService implements OnModuleInit {
-  private shipments: InternationalShipment[] = [];
-  private customsDeclarations: CustomsDeclaration[] = [];
-  private containers: ContainerTrackingItem[] = [];
-  private ports: InternationalPort[] = [];
-  private exchangeRates: ExchangeRateItem[] = [];
-  private localCharges: LocalChargeItem[] = [];
-  private hsCodes: HsCodeItem[] = [];
-  private shipmentFinancials: ShipmentFinancialPnl[] = [];
-  private containerDeposits: ContainerDepositItem[] = [];
-  private vessels: VesselAisTrackingItem[] = [];
-  private shippingDocuments: ShippingDocument[] = [];
-  private drayageDispatches: ContainerDrayageDispatchItem[] = [];
+  private readonly logger = new Logger(InternationalService.name);
 
-  onModuleInit() {
-    this.seedInitialData();
+  constructor(private readonly prisma: PrismaService) {}
+
+  async onModuleInit() {
+    await this.seedInitialDataIfEmpty();
   }
 
-  private seedInitialData() {
-    // 1. Cảng biển & Sân bay chuẩn quốc tế UN/LOCODE
-    this.ports = [
-      { code: 'VNSGN', name: 'Cảng Tân Cảng Cát Lái', country: 'Việt Nam', city: 'TP. Hồ Chí Minh', type: 'SEAPORT' },
-      { code: 'VNHPH', name: 'Cảng Hải Phòng (Lạch Huyện / Đình Vũ)', country: 'Việt Nam', city: 'Hải Phòng', type: 'SEAPORT' },
-      { code: 'VNDAD', name: 'Cảng Tiên Sa Đà Nẵng', country: 'Việt Nam', city: 'Đà Nẵng', type: 'SEAPORT' },
-      { code: 'SGN', name: 'Sân bay Quốc tế Tân Sơn Nhất Cargo', country: 'Việt Nam', city: 'TP. Hồ Chí Minh', type: 'AIRPORT' },
-      { code: 'HAN', name: 'Sân bay Quốc tế Nội Bài Cargo', country: 'Việt Nam', city: 'Hà Nội', type: 'AIRPORT' },
-      { code: 'VNHNI', name: 'Cửa khẩu Quốc tế Hữu Nghị', country: 'Việt Nam', city: 'Lạng Sơn', type: 'BORDER_GATE' },
-      { code: 'USLAX', name: 'Port of Los Angeles', country: 'Hoa Kỳ (USA)', city: 'Los Angeles', type: 'SEAPORT' },
-      { code: 'USNYC', name: 'Port of New York & New Jersey', country: 'Hoa Kỳ (USA)', city: 'New York', type: 'SEAPORT' },
-      { code: 'CNSHA', name: 'Port of Shanghai (Cảng Thượng Hải)', country: 'Trung Quốc', city: 'Thượng Hải', type: 'SEAPORT' },
-      { code: 'CNNBO', name: 'Port of Ningbo-Zhoushan (Ninh Ba)', country: 'Trung Quốc', city: 'Chiết Giang', type: 'SEAPORT' },
-      { code: 'SGSIN', name: 'Port of Singapore', country: 'Singapore', city: 'Singapore', type: 'SEAPORT' },
-      { code: 'DEHAM', name: 'Port of Hamburg', country: 'Đức (Germany)', city: 'Hamburg', type: 'SEAPORT' },
-      { code: 'FRA', name: 'Frankfurt Airport Cargo Terminal', country: 'Đức (Germany)', city: 'Frankfurt', type: 'AIRPORT' },
-      { code: 'NRT', name: 'Tokyo Narita Airport', country: 'Nhật Bản', city: 'Tokyo', type: 'AIRPORT' },
-    ];
+  // ================= CONVERTER HELPERS =================
+  private mapShipment(r: any): InternationalShipment {
+    return {
+      id: r.id,
+      shipmentCode: r.shipment_code,
+      direction: r.direction as any,
+      transportMode: r.transport_mode as any,
+      incoterm: r.incoterm as any,
+      carrierName: r.carrier_name,
+      vesselFlightNo: r.vessel_flight_no,
+      polPort: r.pol_port,
+      podPort: r.pod_port,
+      etdDate: r.etd_date instanceof Date ? r.etd_date.toISOString() : String(r.etd_date),
+      etaDate: r.eta_date instanceof Date ? r.eta_date.toISOString() : String(r.eta_date),
+      blAwbNumber: r.bl_awb_number,
+      containerNumber: r.container_number || undefined,
+      sealNumber: r.seal_number || undefined,
+      containerType: r.container_type || undefined,
+      grossWeightKg: r.gross_weight_kg,
+      cbmVolume: r.cbm_volume,
+      packageCount: r.package_count,
+      shipperName: r.shipper_name,
+      consigneeName: r.consignee_name,
+      currency: r.currency,
+      freightAmount: r.freight_amount,
+      customsStatus: r.customs_status as any,
+      status: r.status as any,
+      notes: r.notes || undefined,
+      createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
+      updatedAt: r.updated_at instanceof Date ? r.updated_at.toISOString() : String(r.updated_at),
+    };
+  }
 
-    // 2. Bảng tỷ giá ngoại tệ Vietcombank
-    this.exchangeRates = [
-      { currency: 'USD', name: 'Đô la Mỹ', buyRateVnd: 25420, transferRateVnd: 25450, sellRateVnd: 25780, updatedAt: new Date().toISOString() },
-      { currency: 'EUR', name: 'Đồng Euro', buyRateVnd: 27580, transferRateVnd: 27650, sellRateVnd: 28100, updatedAt: new Date().toISOString() },
-      { currency: 'CNY', name: 'Nhân dân tệ Trung Quốc', buyRateVnd: 3510, transferRateVnd: 3530, sellRateVnd: 3620, updatedAt: new Date().toISOString() },
-      { currency: 'JPY', name: 'Yên Nhật', buyRateVnd: 165.2, transferRateVnd: 166.5, sellRateVnd: 171.8, updatedAt: new Date().toISOString() },
-      { currency: 'SGD', name: 'Đô la Singapore', buyRateVnd: 19150, transferRateVnd: 19220, sellRateVnd: 19600, updatedAt: new Date().toISOString() },
-    ];
+  private mapCustoms(r: any): CustomsDeclaration {
+    return {
+      id: r.id,
+      declarationNo: r.declaration_no,
+      shipmentId: r.shipment_id,
+      shipmentCode: r.shipment_code,
+      customsBranch: r.customs_branch,
+      declarationType: r.declaration_type,
+      channel: r.channel as any,
+      hsCode: r.hs_code,
+      commodityDescription: r.commodity_description,
+      invoiceValue: r.invoice_value,
+      currency: r.currency,
+      importTaxAmount: r.import_tax_amount,
+      vatTaxAmount: r.vat_tax_amount,
+      status: r.status as any,
+      registeredDate: r.registered_date instanceof Date ? r.registered_date.toISOString() : String(r.registered_date),
+      clearedDate: r.cleared_date ? (r.cleared_date instanceof Date ? r.cleared_date.toISOString() : String(r.cleared_date)) : undefined,
+    };
+  }
 
-    // 3. Phụ phí cảng biển (Local Charges)
-    this.localCharges = [
-      { code: 'THC', name: 'Terminal Handling Charge', description: 'Phí bốc xếp container từ cầu tàu lên bãi cảng', amount: 155, currency: 'USD', appliedUnit: 'Per 40HC' },
-      { code: 'D/O', name: 'Delivery Order Fee', description: 'Phí phát hành lệnh giao hàng cho chủ hàng nhập khẩu', amount: 45, currency: 'USD', appliedUnit: 'Per Bill' },
-      { code: 'CFS', name: 'Container Freight Station', description: 'Phí bốc dỡ và lưu kho cho hàng lẻ đóng ghép LCL', amount: 18, currency: 'USD', appliedUnit: 'Per CBM' },
-      { code: 'CIC', name: 'Container Imbalance Charge', description: 'Phí phụ trội bù đắp chi phí điều chuyển vỏ rỗng', amount: 80, currency: 'USD', appliedUnit: 'Per Container' },
-      { code: 'SEAL', name: 'Seal Fee', description: 'Phí kẹp chì niêm phong bảo mật hải quan', amount: 10, currency: 'USD', appliedUnit: 'Per Seal' },
-      { code: 'AMS', name: 'Automated Manifest System', description: 'Phí truyền dữ liệu tờ khai an ninh điện tử vào hải quan Hoa Kỳ', amount: 35, currency: 'USD', appliedUnit: 'Per Bill' },
-    ];
+  private mapContainer(r: any): ContainerTrackingItem {
+    return {
+      id: r.id,
+      containerNo: r.container_no,
+      type: r.type as any,
+      carrier: r.carrier,
+      shipmentCode: r.shipment_code,
+      sealNo: r.seal_no,
+      currentLocation: r.current_location,
+      temperatureRequired: r.temperature_required || undefined,
+      demDetFreeDays: r.dem_det_free_days,
+      gateInDate: r.gate_in_date instanceof Date ? r.gate_in_date.toISOString() : String(r.gate_in_date),
+      freeTimeExpiryDate: r.free_time_expiry_date instanceof Date ? r.free_time_expiry_date.toISOString() : String(r.free_time_expiry_date),
+      overdueDays: r.overdue_days,
+      estimatedPenaltyAmountVnd: r.estimated_penalty_amount_vnd,
+      status: r.status as any,
+    };
+  }
 
-    // 4. Lô hàng Xuất Nhập Khẩu mẫu
-    this.shipments = [
-      {
-        id: 'shp-exp-001',
-        shipmentCode: 'EXP-2026-001',
-        direction: 'EXPORT',
-        transportMode: 'OCEAN_FCL',
-        incoterm: 'FOB',
-        carrierName: 'Maersk Line',
-        vesselFlightNo: 'MAERSK MC-KINNEY 2601E',
-        polPort: 'VNSGN - Cảng Tân Cảng Cát Lái',
-        podPort: 'USLAX - Port of Los Angeles',
-        etdDate: '2026-09-28T14:00:00.000Z',
-        etaDate: '2026-10-18T08:00:00.000Z',
-        blAwbNumber: 'MAEU982180421',
-        containerNumber: 'MSKU8841920',
-        sealNumber: 'ML-VN98412',
-        containerType: '40HC',
-        grossWeightKg: 24500,
-        cbmVolume: 68.5,
-        packageCount: 950,
-        shipperName: 'Tập Đoàn May Mặc Xuất Khẩu Việt Tiến',
-        consigneeName: 'Walmart Global Sourcing (USA)',
-        currency: 'USD',
-        freightAmount: 3850,
-        customsStatus: 'CLEARED',
-        status: 'CUSTOMS_CLEARED',
-        notes: 'Hàng may mặc đi Mỹ, đã kiểm tra hun trùng và kẹp chì điện tử.',
-        createdAt: '2026-09-20T10:00:00.000Z',
-        updatedAt: '2026-09-27T09:30:00.000Z',
-      },
-      {
-        id: 'shp-imp-002',
-        shipmentCode: 'IMP-2026-002',
-        direction: 'IMPORT',
-        transportMode: 'OCEAN_FCL',
-        incoterm: 'CIF',
-        carrierName: 'COSCO Shipping Lines',
-        vesselFlightNo: 'COSCO HELLAS 045W',
-        polPort: 'CNSHA - Port of Shanghai',
-        podPort: 'VNHPH - Cảng Hải Phòng',
-        etdDate: '2026-09-22T08:00:00.000Z',
-        etaDate: '2026-09-29T16:00:00.000Z',
-        blAwbNumber: 'COSU632194012',
-        containerNumber: 'TCLU1284711',
-        sealNumber: 'CS-SH28192',
-        containerType: '20GP',
-        grossWeightKg: 16800,
-        cbmVolume: 28.2,
-        packageCount: 420,
-        shipperName: 'Semiconductor Precision Ltd (Shanghai)',
-        consigneeName: 'Công ty Cổ phần Công nghệ FPT / Viettel',
-        currency: 'USD',
-        freightAmount: 850,
-        customsStatus: 'YELLOW',
-        status: 'CUSTOMS_PROCESSING',
-        notes: 'Linh kiện chip điện tử bán dẫn, hải quan yêu cầu bổ sung C/O Form E.',
-        createdAt: '2026-09-21T08:00:00.000Z',
-        updatedAt: '2026-09-27T10:15:00.000Z',
-      },
-      {
-        id: 'shp-air-003',
-        shipmentCode: 'AIR-2026-003',
-        direction: 'EXPORT',
-        transportMode: 'AIR_FREIGHT',
-        incoterm: 'DDP',
-        carrierName: 'Qatar Airways Cargo',
-        vesselFlightNo: 'QR 8842 Boeing 777F',
-        polPort: 'HAN - Sân bay Quốc tế Nội Bài Cargo',
-        podPort: 'FRA - Frankfurt Airport Cargo Terminal',
-        etdDate: '2026-09-28T22:30:00.000Z',
-        etaDate: '2026-09-29T14:45:00.000Z',
-        blAwbNumber: '157-89410294',
-        containerType: 'ULD Air Pallet',
-        grossWeightKg: 620,
-        cbmVolume: 3.8,
-        packageCount: 35,
-        shipperName: 'Samsung Electronics Vietnam (SEV)',
-        consigneeName: 'Samsung Electronics Europe Logistics B.V.',
-        currency: 'EUR',
-        freightAmount: 2650,
-        customsStatus: 'GREEN',
-        status: 'BOOKING_CONFIRMED',
-        notes: 'Lô hàng mẫu bo mạch điện thoại flagship phục vụ ra mắt thị trường EU.',
-        createdAt: '2026-09-26T14:00:00.000Z',
-        updatedAt: '2026-09-27T08:45:00.000Z',
-      },
-      {
-        id: 'shp-crb-004',
-        shipmentCode: 'CRB-2026-004',
-        direction: 'CROSS_BORDER',
-        transportMode: 'ROAD_CROSS_BORDER',
-        incoterm: 'DAP',
-        carrierName: 'VietRoute Cross-Border Logistics Fleet',
-        vesselFlightNo: 'Xe liên vận VN-CN: 29H-882.19 / Rơ-mooc 29R-012.88',
-        polPort: 'VNHNI - Cửa khẩu Quốc tế Hữu Nghị',
-        podPort: 'Trung Quốc - Chợ Nông Sản Nam Ninh',
-        etdDate: '2026-09-27T18:00:00.000Z',
-        etaDate: '2026-09-28T12:00:00.000Z',
-        blAwbNumber: 'VTR-CRB-2026-004',
-        containerNumber: 'CMAU9921448',
-        sealNumber: 'HQ-HN-44129',
-        containerType: '40RF',
-        grossWeightKg: 22000,
-        cbmVolume: 65.0,
-        packageCount: 1800,
-        shipperName: 'Hợp Tác Xã Nông Sản Sầu Riêng Tiền Giang',
-        consigneeName: 'Guangxi Fresh Fruits Trading Co., Ltd',
-        currency: 'CNY',
-        freightAmount: 18500,
-        customsStatus: 'CLEARED',
-        status: 'SAILING',
-        notes: 'Container lạnh duy trì nhiệt độ +14°C, có chứng thư kiểm dịch thực vật.',
-        createdAt: '2026-09-25T11:00:00.000Z',
-        updatedAt: '2026-09-27T14:20:00.000Z',
-      },
-      {
-        id: 'shp-imp-005',
-        shipmentCode: 'IMP-2026-005',
-        direction: 'IMPORT',
-        transportMode: 'OCEAN_FCL',
-        incoterm: 'EXW',
-        carrierName: 'Hapag-Lloyd',
-        vesselFlightNo: 'AL MURABBA 022E',
-        polPort: 'DEHAM - Port of Hamburg',
-        podPort: 'VNSGN - Cảng Tân Cảng Cát Lái',
-        etdDate: '2026-09-02T10:00:00.000Z',
-        etaDate: '2026-09-27T20:00:00.000Z',
-        blAwbNumber: 'HLCUHAM2608192',
-        containerNumber: 'HLXU4819201',
-        sealNumber: 'HL-DE99120',
-        containerType: '40HC',
-        grossWeightKg: 21800,
-        cbmVolume: 58.0,
-        packageCount: 12,
-        shipperName: 'Siemens Industrial Automation GmbH',
-        consigneeName: 'VinFast Auto Manufacturing Complex',
-        currency: 'EUR',
-        freightAmount: 3400,
-        customsStatus: 'RED',
-        status: 'ARRIVED_PORT',
-        notes: 'Dây chuyền dập robot công nghiệp, phân luồng Đỏ kiểm hóa thực tế tại Cát Lái.',
-        createdAt: '2026-09-01T09:00:00.000Z',
-        updatedAt: '2026-09-27T16:00:00.000Z',
-      },
-    ];
+  private mapPort(r: any): InternationalPort {
+    return {
+      code: r.code,
+      name: r.name,
+      country: r.country,
+      city: r.city,
+      type: r.type as any,
+    };
+  }
 
-    // 5. Tờ khai Hải quan điện tử VNACCS
-    this.customsDeclarations = [
-      {
-        id: 'cst-001',
-        declarationNo: '104829104820',
-        shipmentId: 'shp-exp-001',
-        shipmentCode: 'EXP-2026-001',
-        customsBranch: 'Chi cục HQ CK Cảng Sài Gòn KV1 (Cát Lái)',
-        declarationType: 'B11 (Xuất kinh doanh)',
-        channel: 'GREEN',
-        hsCode: '6109.10.00',
-        commodityDescription: 'Áo thun cotton dệt kim nam xuất khẩu',
-        invoiceValue: 145000,
-        currency: 'USD',
-        importTaxAmount: 0,
-        vatTaxAmount: 0,
-        status: 'CLEARED',
-        registeredDate: '2026-09-26T08:30:00.000Z',
-        clearedDate: '2026-09-26T08:45:00.000Z',
-      },
-      {
-        id: 'cst-002',
-        declarationNo: '104829881923',
-        shipmentId: 'shp-imp-002',
-        shipmentCode: 'IMP-2026-002',
-        customsBranch: 'Chi cục Hải quan CK Cảng Đình Vũ - Hải Phòng',
-        declarationType: 'A11 (Nhập kinh doanh tiêu dùng)',
-        channel: 'YELLOW',
-        hsCode: '8542.31.00',
-        commodityDescription: 'Bộ vi xử lý tích hợp (IC Chipset điều khiển)',
-        invoiceValue: 88500,
-        currency: 'USD',
-        importTaxAmount: 0, // Thuế ưu đãi ACFTA theo C/O Form E
-        vatTaxAmount: 225675000, // VAT 10%
-        status: 'REGISTERED',
-        registeredDate: '2026-09-27T09:15:00.000Z',
-      },
-      {
-        id: 'cst-003',
-        declarationNo: '104830119284',
-        shipmentId: 'shp-air-003',
-        shipmentCode: 'AIR-2026-003',
-        customsBranch: 'Chi cục HQ CK Sân bay Quốc tế Nội Bài',
-        declarationType: 'E31 (Nhập / Xuất sản xuất gia công)',
-        channel: 'GREEN',
-        hsCode: '8517.70.10',
-        commodityDescription: 'Bo mạch PBA hoàn chỉnh cho smartphone',
-        invoiceValue: 320000,
-        currency: 'EUR',
-        importTaxAmount: 0,
-        vatTaxAmount: 0,
-        status: 'CLEARED',
-        registeredDate: '2026-09-27T08:00:00.000Z',
-        clearedDate: '2026-09-27T08:10:00.000Z',
-      },
-      {
-        id: 'cst-004',
-        declarationNo: '104830554190',
-        shipmentId: 'shp-imp-005',
-        shipmentCode: 'IMP-2026-005',
-        customsBranch: 'Chi cục HQ CK Cảng Sài Gòn KV1 (Cát Lái)',
-        declarationType: 'A12 (Nhập kinh doanh sản xuất máy móc thiết bị)',
-        channel: 'RED',
-        hsCode: '8479.89.40',
-        commodityDescription: 'Cánh tay robot công nghiệp dập tự động 6 bậc tự do',
-        invoiceValue: 420000,
-        currency: 'EUR',
-        importTaxAmount: 0,
-        vatTaxAmount: 1159200000,
-        status: 'REGISTERED',
-        registeredDate: '2026-09-27T10:00:00.000Z',
-      },
-    ];
+  private mapExchangeRate(r: any): ExchangeRateItem {
+    return {
+      currency: r.currency,
+      name: r.name,
+      buyRateVnd: r.buy_rate_vnd,
+      transferRateVnd: r.transfer_rate_vnd,
+      sellRateVnd: r.sell_rate_vnd,
+      updatedAt: r.updated_at instanceof Date ? r.updated_at.toISOString() : String(r.updated_at),
+    };
+  }
 
-    // 6. Theo dõi Container & Hạn Demurrage / Detention (Phí phạt lưu bãi)
-    this.containers = [
-      {
-        id: 'cnt-01',
-        containerNo: 'MSKU8841920',
-        type: '40HC',
-        carrier: 'Maersk Line',
-        shipmentCode: 'EXP-2026-001',
-        sealNo: 'ML-VN98412',
-        currentLocation: 'Bãi Cảng Cát Lái - Block E3',
-        demDetFreeDays: 7,
-        gateInDate: '2026-09-26T15:00:00.000Z',
-        freeTimeExpiryDate: '2026-10-03T23:59:59.000Z',
-        overdueDays: 0,
-        estimatedPenaltyAmountVnd: 0,
-        status: 'IN_DEPOT',
-      },
-      {
-        id: 'cnt-02',
-        containerNo: 'TCLU1284711',
-        type: '20GP',
-        carrier: 'COSCO Shipping',
-        shipmentCode: 'IMP-2026-002',
-        sealNo: 'CS-SH28192',
-        currentLocation: 'Tàu COSCO HELLAS (Biển Đông)',
-        demDetFreeDays: 14,
-        gateInDate: '2026-09-22T08:00:00.000Z',
-        freeTimeExpiryDate: '2026-10-06T23:59:59.000Z',
-        overdueDays: 0,
-        estimatedPenaltyAmountVnd: 0,
-        status: 'ON_VESSEL',
-      },
-      {
-        id: 'cnt-03',
-        containerNo: 'HLXU4819201',
-        type: '40HC',
-        carrier: 'Hapag-Lloyd',
-        shipmentCode: 'IMP-2026-005',
-        sealNo: 'HL-DE99120',
-        currentLocation: 'Bãi Kiểm Hóa Hải Quan Cát Lái (Khu C)',
-        demDetFreeDays: 5,
-        gateInDate: '2026-09-21T09:00:00.000Z',
-        freeTimeExpiryDate: '2026-09-26T23:59:59.000Z',
-        overdueDays: 1, // Đã quá hạn 1 ngày!
-        estimatedPenaltyAmountVnd: 1250000, // Phạt lưu bãi 1.250.000 VNĐ / ngày
-        status: 'IN_DEPOT',
-      },
-      {
-        id: 'cnt-04',
-        containerNo: 'CMAU9921448',
-        type: '40RF',
-        carrier: 'VietRoute Fleet',
-        shipmentCode: 'CRB-2026-004',
-        sealNo: 'HQ-HN-44129',
-        currentLocation: 'Đang di chuyển trên Quốc lộ 1A qua Bắc Giang',
-        temperatureRequired: '+14°C',
-        demDetFreeDays: 7,
-        gateInDate: '2026-09-25T11:00:00.000Z',
-        freeTimeExpiryDate: '2026-10-02T23:59:59.000Z',
-        overdueDays: 0,
-        estimatedPenaltyAmountVnd: 0,
-        status: 'AT_FACTORY',
-      },
-    ];
+  private mapLocalCharge(r: any): LocalChargeItem {
+    return {
+      code: r.code,
+      name: r.name,
+      description: r.description,
+      amount: r.amount,
+      currency: r.currency,
+      appliedUnit: r.applied_unit,
+    };
+  }
 
-    // 5. Biểu thuế XNK & Phân loại Mã HS Việt Nam chuẩn 2026
-    this.hsCodes = [
-      {
-        hsCode: '0306.17.21',
-        descriptionVi: 'Tôm thẻ chân trắng đông lạnh (Penaeus vannamei), bóc vỏ, bỏ đầu',
-        descriptionEn: 'Frozen whiteleg shrimp, peeled, headless',
-        unit: 'KG',
-        standardDutyRate: 15,
-        mfnRate: 10,
-        evftaRate: 0,
-        cptppRate: 0,
-        acftaRate: 0,
-        atigaRate: 0,
-        vkftaRate: 0,
-        vatRate: 0, // Hàng thủy sản nguyên liệu chưa chế biến sâu thuộc đối tượng không chịu VAT
-        specializedInspection: 'Bắt buộc Kiểm dịch động vật thủy sản nhập khẩu',
-        inspectionAgency: 'Cục Thú Y (Bộ NN&PTNT)',
-        importConditions: 'Cần có Health Certificate từ cơ quan thẩm quyền nước xuất khẩu',
-      },
-      {
-        hsCode: '0901.11.10',
-        descriptionVi: 'Cà phê Robusta nhân sống, chưa rang, chưa khử chất caffeine',
-        descriptionEn: 'Coffee, not roasted, not decaffeinated, Robusta',
-        unit: 'KG',
-        standardDutyRate: 30,
-        mfnRate: 20,
-        evftaRate: 0,
-        cptppRate: 0,
-        acftaRate: 5,
-        atigaRate: 0,
-        vkftaRate: 0,
-        vatRate: 5,
-        specializedInspection: 'Kiểm dịch thực vật tại cửa khẩu',
-        inspectionAgency: 'Cục Bảo vệ Thực vật',
-        importConditions: 'Chứng thư kiểm dịch Phytosanitary',
-      },
-      {
-        hsCode: '6109.10.10',
-        descriptionVi: 'Áo phông (T-shirts) dệt kim hoặc móc, bằng bông (cotton 100%)',
-        descriptionEn: 'T-shirts, knitted or crocheted, of cotton',
-        unit: 'PCE',
-        standardDutyRate: 30,
-        mfnRate: 20,
-        evftaRate: 2,
-        cptppRate: 0,
-        acftaRate: 0,
-        atigaRate: 0,
-        vkftaRate: 5,
-        vatRate: 8,
-        specializedInspection: 'Kiểm tra dư lượng Formaldehyt và Amin thơm chuyển hóa',
-        inspectionAgency: 'Viện Dệt May / Trung tâm Giám định',
-        importConditions: 'Quy chuẩn kỹ thuật quốc gia QCVN 01:2017/BCT',
-      },
-      {
-        hsCode: '8541.43.00',
-        descriptionVi: 'Tấm pin năng lượng mặt trời (Solar photovoltaic modules)',
-        descriptionEn: 'Photovoltaic cells assembled in modules or made up into panels',
-        unit: 'PCE',
-        standardDutyRate: 5,
-        mfnRate: 0,
-        evftaRate: 0,
-        cptppRate: 0,
-        acftaRate: 0,
-        atigaRate: 0,
-        vkftaRate: 0,
-        vatRate: 8,
-        specializedInspection: 'Kiểm tra hiệu suất năng lượng tối thiểu & an toàn điện',
-        inspectionAgency: 'Bộ Công Thương',
-        importConditions: 'Chứng nhận hợp quy dán nhãn năng lượng',
-      },
-      {
-        hsCode: '4011.20.10',
-        descriptionVi: 'Lốp xe tải loại bơm hơi bằng cao su, kết cấu bố tròn (Radial)',
-        descriptionEn: 'New pneumatic tyres, of rubber, of a kind used on buses or lorries (Radial)',
-        unit: 'PCE',
-        standardDutyRate: 35,
-        mfnRate: 25,
-        evftaRate: 5,
-        cptppRate: 0,
-        acftaRate: 0,
-        atigaRate: 0,
-        vkftaRate: 5,
-        vatRate: 8,
-        specializedInspection: 'Kiểm tra chất lượng nhà nước an toàn kỹ thuật linh kiện ô tô',
-        inspectionAgency: 'Cục Đăng Kiểm Việt Nam (Bộ GTVT)',
-        importConditions: 'Giấy chứng nhận thử nghiệm mẫu theo QCVN 34:2017/BGTVT',
-      },
-      {
-        hsCode: '0401.20.10',
-        descriptionVi: 'Sữa tươi tiệt trùng UHT, hàm lượng chất béo từ 1% đến 6%',
-        descriptionEn: 'Milk and cream, UHT, fat content exceeding 1% but not exceeding 6%',
-        unit: 'LTR',
-        standardDutyRate: 25,
-        mfnRate: 15,
-        evftaRate: 3.5,
-        cptppRate: 0,
-        acftaRate: 5,
-        atigaRate: 0,
-        vkftaRate: 0,
-        vatRate: 8,
-        specializedInspection: 'Kiểm tra an toàn thực phẩm nhập khẩu & Kiểm dịch động vật',
-        inspectionAgency: 'Cục An toàn Thực phẩm (Bộ Y Tế) & Cục Thú Y',
-        importConditions: 'Bản tự công bố sản phẩm và chứng thư vệ sinh thú y',
-      },
-      {
-        hsCode: '8471.30.20',
-        descriptionVi: 'Máy vi tính xách tay (Laptop), bao gồm cả notebook và subnotebook',
-        descriptionEn: 'Laptops, portable automatic data processing machines',
-        unit: 'PCE',
-        standardDutyRate: 0,
-        mfnRate: 0,
-        evftaRate: 0,
-        cptppRate: 0,
-        acftaRate: 0,
-        atigaRate: 0,
-        vkftaRate: 0,
-        vatRate: 8,
-        specializedInspection: 'Kiểm tra chất lượng hợp quy thiết bị viễn thông và CNTT',
-        inspectionAgency: 'Bộ Thông tin và Truyền thông (Cục Viễn Thông)',
-        importConditions: 'Giấy chứng nhận hợp quy (CR) và dấu hợp quy',
-      },
-      {
-        hsCode: '7208.39.90',
-        descriptionVi: 'Thép cuộn cán nóng (HRC), chưa phủ, mạ hoặc tráng, dạng cuộn',
-        descriptionEn: 'Flat-rolled products of iron or non-alloy steel, hot-rolled, in coils',
-        unit: 'TNE',
-        standardDutyRate: 10,
-        mfnRate: 5,
-        evftaRate: 0,
-        cptppRate: 0,
-        acftaRate: 0,
-        atigaRate: 0,
-        vkftaRate: 0,
-        vatRate: 8,
-        specializedInspection: 'Kiểm tra chất lượng thép nhập khẩu theo QCVN 16:2019/BXD',
-        inspectionAgency: 'Chi cục Tiêu chuẩn Đo lường Chất lượng',
-        importConditions: 'Có áp dụng thuế chống bán phá giá tạm thời nếu xuất xứ từ một số nước',
-      },
-    ];
+  private mapHsCode(r: any): HsCodeItem {
+    return {
+      hsCode: r.hs_code,
+      descriptionVi: r.description_vi,
+      descriptionEn: r.description_en,
+      unit: r.unit,
+      standardDutyRate: r.standard_duty_rate,
+      mfnRate: r.mfn_rate,
+      evftaRate: r.evfta_rate,
+      cptppRate: r.cptpp_rate,
+      acftaRate: r.acfta_rate,
+      atigaRate: r.atiga_rate,
+      vkftaRate: r.vkfta_rate,
+      vatRate: r.vat_rate,
+      specializedInspection: r.specialized_inspection || '',
+      inspectionAgency: r.inspection_agency || undefined,
+      importConditions: r.import_conditions || undefined,
+    };
+  }
 
-    // 6. Dữ liệu phân tích Tài chính & Lợi nhuận gộp P&L từng lô hàng
-    this.shipmentFinancials = [
-      {
-        shipmentId: 'shp-01',
-        shipmentCode: 'EXP-2026-001',
-        shipperName: 'Tập đoàn Dệt may Việt Nam (Vinatex)',
-        carrierName: 'Maersk Line',
-        currency: 'USD',
-        sellingFreight: 2200,
-        sellingLocalCharges: 350,
-        totalRevenueVnd: 65161000,
-        buyingFreight: 1750,
-        buyingLocalCharges: 260,
-        truckingCostVnd: 4500000,
-        customsCostVnd: 1200000,
-        portHandlingCostVnd: 1500000,
-        totalCostVnd: 58454500,
-        grossProfitVnd: 6706500,
-        grossProfitUsd: 263.5,
-        profitMarginPercent: 10.29,
-        fxGainLossVnd: 450000,
-        paymentStatus: 'PAID',
-      },
-      {
-        shipmentId: 'shp-02',
-        shipmentCode: 'IMP-2026-002',
-        shipperName: 'Samsung Electronics Gumi Plant',
-        carrierName: 'Korean Air Cargo',
-        currency: 'USD',
-        sellingFreight: 4850,
-        sellingLocalCharges: 420,
-        totalRevenueVnd: 134442600,
-        buyingFreight: 4100,
-        buyingLocalCharges: 310,
-        truckingCostVnd: 3800000,
-        customsCostVnd: 1500000,
-        portHandlingCostVnd: 2200000,
-        totalCostVnd: 119732500,
-        grossProfitVnd: 14710100,
-        grossProfitUsd: 577.9,
-        profitMarginPercent: 10.94,
-        fxGainLossVnd: 620000,
-        paymentStatus: 'PAID',
-      },
-      {
-        shipmentId: 'shp-03',
-        shipmentCode: 'EXP-2026-003',
-        shipperName: 'Công ty Cổ phần Thủy sản Minh Phú',
-        carrierName: 'Ocean Network Express (ONE)',
-        currency: 'USD',
-        sellingFreight: 3600,
-        sellingLocalCharges: 480,
-        totalRevenueVnd: 104037600,
-        buyingFreight: 2950,
-        buyingLocalCharges: 380,
-        truckingCostVnd: 6200000,
-        customsCostVnd: 1800000,
-        portHandlingCostVnd: 2800000,
-        totalCostVnd: 95548500,
-        grossProfitVnd: 8489100,
-        grossProfitUsd: 333.5,
-        profitMarginPercent: 8.16,
-        fxGainLossVnd: -210000,
-        paymentStatus: 'PARTIAL',
-      },
-      {
-        shipmentId: 'shp-04',
-        shipmentCode: 'CRB-2026-004',
-        shipperName: 'Vina T&T Fruit Export',
-        carrierName: 'VietRoute Cross-Border Fleet',
-        currency: 'USD',
-        sellingFreight: 1850,
-        sellingLocalCharges: 180,
-        totalRevenueVnd: 51866700,
-        buyingFreight: 1300,
-        buyingLocalCharges: 120,
-        truckingCostVnd: 4200000,
-        customsCostVnd: 950000,
-        portHandlingCostVnd: 800000,
-        totalCostVnd: 42139000,
-        grossProfitVnd: 9727700,
-        grossProfitUsd: 382.2,
-        profitMarginPercent: 18.75,
-        fxGainLossVnd: 180000,
-        paymentStatus: 'PAID',
-      },
-      {
-        shipmentId: 'shp-05',
-        shipmentCode: 'IMP-2026-005',
-        shipperName: 'BASF Coatings GmbH (Hamburg)',
-        carrierName: 'Hapag-Lloyd',
-        currency: 'EUR',
-        sellingFreight: 3100,
-        sellingLocalCharges: 390,
-        totalRevenueVnd: 96494000,
-        buyingFreight: 2600,
-        buyingLocalCharges: 310,
-        truckingCostVnd: 5500000,
-        customsCostVnd: 2200000,
-        portHandlingCostVnd: 2500000,
-        totalCostVnd: 90691500,
-        grossProfitVnd: 5802500,
-        grossProfitUsd: 206.5,
-        profitMarginPercent: 6.01,
-        fxGainLossVnd: -350000,
-        paymentStatus: 'UNPAID',
-      },
-    ];
+  private mapFinancial(r: any): ShipmentFinancialPnl {
+    return {
+      shipmentId: r.shipment_id,
+      shipmentCode: r.shipment_code,
+      shipperName: r.shipper_name,
+      carrierName: r.carrier_name,
+      currency: r.currency,
+      sellingFreight: r.selling_freight,
+      sellingLocalCharges: r.selling_local_charges,
+      totalRevenueVnd: r.total_revenue_vnd,
+      buyingFreight: r.buying_freight,
+      buyingLocalCharges: r.buying_local_charges,
+      truckingCostVnd: r.trucking_cost_vnd,
+      customsCostVnd: r.customs_cost_vnd,
+      portHandlingCostVnd: r.port_handling_cost_vnd,
+      totalCostVnd: r.total_cost_vnd,
+      grossProfitVnd: r.gross_profit_vnd,
+      grossProfitUsd: r.gross_profit_usd,
+      profitMarginPercent: r.profit_margin_percent,
+      fxGainLossVnd: r.fx_gain_loss_vnd,
+      paymentStatus: r.payment_status as any,
+    };
+  }
 
-    // 7. Theo dõi Tiền cược vỏ Container & Biên bản giao nhận EIR
-    this.containerDeposits = [
-      {
-        id: 'dep-01',
-        containerNo: 'MSKU8923410',
-        shipmentCode: 'EXP-2026-001',
-        carrier: 'Maersk Line',
-        depositAmountVnd: 3000000,
-        receiptNumber: 'EIR-MSK-2026-8812',
-        depositedDate: '2026-09-24T08:30:00.000Z',
-        refundDueDate: '2026-10-10T17:00:00.000Z',
-        refundStatus: 'PENDING_REFUND',
-        eirCondition: 'INTACT',
-      },
-      {
-        id: 'dep-02',
-        containerNo: 'ONEU7718923',
-        shipmentCode: 'EXP-2026-003',
-        carrier: 'Ocean Network Express (ONE)',
-        depositAmountVnd: 5000000,
-        receiptNumber: 'EIR-ONE-2026-4419',
-        depositedDate: '2026-09-23T14:00:00.000Z',
-        refundDueDate: '2026-10-08T17:00:00.000Z',
-        refundStatus: 'PENDING_REFUND',
-        eirCondition: 'INTACT',
-      },
-      {
-        id: 'dep-03',
-        containerNo: 'HLXU4819201',
-        shipmentCode: 'IMP-2026-005',
-        carrier: 'Hapag-Lloyd',
-        depositAmountVnd: 3500000,
-        receiptNumber: 'EIR-HL-2026-9021',
-        depositedDate: '2026-09-21T10:00:00.000Z',
-        refundDueDate: '2026-09-28T17:00:00.000Z',
-        refundStatus: 'DEDUCTED_REPAIR',
-        refundedAmountVnd: 2800000,
-        deductedReason: 'Phát sinh vết móp sàn gỗ container (trừ 700.000 VNĐ theo biên bản EIR)',
-        eirCondition: 'DENTED',
-      },
-      {
-        id: 'dep-04',
-        containerNo: 'TEMU3391820',
-        shipmentCode: 'IMP-2026-002',
-        carrier: 'Evergreen Line',
-        depositAmountVnd: 3000000,
-        receiptNumber: 'EIR-EMC-2026-1102',
-        depositedDate: '2026-09-18T09:00:00.000Z',
-        refundDueDate: '2026-09-25T17:00:00.000Z',
-        refundStatus: 'REFUNDED_FULL',
-        refundedAmountVnd: 3000000,
-        eirCondition: 'INTACT',
-      },
-    ];
+  private mapDeposit(r: any): ContainerDepositItem {
+    return {
+      id: r.id,
+      containerNo: r.container_no,
+      shipmentCode: r.shipment_code,
+      carrier: r.carrier,
+      depositAmountVnd: r.deposit_amount_vnd,
+      receiptNumber: r.receipt_number,
+      depositedDate: r.deposited_date instanceof Date ? r.deposited_date.toISOString() : String(r.deposited_date),
+      refundDueDate: r.refund_due_date instanceof Date ? r.refund_due_date.toISOString() : String(r.refund_due_date),
+      refundStatus: r.refund_status as any,
+      refundedAmountVnd: r.refunded_amount_vnd ?? undefined,
+      deductedReason: r.deducted_reason ?? undefined,
+      eirCondition: r.eir_condition as any,
+    };
+  }
 
-    // 8. Tọa độ Hải trình Vệ tinh AIS thời gian thực (Live Vessel AIS)
-    this.vessels = [
-      {
-        vesselName: 'MAERSK MC-KINNEY MOLLER',
-        mmsi: '219018271',
-        imo: '9619907',
-        flag: 'Denmark',
-        shipmentCodes: ['EXP-2026-001'],
-        currentLatitude: 14.8512,
-        currentLongitude: 114.2831,
-        speedKnots: 19.4,
-        headingDegrees: 68,
-        departurePort: 'VNSGN - Tân Cảng Cát Lái',
-        destinationPort: 'USLAX - Port of Los Angeles',
-        atdDate: '2026-09-26T16:00:00.000Z',
-        etaPredicted: '2026-10-12T08:00:00.000Z',
-        distanceCoveredNm: 1240,
-        distanceRemainingNm: 6820,
-        progressPercent: 15.38,
-        weatherRisk: 'LOW_NORMAL',
-        navStatus: 'UNDERWAY_USING_ENGINE',
-      },
-      {
-        vesselName: 'ONE APUS',
-        mmsi: '353136000',
-        imo: '9806079',
-        flag: 'Japan',
-        shipmentCodes: ['EXP-2026-003'],
-        currentLatitude: 10.3541,
-        currentLongitude: 107.0189,
-        speedKnots: 0.1,
-        headingDegrees: 182,
-        departurePort: 'VNSGN - Tân Cảng Cái Mép (TCIT)',
-        destinationPort: 'DEHAM - Port of Hamburg',
-        atdDate: '2026-09-28T02:00:00.000Z',
-        etaPredicted: '2026-10-22T14:00:00.000Z',
-        distanceCoveredNm: 0,
-        distanceRemainingNm: 9200,
-        progressPercent: 0,
-        weatherRisk: 'LOW_NORMAL',
-        navStatus: 'MOORED',
-      },
-      {
-        vesselName: 'CMA CGM JACQUES SAADE',
-        mmsi: '228386700',
-        imo: '9839179',
-        flag: 'France',
-        shipmentCodes: ['IMP-2026-005'],
-        currentLatitude: 12.1124,
-        currentLongitude: 110.8932,
-        speedKnots: 17.8,
-        headingDegrees: 215,
-        departurePort: 'DEHAM - Port of Hamburg',
-        destinationPort: 'VNSGN - Cảng Tân Cảng Cát Lái',
-        atdDate: '2026-09-08T10:00:00.000Z',
-        etaPredicted: '2026-09-29T18:00:00.000Z',
-        distanceCoveredNm: 8940,
-        distanceRemainingNm: 380,
-        progressPercent: 95.92,
-        weatherRisk: 'MODERATE_SWELL',
-        navStatus: 'UNDERWAY_USING_ENGINE',
-      },
-    ];
+  private mapVessel(r: any): VesselAisTrackingItem {
+    return {
+      vesselName: r.vessel_name,
+      mmsi: r.mmsi,
+      imo: r.imo,
+      flag: r.flag,
+      shipmentCodes: r.shipment_codes || [],
+      currentLatitude: r.current_latitude,
+      currentLongitude: r.current_longitude,
+      speedKnots: r.speed_knots,
+      headingDegrees: r.heading_degrees,
+      departurePort: r.departure_port,
+      destinationPort: r.destination_port,
+      atdDate: r.atd_date instanceof Date ? r.atd_date.toISOString() : String(r.atd_date),
+      etaPredicted: r.eta_predicted instanceof Date ? r.eta_predicted.toISOString() : String(r.eta_predicted),
+      distanceCoveredNm: r.distance_covered_nm,
+      distanceRemainingNm: r.distance_remaining_nm,
+      progressPercent: r.progress_percent,
+      weatherRisk: r.weather_risk as any,
+      navStatus: r.nav_status as any,
+    };
+  }
 
-    // 9. Kho Chứng từ Xuất Nhập Khẩu Số Hóa
-    this.shippingDocuments = [
-      {
-        id: 'doc-01',
-        shipmentId: 'shp-01',
-        shipmentCode: 'EXP-2026-001',
-        documentType: 'BILL_OF_LADING',
-        documentNumber: 'MAEU-881920192',
-        issueDate: '2026-09-26T18:00:00.000Z',
-        issuer: 'Maersk Line Vietnam Agency',
-        fileFormat: 'PDF',
-        status: 'VERIFIED',
-        verificationNotes: 'Vận đơn gốc Seaway Bill sạch, đúng tên Shipper/Consignee',
-        isMandatory: true,
-      },
-      {
-        id: 'doc-02',
-        shipmentId: 'shp-01',
-        shipmentCode: 'EXP-2026-001',
-        documentType: 'COMMERCIAL_INVOICE',
-        documentNumber: 'INV-VTX-2026-091',
-        issueDate: '2026-09-25T10:00:00.000Z',
-        issuer: 'Vinatex Export Corp',
-        fileFormat: 'PDF',
-        status: 'VERIFIED',
-        verificationNotes: 'Khớp trị giá 42,000 USD điều kiện FOB',
-        isMandatory: true,
-      },
-      {
-        id: 'doc-03',
-        shipmentId: 'shp-01',
-        shipmentCode: 'EXP-2026-001',
-        documentType: 'PACKING_LIST',
-        documentNumber: 'PL-VTX-2026-091',
-        issueDate: '2026-09-25T10:30:00.000Z',
-        issuer: 'Vinatex Export Corp',
-        fileFormat: 'PDF',
-        status: 'VERIFIED',
-        verificationNotes: 'Đúng 480 cartons, Gross Weight 8,420 kg, 58.4 CBM',
-        isMandatory: true,
-      },
-      {
-        id: 'doc-04',
-        shipmentId: 'shp-01',
-        shipmentCode: 'EXP-2026-001',
-        documentType: 'CERTIFICATE_OF_ORIGIN',
-        documentNumber: 'CO-VCCI-2026-88192',
-        issueDate: '2026-09-26T14:00:00.000Z',
-        issuer: 'Phòng Thương Mại và Công Nghiệp Việt Nam (VCCI)',
-        fileFormat: 'PDF',
-        status: 'VERIFIED',
-        verificationNotes: 'C/O Form B xuất khẩu thị trường Mỹ hợp lệ',
-        isMandatory: false,
-      },
-      {
-        id: 'doc-05',
-        shipmentId: 'shp-03',
-        shipmentCode: 'EXP-2026-003',
-        documentType: 'CERTIFICATE_OF_ORIGIN',
-        documentNumber: 'CO-EUR1-2026-44102',
-        issueDate: '2026-09-27T09:00:00.000Z',
-        issuer: 'Bộ Công Thương (Cục Xuất Nhập Khẩu)',
-        fileFormat: 'PDF',
-        status: 'VERIFIED',
-        verificationNotes: 'C/O Form EUR.1 hưởng thuế suất ưu đãi EVFTA 0%',
-        isMandatory: true,
-      },
-      {
-        id: 'doc-06',
-        shipmentId: 'shp-03',
-        shipmentCode: 'EXP-2026-003',
-        documentType: 'PHYTOSANITARY',
-        documentNumber: 'HEALTH-NAFI-2026-119',
-        issueDate: '2026-09-27T11:00:00.000Z',
-        issuer: 'Cục Quản lý Chất lượng Nông lâm sản và Thủy sản (NAFIQPM)',
-        fileFormat: 'PDF',
-        status: 'ISSUED',
-        verificationNotes: 'Đạt chỉ tiêu vi sinh và an toàn thực phẩm tiêu chuẩn EU',
-        isMandatory: true,
-      },
-      {
-        id: 'doc-07',
-        shipmentId: 'shp-05',
-        shipmentCode: 'IMP-2026-005',
-        documentType: 'BILL_OF_LADING',
-        documentNumber: 'HLCU-HAM-2026-091',
-        issueDate: '2026-09-08T14:00:00.000Z',
-        issuer: 'Hapag-Lloyd AG',
-        fileFormat: 'PDF',
-        status: 'VERIFIED',
-        verificationNotes: 'Vận đơn Surrendered Bill đã nộp tiền cước đầu xuất',
-        isMandatory: true,
-      },
-      {
-        id: 'doc-08',
-        shipmentId: 'shp-05',
-        shipmentCode: 'IMP-2026-005',
-        documentType: 'CERTIFICATE_OF_ORIGIN',
-        documentNumber: 'CO-DE-2026-99120',
-        issueDate: '2026-09-09T08:00:00.000Z',
-        issuer: 'IHK Hamburg Chamber of Commerce',
-        fileFormat: 'PDF',
-        status: 'DRAFT',
-        verificationNotes: 'Bản scan mờ, đang yêu cầu gửi lại bản gốc có xác thực điện tử',
-        isMandatory: true,
-      },
-    ];
+  private mapShippingDocument(r: any): ShippingDocument {
+    return {
+      id: r.id,
+      shipmentId: r.shipment_id,
+      shipmentCode: r.shipment_code,
+      documentType: r.document_type as any,
+      documentNumber: r.document_number,
+      issueDate: r.issue_date instanceof Date ? r.issue_date.toISOString() : String(r.issue_date),
+      issuer: r.issuer,
+      fileFormat: r.file_format,
+      status: r.status as any,
+      verificationNotes: r.verification_notes || undefined,
+      isMandatory: r.is_mandatory,
+    };
+  }
 
-    // 10. Điều độ Xe Đầu Kéo Container Cảng - Kho (Port-to-Door Drayage)
-    this.drayageDispatches = [
-      {
-        id: 'dsp-01',
-        dispatchCode: 'DO-TRUCK-2601',
-        shipmentCode: 'EXP-2026-001',
-        containerNo: 'MSKU8841920',
-        containerType: '40HC',
-        dispatchType: 'DOOR_TO_PORT',
-        pickupLocation: 'Kho Vinatex - KCN Sóng Thần, Dĩ An, Bình Dương',
-        deliveryLocation: 'Cảng Tân Cảng Cát Lái - Cổng E (Hạ bãi xuất khẩu)',
-        tractorPlate: '51C-881.92',
-        trailerPlate: '51R-441.20',
-        driverName: 'Nguyễn Văn Hùng',
-        driverPhone: '0918.441.291',
-        driverLicenseGrade: 'FC',
-        appointmentTime: '2026-09-28T05:30:00.000Z',
-        status: 'DISPATCHED',
-        tollFeeVnd: 180000,
-        fuelEstimatedLiters: 48,
-        notes: 'Đã hoàn tất đóng hàng niêm phong chì seal ML-VN98412',
-        createdAt: '2026-09-27T10:00:00.000Z',
-      },
-      {
-        id: 'dsp-02',
-        dispatchCode: 'DO-TRUCK-2602',
-        shipmentCode: 'EXP-2026-003',
-        containerNo: 'ONEU7718923',
-        containerType: '40RF',
-        dispatchType: 'DOOR_TO_PORT',
-        pickupLocation: 'Kho Lạnh Minh Phú - KCN Sông Hậu, Hậu Giang',
-        deliveryLocation: 'Cảng Cái Mép (TCIT) - Cổng Container Lạnh',
-        tractorPlate: '50H-992.14',
-        trailerPlate: '50R-331.09',
-        driverName: 'Trần Đình Trọng',
-        driverPhone: '0903.882.119',
-        driverLicenseGrade: 'FC',
-        appointmentTime: '2026-09-28T02:00:00.000Z',
-        status: 'PULLED_FROM_PORT',
-        tollFeeVnd: 280000,
-        fuelEstimatedLiters: 92,
-        notes: 'Xe có gắn máy phát GenSet bảo đảm nhiệt độ âm sâu -18°C',
-        createdAt: '2026-09-27T11:00:00.000Z',
-      },
-      {
-        id: 'dsp-03',
-        dispatchCode: 'DO-TRUCK-2603',
-        shipmentCode: 'IMP-2026-005',
-        containerNo: 'HLXU4819201',
-        containerType: '40HC',
-        dispatchType: 'PORT_TO_DOOR',
-        pickupLocation: 'Bãi Cảng Cát Lái (Sau thông quan hải quan)',
-        deliveryLocation: 'Nhà máy Sơn BASF - KCN Amata, Đồng Nai',
-        tractorPlate: '60C-442.88',
-        trailerPlate: '60R-221.75',
-        driverName: 'Lê Hoàng Nam',
-        driverPhone: '0978.112.554',
-        driverLicenseGrade: 'FC',
-        appointmentTime: '2026-09-29T21:30:00.000Z',
-        status: 'PENDING_DISPATCH',
-        tollFeeVnd: 150000,
-        fuelEstimatedLiters: 42,
-        notes: 'Chạy khung giờ đêm tránh giờ cấm tải xe container trên Xa lộ Hà Nội',
-        createdAt: '2026-09-27T14:30:00.000Z',
-      },
-    ];
+  private mapDrayage(r: any): ContainerDrayageDispatchItem {
+    return {
+      id: r.id,
+      dispatchCode: r.dispatch_code,
+      shipmentCode: r.shipment_code,
+      containerNo: r.container_no,
+      containerType: r.container_type,
+      dispatchType: r.dispatch_type as any,
+      pickupLocation: r.pickup_location,
+      deliveryLocation: r.delivery_location,
+      tractorPlate: r.tractor_plate,
+      trailerPlate: r.trailer_plate,
+      driverName: r.driver_name,
+      driverPhone: r.driver_phone,
+      driverLicenseGrade: r.driver_license_grade as any,
+      appointmentTime: r.appointment_time instanceof Date ? r.appointment_time.toISOString() : String(r.appointment_time),
+      status: r.status as any,
+      tollFeeVnd: r.toll_fee_vnd,
+      fuelEstimatedLiters: r.fuel_estimated_liters,
+      notes: r.notes || undefined,
+      createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
+    };
+  }
+
+  // ================= SEED INITIAL DATA =================
+  private async seedInitialDataIfEmpty() {
+    try {
+      const portCount = await this.prisma.internationalPort.count();
+      if (portCount === 0) {
+        this.logger.log('Seeding initial international ports into PostgreSQL...');
+        const initialPorts = [
+          { code: 'VNSGN', name: 'Cảng Tân Cảng Cát Lái', country: 'Việt Nam', city: 'TP. Hồ Chí Minh', type: 'SEAPORT' },
+          { code: 'VNHPH', name: 'Cảng Hải Phòng (Lạch Huyện / Đình Vũ)', country: 'Việt Nam', city: 'Hải Phòng', type: 'SEAPORT' },
+          { code: 'VNDAD', name: 'Cảng Tiên Sa Đà Nẵng', country: 'Việt Nam', city: 'Đà Nẵng', type: 'SEAPORT' },
+          { code: 'SGN', name: 'Sân bay Quốc tế Tân Sơn Nhất Cargo', country: 'Việt Nam', city: 'TP. Hồ Chí Minh', type: 'AIRPORT' },
+          { code: 'HAN', name: 'Sân bay Quốc tế Nội Bài Cargo', country: 'Việt Nam', city: 'Hà Nội', type: 'AIRPORT' },
+          { code: 'VNHNI', name: 'Cửa khẩu Quốc tế Hữu Nghị', country: 'Việt Nam', city: 'Lạng Sơn', type: 'BORDER_GATE' },
+          { code: 'USLAX', name: 'Port of Los Angeles', country: 'Hoa Kỳ (USA)', city: 'Los Angeles', type: 'SEAPORT' },
+          { code: 'USNYC', name: 'Port of New York & New Jersey', country: 'Hoa Kỳ (USA)', city: 'New York', type: 'SEAPORT' },
+          { code: 'CNSHA', name: 'Port of Shanghai (Cảng Thượng Hải)', country: 'Trung Quốc', city: 'Thượng Hải', type: 'SEAPORT' },
+          { code: 'CNNBO', name: 'Port of Ningbo-Zhoushan (Ninh Ba)', country: 'Trung Quốc', city: 'Chiết Giang', type: 'SEAPORT' },
+          { code: 'SGSIN', name: 'Port of Singapore', country: 'Singapore', city: 'Singapore', type: 'SEAPORT' },
+          { code: 'DEHAM', name: 'Port of Hamburg', country: 'Đức (Germany)', city: 'Hamburg', type: 'SEAPORT' },
+          { code: 'FRA', name: 'Frankfurt Airport Cargo Terminal', country: 'Đức (Germany)', city: 'Frankfurt', type: 'AIRPORT' },
+          { code: 'NRT', name: 'Tokyo Narita Airport', country: 'Nhật Bản', city: 'Tokyo', type: 'AIRPORT' },
+        ];
+        await this.prisma.internationalPort.createMany({ data: initialPorts, skipDuplicates: true });
+      }
+
+      const rateCount = await this.prisma.exchangeRate.count();
+      if (rateCount === 0) {
+        this.logger.log('Seeding initial exchange rates into PostgreSQL...');
+        const initialRates = [
+          { currency: 'USD', name: 'Đô la Mỹ', buy_rate_vnd: 25420, transfer_rate_vnd: 25450, sell_rate_vnd: 25780 },
+          { currency: 'EUR', name: 'Đồng Euro', buy_rate_vnd: 27580, transfer_rate_vnd: 27650, sell_rate_vnd: 28100 },
+          { currency: 'CNY', name: 'Nhân dân tệ Trung Quốc', buy_rate_vnd: 3510, transfer_rate_vnd: 3530, sell_rate_vnd: 3620 },
+          { currency: 'JPY', name: 'Yên Nhật', buy_rate_vnd: 165.2, transfer_rate_vnd: 166.5, sell_rate_vnd: 171.8 },
+          { currency: 'SGD', name: 'Đô la Singapore', buy_rate_vnd: 19150, transfer_rate_vnd: 19220, sell_rate_vnd: 19600 },
+        ];
+        await this.prisma.exchangeRate.createMany({ data: initialRates, skipDuplicates: true });
+      }
+
+      const chargeCount = await this.prisma.localCharge.count();
+      if (chargeCount === 0) {
+        this.logger.log('Seeding initial local charges into PostgreSQL...');
+        const initialCharges = [
+          { code: 'THC', name: 'Terminal Handling Charge', description: 'Phí bốc xếp container từ cầu tàu lên bãi cảng', amount: 155, currency: 'USD', applied_unit: 'Per 40HC' },
+          { code: 'D/O', name: 'Delivery Order Fee', description: 'Phí phát hành lệnh giao hàng cho chủ hàng nhập khẩu', amount: 45, currency: 'USD', applied_unit: 'Per Bill' },
+          { code: 'CFS', name: 'Container Freight Station', description: 'Phí bốc dỡ và lưu kho cho hàng lẻ đóng ghép LCL', amount: 18, currency: 'USD', applied_unit: 'Per CBM' },
+          { code: 'CIC', name: 'Container Imbalance Charge', description: 'Phí phụ trội bù đắp chi phí điều chuyển vỏ rỗng', amount: 80, currency: 'USD', applied_unit: 'Per Container' },
+          { code: 'SEAL', name: 'Seal Fee', description: 'Phí kẹp chì niêm phong bảo mật hải quan', amount: 10, currency: 'USD', applied_unit: 'Per Seal' },
+          { code: 'AMS', name: 'Automated Manifest System', description: 'Phí truyền dữ liệu tờ khai an ninh điện tử vào hải quan Hoa Kỳ', amount: 35, currency: 'USD', applied_unit: 'Per Bill' },
+        ];
+        await this.prisma.localCharge.createMany({ data: initialCharges, skipDuplicates: true });
+      }
+
+      const hsCount = await this.prisma.hsCode.count();
+      if (hsCount === 0) {
+        this.logger.log('Seeding initial HS Codes into PostgreSQL...');
+        const initialHsCodes = [
+          {
+            hs_code: '0306.17.21',
+            description_vi: 'Tôm thẻ chân trắng đông lạnh (Penaeus vannamei), bóc vỏ, bỏ đầu',
+            description_en: 'Frozen whiteleg shrimp, peeled, headless',
+            unit: 'KG',
+            standard_duty_rate: 15,
+            mfn_rate: 10,
+            evfta_rate: 0,
+            cptpp_rate: 0,
+            acfta_rate: 0,
+            atiga_rate: 0,
+            vkfta_rate: 0,
+            vat_rate: 0,
+            specialized_inspection: 'Bắt buộc Kiểm dịch động vật thủy sản nhập khẩu',
+            inspection_agency: 'Cục Thú Y (Bộ NN&PTNT)',
+            import_conditions: 'Cần có Health Certificate từ cơ quan thẩm quyền nước xuất khẩu',
+          },
+          {
+            hs_code: '0901.11.10',
+            description_vi: 'Cà phê Robusta nhân sống, chưa rang, chưa khử chất caffeine',
+            description_en: 'Coffee, not roasted, not decaffeinated, Robusta',
+            unit: 'KG',
+            standard_duty_rate: 30,
+            mfn_rate: 20,
+            evfta_rate: 0,
+            cptpp_rate: 0,
+            acfta_rate: 5,
+            atiga_rate: 0,
+            vkfta_rate: 0,
+            vat_rate: 5,
+            specialized_inspection: 'Kiểm dịch thực vật tại cửa khẩu',
+            inspection_agency: 'Cục Bảo vệ Thực vật',
+            import_conditions: 'Chứng thư kiểm dịch Phytosanitary',
+          },
+          {
+            hs_code: '6109.10.10',
+            description_vi: 'Áo phông (T-shirts) dệt kim hoặc móc, bằng bông (cotton 100%)',
+            description_en: 'T-shirts, knitted or crocheted, of cotton',
+            unit: 'PCE',
+            standard_duty_rate: 30,
+            mfn_rate: 20,
+            evfta_rate: 2,
+            cptpp_rate: 0,
+            acfta_rate: 0,
+            atiga_rate: 0,
+            vkfta_rate: 5,
+            vat_rate: 8,
+            specialized_inspection: 'Kiểm tra dư lượng Formaldehyt và Amin thơm chuyển hóa',
+            inspection_agency: 'Viện Dệt May / Trung tâm Giám định',
+            import_conditions: 'Quy chuẩn kỹ thuật quốc gia QCVN 01:2017/BCT',
+          },
+          {
+            hs_code: '8541.43.00',
+            description_vi: 'Tấm pin năng lượng mặt trời (Solar photovoltaic modules)',
+            description_en: 'Photovoltaic cells assembled in modules or made up into panels',
+            unit: 'PCE',
+            standard_duty_rate: 5,
+            mfn_rate: 0,
+            evfta_rate: 0,
+            cptpp_rate: 0,
+            acfta_rate: 0,
+            atiga_rate: 0,
+            vkfta_rate: 0,
+            vat_rate: 8,
+            specialized_inspection: 'Kiểm tra hiệu suất năng lượng tối thiểu & an toàn điện',
+            inspection_agency: 'Bộ Công Thương',
+            import_conditions: 'Chứng nhận hợp quy dán nhãn năng lượng',
+          },
+          {
+            hs_code: '4011.20.10',
+            description_vi: 'Lốp xe tải loại bơm hơi bằng cao su, kết cấu bố tròn (Radial)',
+            description_en: 'New pneumatic tyres, of rubber, of a kind used on buses or lorries (Radial)',
+            unit: 'PCE',
+            standard_duty_rate: 35,
+            mfn_rate: 25,
+            evfta_rate: 5,
+            cptpp_rate: 0,
+            acfta_rate: 0,
+            atiga_rate: 0,
+            vkfta_rate: 5,
+            vat_rate: 8,
+            specialized_inspection: 'Kiểm tra chất lượng nhà nước an toàn kỹ thuật linh kiện ô tô',
+            inspection_agency: 'Cục Đăng Kiểm Việt Nam (Bộ GTVT)',
+            import_conditions: 'Giấy chứng nhận thử nghiệm mẫu theo QCVN 34:2017/BGTVT',
+          },
+          {
+            hs_code: '8471.30.20',
+            description_vi: 'Máy vi tính xách tay (Laptop), bao gồm cả notebook và subnotebook',
+            description_en: 'Laptops, portable automatic data processing machines',
+            unit: 'PCE',
+            standard_duty_rate: 0,
+            mfn_rate: 0,
+            evfta_rate: 0,
+            cptpp_rate: 0,
+            acfta_rate: 0,
+            atiga_rate: 0,
+            vkfta_rate: 0,
+            vat_rate: 8,
+            specialized_inspection: 'Kiểm tra chất lượng hợp quy thiết bị viễn thông và CNTT',
+            inspection_agency: 'Bộ Thông tin và Truyền thông (Cục Viễn Thông)',
+            import_conditions: 'Giấy chứng nhận hợp quy (CR) và dấu hợp quy',
+          },
+        ];
+        await this.prisma.hsCode.createMany({ data: initialHsCodes, skipDuplicates: true });
+      }
+
+      const shipmentCount = await this.prisma.internationalShipment.count();
+      if (shipmentCount === 0) {
+        this.logger.log('Seeding initial international shipments into PostgreSQL...');
+        const initialShipments = [
+          {
+            id: 'shp-exp-001',
+            shipment_code: 'EXP-2026-001',
+            direction: 'EXPORT' as any,
+            transport_mode: 'OCEAN_FCL' as any,
+            incoterm: 'FOB',
+            carrier_name: 'Maersk Line',
+            vessel_flight_no: 'MAERSK MC-KINNEY 2601E',
+            pol_port: 'VNSGN - Cảng Tân Cảng Cát Lái',
+            pod_port: 'USLAX - Port of Los Angeles',
+            etd_date: new Date('2026-09-28T14:00:00.000Z'),
+            eta_date: new Date('2026-10-18T08:00:00.000Z'),
+            bl_awb_number: 'MAEU982180421',
+            container_number: 'MSKU8841920',
+            seal_number: 'ML-VN98412',
+            container_type: '40HC',
+            gross_weight_kg: 24500,
+            cbm_volume: 68.5,
+            package_count: 950,
+            shipper_name: 'Tập Đoàn May Mặc Xuất Khẩu Việt Tiến',
+            consignee_name: 'Walmart Global Sourcing (USA)',
+            currency: 'USD',
+            freight_amount: 3850,
+            customs_status: 'CLEARED',
+            status: 'CUSTOMS_CLEARED',
+            notes: 'Hàng may mặc đi Mỹ, đã kiểm tra hun trùng và kẹp chì điện tử.',
+          },
+          {
+            id: 'shp-imp-002',
+            shipment_code: 'IMP-2026-002',
+            direction: 'IMPORT' as any,
+            transport_mode: 'OCEAN_FCL' as any,
+            incoterm: 'CIF',
+            carrier_name: 'COSCO Shipping Lines',
+            vessel_flight_no: 'COSCO HELLAS 045W',
+            pol_port: 'CNSHA - Port of Shanghai',
+            pod_port: 'VNHPH - Cảng Hải Phòng',
+            etd_date: new Date('2026-09-22T08:00:00.000Z'),
+            eta_date: new Date('2026-09-29T16:00:00.000Z'),
+            bl_awb_number: 'COSU632194012',
+            container_number: 'TCLU1284711',
+            seal_number: 'CS-SH28192',
+            container_type: '20GP',
+            gross_weight_kg: 16800,
+            cbm_volume: 28.2,
+            package_count: 420,
+            shipper_name: 'Semiconductor Precision Ltd (Shanghai)',
+            consignee_name: 'Công ty Cổ phần Công nghệ FPT / Viettel',
+            currency: 'USD',
+            freight_amount: 850,
+            customs_status: 'YELLOW',
+            status: 'CUSTOMS_PROCESSING',
+            notes: 'Linh kiện chip điện tử bán dẫn, hải quan yêu cầu bổ sung C/O Form E.',
+          },
+          {
+            id: 'shp-air-003',
+            shipment_code: 'AIR-2026-003',
+            direction: 'EXPORT' as any,
+            transport_mode: 'AIR_FREIGHT' as any,
+            incoterm: 'DDP',
+            carrier_name: 'Qatar Airways Cargo',
+            vessel_flight_no: 'QR 8842 Boeing 777F',
+            pol_port: 'HAN - Sân bay Quốc tế Nội Bài Cargo',
+            pod_port: 'FRA - Frankfurt Airport Cargo Terminal',
+            etd_date: new Date('2026-09-28T22:30:00.000Z'),
+            eta_date: new Date('2026-09-29T14:45:00.000Z'),
+            bl_awb_number: '157-89410294',
+            container_type: 'ULD Air Pallet',
+            gross_weight_kg: 620,
+            cbm_volume: 3.8,
+            package_count: 35,
+            shipper_name: 'Samsung Electronics Vietnam (SEV)',
+            consignee_name: 'Samsung Electronics Europe Logistics B.V.',
+            currency: 'EUR',
+            freight_amount: 2650,
+            customs_status: 'GREEN',
+            status: 'BOOKING_CONFIRMED',
+            notes: 'Lô hàng mẫu bo mạch điện thoại flagship phục vụ ra mắt thị trường EU.',
+          },
+          {
+            id: 'shp-crb-004',
+            shipment_code: 'CRB-2026-004',
+            direction: 'CROSS_BORDER' as any,
+            transport_mode: 'ROAD_CROSS_BORDER' as any,
+            incoterm: 'DAP',
+            carrier_name: 'VietRoute Cross-Border Logistics Fleet',
+            vessel_flight_no: 'Xe liên vận VN-CN: 29H-882.19 / Rơ-mooc 29R-012.88',
+            pol_port: 'VNHNI - Cửa khẩu Quốc tế Hữu Nghị',
+            pod_port: 'Trung Quốc - Chợ Nông Sản Nam Ninh',
+            etd_date: new Date('2026-09-27T18:00:00.000Z'),
+            eta_date: new Date('2026-09-28T12:00:00.000Z'),
+            bl_awb_number: 'VTR-CRB-2026-004',
+            container_number: 'CMAU9921448',
+            seal_number: 'HQ-HN-44129',
+            container_type: '40RF',
+            gross_weight_kg: 22000,
+            cbm_volume: 65.0,
+            package_count: 1800,
+            shipper_name: 'Hợp Tác Xã Nông Sản Sầu Riêng Tiền Giang',
+            consignee_name: 'Guangxi Fresh Fruits Trading Co., Ltd',
+            currency: 'CNY',
+            freight_amount: 18500,
+            customs_status: 'CLEARED',
+            status: 'SAILING',
+            notes: 'Container lạnh duy trì nhiệt độ +14°C, có chứng thư kiểm dịch thực vật.',
+          },
+          {
+            id: 'shp-imp-005',
+            shipment_code: 'IMP-2026-005',
+            direction: 'IMPORT' as any,
+            transport_mode: 'OCEAN_FCL' as any,
+            incoterm: 'EXW',
+            carrier_name: 'Hapag-Lloyd',
+            vessel_flight_no: 'AL MURABBA 022E',
+            pol_port: 'DEHAM - Port of Hamburg',
+            pod_port: 'VNSGN - Cảng Tân Cảng Cát Lái',
+            etd_date: new Date('2026-09-02T10:00:00.000Z'),
+            eta_date: new Date('2026-09-27T20:00:00.000Z'),
+            bl_awb_number: 'HLCUHAM2608192',
+            container_number: 'HLXU4819201',
+            seal_number: 'HL-DE99120',
+            container_type: '40HC',
+            gross_weight_kg: 21800,
+            cbm_volume: 58.0,
+            package_count: 12,
+            shipper_name: 'Siemens Industrial Automation GmbH',
+            consignee_name: 'VinFast Auto Manufacturing Complex',
+            currency: 'EUR',
+            freight_amount: 3400,
+            customs_status: 'RED',
+            status: 'ARRIVED_PORT',
+            notes: 'Dây chuyền dập robot công nghiệp, phân luồng Đỏ kiểm hóa thực tế tại Cát Lái.',
+          },
+        ];
+        await this.prisma.internationalShipment.createMany({ data: initialShipments, skipDuplicates: true });
+      }
+
+      const customsCount = await this.prisma.customsDeclaration.count();
+      if (customsCount === 0) {
+        this.logger.log('Seeding initial customs declarations into PostgreSQL...');
+        const initialCustoms = [
+          {
+            id: 'cst-001',
+            declaration_no: '104829104820',
+            shipment_id: 'shp-exp-001',
+            shipment_code: 'EXP-2026-001',
+            customs_branch: 'Chi cục HQ CK Cảng Sài Gòn KV1 (Cát Lái)',
+            declaration_type: 'B11 (Xuất kinh doanh)',
+            channel: 'GREEN' as any,
+            hs_code: '6109.10.00',
+            commodity_description: 'Áo thun cotton dệt kim nam xuất khẩu',
+            invoice_value: 145000,
+            currency: 'USD',
+            import_tax_amount: 0,
+            vat_tax_amount: 0,
+            status: 'CLEARED',
+            registered_date: new Date('2026-09-26T08:30:00.000Z'),
+            cleared_date: new Date('2026-09-26T08:45:00.000Z'),
+          },
+          {
+            id: 'cst-002',
+            declaration_no: '104829881923',
+            shipment_id: 'shp-imp-002',
+            shipment_code: 'IMP-2026-002',
+            customs_branch: 'Chi cục Hải quan CK Cảng Đình Vũ - Hải Phòng',
+            declaration_type: 'A11 (Nhập kinh doanh tiêu dùng)',
+            channel: 'YELLOW' as any,
+            hs_code: '8542.31.00',
+            commodity_description: 'Bộ vi xử lý tích hợp (IC Chipset điều khiển)',
+            invoice_value: 88500,
+            currency: 'USD',
+            import_tax_amount: 0,
+            vat_tax_amount: 225675000,
+            status: 'REGISTERED',
+            registered_date: new Date('2026-09-27T09:15:00.000Z'),
+          },
+          {
+            id: 'cst-003',
+            declaration_no: '104830119284',
+            shipment_id: 'shp-air-003',
+            shipment_code: 'AIR-2026-003',
+            customs_branch: 'Chi cục HQ CK Sân bay Quốc tế Nội Bài',
+            declaration_type: 'E31 (Nhập / Xuất sản xuất gia công)',
+            channel: 'GREEN' as any,
+            hs_code: '8517.70.10',
+            commodity_description: 'Bo mạch PBA hoàn chỉnh cho smartphone',
+            invoice_value: 320000,
+            currency: 'EUR',
+            import_tax_amount: 0,
+            vat_tax_amount: 0,
+            status: 'CLEARED',
+            registered_date: new Date('2026-09-27T08:00:00.000Z'),
+            cleared_date: new Date('2026-09-27T08:10:00.000Z'),
+          },
+          {
+            id: 'cst-004',
+            declaration_no: '104830554190',
+            shipment_id: 'shp-imp-005',
+            shipment_code: 'IMP-2026-005',
+            customs_branch: 'Chi cục HQ CK Cảng Sài Gòn KV1 (Cát Lái)',
+            declaration_type: 'A12 (Nhập kinh doanh sản xuất máy móc thiết bị)',
+            channel: 'RED' as any,
+            hs_code: '8479.89.40',
+            commodity_description: 'Cánh tay robot công nghiệp dập tự động 6 bậc tự do',
+            invoice_value: 420000,
+            currency: 'EUR',
+            import_tax_amount: 0,
+            vat_tax_amount: 1159200000,
+            status: 'REGISTERED',
+            registered_date: new Date('2026-09-27T10:00:00.000Z'),
+          },
+        ];
+        await this.prisma.customsDeclaration.createMany({ data: initialCustoms, skipDuplicates: true });
+      }
+
+      const containerCount = await this.prisma.containerTracking.count();
+      if (containerCount === 0) {
+        this.logger.log('Seeding initial container trackings into PostgreSQL...');
+        const initialContainers = [
+          {
+            id: 'cnt-01',
+            container_no: 'MSKU8841920',
+            type: '40HC',
+            carrier: 'Maersk Line',
+            shipment_code: 'EXP-2026-001',
+            seal_no: 'ML-VN98412',
+            current_location: 'Bãi Cảng Cát Lái - Block E3',
+            dem_det_free_days: 7,
+            gate_in_date: new Date('2026-09-26T15:00:00.000Z'),
+            free_time_expiry_date: new Date('2026-10-03T23:59:59.000Z'),
+            overdue_days: 0,
+            estimated_penalty_amount_vnd: 0,
+            status: 'IN_DEPOT',
+          },
+          {
+            id: 'cnt-02',
+            container_no: 'TCLU1284711',
+            type: '20GP',
+            carrier: 'COSCO Shipping',
+            shipment_code: 'IMP-2026-002',
+            seal_no: 'CS-SH28192',
+            current_location: 'Tàu COSCO HELLAS (Biển Đông)',
+            dem_det_free_days: 14,
+            gate_in_date: new Date('2026-09-22T08:00:00.000Z'),
+            free_time_expiry_date: new Date('2026-10-06T23:59:59.000Z'),
+            overdue_days: 0,
+            estimated_penalty_amount_vnd: 0,
+            status: 'ON_VESSEL',
+          },
+          {
+            id: 'cnt-03',
+            container_no: 'HLXU4819201',
+            type: '40HC',
+            carrier: 'Hapag-Lloyd',
+            shipment_code: 'IMP-2026-005',
+            seal_no: 'HL-DE99120',
+            current_location: 'Bãi Kiểm Hóa Hải Quan Cát Lái (Khu C)',
+            dem_det_free_days: 5,
+            gate_in_date: new Date('2026-09-21T09:00:00.000Z'),
+            free_time_expiry_date: new Date('2026-09-26T23:59:59.000Z'),
+            overdue_days: 1,
+            estimated_penalty_amount_vnd: 1250000,
+            status: 'IN_DEPOT',
+          },
+          {
+            id: 'cnt-04',
+            container_no: 'CMAU9921448',
+            type: '40RF',
+            carrier: 'VietRoute Fleet',
+            shipment_code: 'CRB-2026-004',
+            seal_no: 'HQ-HN-44129',
+            current_location: 'Đang di chuyển trên Quốc lộ 1A qua Bắc Giang',
+            temperature_required: '+14°C',
+            dem_det_free_days: 7,
+            gate_in_date: new Date('2026-09-25T11:00:00.000Z'),
+            free_time_expiry_date: new Date('2026-10-02T23:59:59.000Z'),
+            overdue_days: 0,
+            estimated_penalty_amount_vnd: 0,
+            status: 'AT_FACTORY',
+          },
+        ];
+        await this.prisma.containerTracking.createMany({ data: initialContainers, skipDuplicates: true });
+      }
+
+      const financialCount = await this.prisma.shipmentFinancial.count();
+      if (financialCount === 0) {
+        this.logger.log('Seeding initial shipment financials into PostgreSQL...');
+        const initialFinancials = [
+          {
+            shipment_id: 'shp-01',
+            shipment_code: 'EXP-2026-001',
+            shipper_name: 'Tập đoàn Dệt may Việt Nam (Vinatex)',
+            carrier_name: 'Maersk Line',
+            currency: 'USD',
+            selling_freight: 2200,
+            selling_local_charges: 350,
+            total_revenue_vnd: 65161000,
+            buying_freight: 1750,
+            buying_local_charges: 260,
+            trucking_cost_vnd: 4500000,
+            customs_cost_vnd: 1200000,
+            port_handling_cost_vnd: 1500000,
+            total_cost_vnd: 58454500,
+            gross_profit_vnd: 6706500,
+            gross_profit_usd: 263.5,
+            profit_margin_percent: 10.29,
+            fx_gain_loss_vnd: 450000,
+            payment_status: 'PAID',
+          },
+          {
+            shipment_id: 'shp-02',
+            shipment_code: 'IMP-2026-002',
+            shipper_name: 'Semiconductor Precision Ltd',
+            carrier_name: 'COSCO Shipping',
+            currency: 'USD',
+            selling_freight: 1850,
+            selling_local_charges: 180,
+            total_revenue_vnd: 51866700,
+            buying_freight: 1300,
+            buying_local_charges: 120,
+            trucking_cost_vnd: 4200000,
+            customs_cost_vnd: 950000,
+            port_handling_cost_vnd: 800000,
+            total_cost_vnd: 42139000,
+            gross_profit_vnd: 9727700,
+            gross_profit_usd: 382.2,
+            profit_margin_percent: 18.75,
+            fx_gain_loss_vnd: 180000,
+            payment_status: 'PAID',
+          },
+        ];
+        await this.prisma.shipmentFinancial.createMany({ data: initialFinancials, skipDuplicates: true });
+      }
+
+      const depositCount = await this.prisma.containerDeposit.count();
+      if (depositCount === 0) {
+        this.logger.log('Seeding initial container deposits into PostgreSQL...');
+        const initialDeposits = [
+          {
+            id: 'dep-01',
+            container_no: 'MSKU8923410',
+            shipment_code: 'EXP-2026-001',
+            carrier: 'Maersk Line',
+            deposit_amount_vnd: 3000000,
+            receipt_number: 'EIR-MSK-2026-8812',
+            deposited_date: new Date('2026-09-24T08:30:00.000Z'),
+            refund_due_date: new Date('2026-10-10T17:00:00.000Z'),
+            refund_status: 'PENDING_REFUND',
+            eir_condition: 'INTACT',
+          },
+          {
+            id: 'dep-02',
+            container_no: 'HLXU4819201',
+            shipment_code: 'IMP-2026-005',
+            carrier: 'Hapag-Lloyd',
+            deposit_amount_vnd: 3500000,
+            receipt_number: 'EIR-HL-2026-9021',
+            deposited_date: new Date('2026-09-21T10:00:00.000Z'),
+            refund_due_date: new Date('2026-09-28T17:00:00.000Z'),
+            refund_status: 'DEDUCTED_REPAIR',
+            refunded_amount_vnd: 2800000,
+            deducted_reason: 'Phát sinh vết móp sàn gỗ container (trừ 700.000 VNĐ theo biên bản EIR)',
+            eir_condition: 'DENTED',
+          },
+        ];
+        await this.prisma.containerDeposit.createMany({ data: initialDeposits, skipDuplicates: true });
+      }
+
+      const vesselCount = await this.prisma.vesselAisTracking.count();
+      if (vesselCount === 0) {
+        this.logger.log('Seeding initial vessel tracking into PostgreSQL...');
+        const initialVessels = [
+          {
+            vessel_name: 'MAERSK MC-KINNEY MOLLER',
+            mmsi: '219018271',
+            imo: '9619907',
+            flag: 'Denmark',
+            shipment_codes: ['EXP-2026-001'],
+            current_latitude: 14.8512,
+            current_longitude: 114.2831,
+            speed_knots: 19.4,
+            heading_degrees: 68,
+            departure_port: 'VNSGN - Tân Cảng Cát Lái',
+            destination_port: 'USLAX - Port of Los Angeles',
+            atd_date: new Date('2026-09-26T16:00:00.000Z'),
+            eta_predicted: new Date('2026-10-12T08:00:00.000Z'),
+            distance_covered_nm: 1240,
+            distance_remaining_nm: 6820,
+            progress_percent: 15.38,
+            weather_risk: 'LOW_NORMAL',
+            nav_status: 'UNDERWAY_USING_ENGINE',
+          },
+          {
+            vessel_name: 'ONE APUS',
+            mmsi: '353136000',
+            imo: '9806079',
+            flag: 'Japan',
+            shipment_codes: ['EXP-2026-003'],
+            current_latitude: 10.3541,
+            current_longitude: 107.0189,
+            speed_knots: 0.1,
+            heading_degrees: 182,
+            departure_port: 'VNSGN - Tân Cảng Cái Mép (TCIT)',
+            destination_port: 'DEHAM - Port of Hamburg',
+            atd_date: new Date('2026-09-28T02:00:00.000Z'),
+            eta_predicted: new Date('2026-10-22T14:00:00.000Z'),
+            distance_covered_nm: 0,
+            distance_remaining_nm: 9200,
+            progress_percent: 0,
+            weather_risk: 'LOW_NORMAL',
+            nav_status: 'MOORED',
+          },
+        ];
+        await this.prisma.vesselAisTracking.createMany({ data: initialVessels, skipDuplicates: true });
+      }
+
+      const docCount = await this.prisma.shippingDocumentRecord.count();
+      if (docCount === 0) {
+        this.logger.log('Seeding initial shipping documents into PostgreSQL...');
+        const initialDocs = [
+          {
+            id: 'doc-01',
+            shipment_id: 'shp-exp-001',
+            shipment_code: 'EXP-2026-001',
+            document_type: 'BILL_OF_LADING',
+            document_number: 'MAEU-B/L-982180421',
+            issue_date: new Date('2026-09-27T10:00:00.000Z'),
+            issuer: 'Maersk Line A/S Vietnam Branch',
+            file_format: 'PDF',
+            status: 'VERIFIED',
+            verification_notes: 'Vận đơn điện tử Seaway Bill, đã đối chiếu đầy đủ với Shipper & Consignee',
+            is_mandatory: true,
+          },
+          {
+            id: 'doc-02',
+            shipment_id: 'shp-exp-001',
+            shipment_code: 'EXP-2026-001',
+            document_type: 'COMMERCIAL_INVOICE',
+            document_number: 'INV-VT-2026-8812',
+            issue_date: new Date('2026-09-26T14:30:00.000Z'),
+            issuer: 'Tập Đoàn May Mặc Việt Tiến',
+            file_format: 'PDF',
+            status: 'VERIFIED',
+            verification_notes: 'Khớp với giá trị khai báo hải quan 145.000 USD',
+            is_mandatory: true,
+          },
+        ];
+        await this.prisma.shippingDocumentRecord.createMany({ data: initialDocs, skipDuplicates: true });
+      }
+
+      const drayageCount = await this.prisma.containerDrayageDispatch.count();
+      if (drayageCount === 0) {
+        this.logger.log('Seeding initial drayage dispatches into PostgreSQL...');
+        const initialDrayages = [
+          {
+            id: 'dsp-01',
+            dispatch_code: 'DO-TRUCK-2601',
+            shipment_code: 'EXP-2026-001',
+            container_no: 'MSKU8841920',
+            container_type: '40HC',
+            dispatch_type: 'DOOR_TO_PORT',
+            pickup_location: 'Kho Vinatex - KCN Sóng Thần, Dĩ An, Bình Dương',
+            delivery_location: 'Cảng Tân Cảng Cát Lái - Cổng E (Hạ bãi xuất khẩu)',
+            tractor_plate: '51C-881.92',
+            trailer_plate: '51R-441.20',
+            driver_name: 'Nguyễn Văn Hùng',
+            driver_phone: '0918.441.291',
+            driver_license_grade: 'FC',
+            appointment_time: new Date('2026-09-28T05:30:00.000Z'),
+            status: 'DISPATCHED',
+            toll_fee_vnd: 180000,
+            fuel_estimated_liters: 48,
+            notes: 'Đã hoàn tất đóng hàng niêm phong chì seal ML-VN98412',
+          },
+          {
+            id: 'dsp-02',
+            dispatch_code: 'DO-TRUCK-2602',
+            shipment_code: 'IMP-2026-005',
+            container_no: 'HLXU4819201',
+            container_type: '40HC',
+            dispatch_type: 'PORT_TO_DOOR',
+            pickup_location: 'Bãi Cảng Cát Lái (Sau thông quan hải quan)',
+            delivery_location: 'Nhà máy Sơn BASF - KCN Amata, Đồng Nai',
+            tractor_plate: '60C-442.88',
+            trailer_plate: '60R-221.75',
+            driver_name: 'Lê Hoàng Nam',
+            driver_phone: '0978.112.554',
+            driver_license_grade: 'FC',
+            appointment_time: new Date('2026-09-29T21:30:00.000Z'),
+            status: 'PENDING_DISPATCH',
+            toll_fee_vnd: 150000,
+            fuel_estimated_liters: 42,
+            notes: 'Chạy khung giờ đêm tránh giờ cấm tải xe container trên Xa lộ Hà Nội',
+          },
+        ];
+        await this.prisma.containerDrayageDispatch.createMany({ data: initialDrayages, skipDuplicates: true });
+      }
+    } catch (err: any) {
+      this.logger.warn(`Lỗi khi seed dữ liệu vận tải quốc tế: ${err?.message}`);
+    }
   }
 
   // ================= SHIPMENTS API =================
@@ -1137,241 +1158,304 @@ export class InternationalService implements OnModuleInit {
     incoterm?: string;
     status?: string;
     search?: string;
-  }) {
-    let list = [...this.shipments];
+  }): Promise<InternationalShipment[]> {
+    const where: any = {};
 
     if (params?.direction && params.direction !== 'ALL') {
-      list = list.filter((s) => s.direction === params.direction);
+      where.direction = params.direction;
     }
     if (params?.mode && params.mode !== 'ALL') {
-      list = list.filter((s) => s.transportMode === params.mode);
+      where.transport_mode = params.mode;
     }
     if (params?.incoterm && params.incoterm !== 'ALL') {
-      list = list.filter((s) => s.incoterm === params.incoterm);
+      where.incoterm = params.incoterm;
     }
     if (params?.status && params.status !== 'ALL') {
-      list = list.filter((s) => s.status === params.status);
+      where.status = params.status;
     }
     if (params?.search && params.search.trim()) {
-      const q = params.search.trim().toLowerCase();
-      list = list.filter(
-        (s) =>
-          s.shipmentCode.toLowerCase().includes(q) ||
-          s.blAwbNumber.toLowerCase().includes(q) ||
-          (s.containerNumber && s.containerNumber.toLowerCase().includes(q)) ||
-          s.carrierName.toLowerCase().includes(q) ||
-          s.shipperName.toLowerCase().includes(q) ||
-          s.consigneeName.toLowerCase().includes(q) ||
-          s.polPort.toLowerCase().includes(q) ||
-          s.podPort.toLowerCase().includes(q)
-      );
+      const q = params.search.trim();
+      where.OR = [
+        { shipment_code: { contains: q, mode: 'insensitive' } },
+        { bl_awb_number: { contains: q, mode: 'insensitive' } },
+        { container_number: { contains: q, mode: 'insensitive' } },
+        { carrier_name: { contains: q, mode: 'insensitive' } },
+        { shipper_name: { contains: q, mode: 'insensitive' } },
+        { consignee_name: { contains: q, mode: 'insensitive' } },
+        { pol_port: { contains: q, mode: 'insensitive' } },
+        { pod_port: { contains: q, mode: 'insensitive' } },
+      ];
     }
 
-    return list;
+    const records = await this.prisma.internationalShipment.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+    });
+
+    return records.map((r) => this.mapShipment(r));
   }
 
-  async getShipmentById(id: string) {
-    const item = this.shipments.find((s) => s.id === id || s.shipmentCode === id);
-    if (!item) {
+  async getShipmentById(id: string): Promise<InternationalShipment> {
+    const record = await this.prisma.internationalShipment.findFirst({
+      where: {
+        OR: [{ id }, { shipment_code: id }],
+      },
+    });
+
+    if (!record) {
       throw new NotFoundException(`Không tìm thấy lô hàng quốc tế ${id}`);
     }
-    return item;
+    return this.mapShipment(record);
   }
 
-  async createShipment(dto: CreateInternationalShipmentDto) {
-    const existing = this.shipments.find((s) => s.shipmentCode === dto.shipmentCode.trim().toUpperCase());
+  async createShipment(dto: CreateInternationalShipmentDto): Promise<InternationalShipment> {
+    const code = dto.shipmentCode.trim().toUpperCase();
+    const existing = await this.prisma.internationalShipment.findUnique({
+      where: { shipment_code: code },
+    });
+
     if (existing) {
       throw new BadRequestException(`Mã lô hàng "${dto.shipmentCode}" đã tồn tại`);
     }
 
-    const newShipment: InternationalShipment = {
-      id: `shp-${Date.now()}`,
-      shipmentCode: dto.shipmentCode.trim().toUpperCase(),
-      direction: dto.direction,
-      transportMode: dto.transportMode,
-      incoterm: dto.incoterm,
-      carrierName: dto.carrierName.trim(),
-      vesselFlightNo: dto.vesselFlightNo?.trim() || 'Chưa xếp tàu/chuyến',
-      polPort: dto.polPort,
-      podPort: dto.podPort,
-      etdDate: dto.etdDate || new Date().toISOString(),
-      etaDate: dto.etaDate || new Date(Date.now() + 14 * 86400000).toISOString(),
-      blAwbNumber: dto.blAwbNumber?.trim() || `BL-${Date.now().toString().slice(-6)}`,
-      containerNumber: dto.containerNumber?.trim(),
-      sealNumber: dto.sealNumber?.trim(),
-      containerType: dto.containerType || '40HC',
-      grossWeightKg: dto.grossWeightKg || 1000,
-      cbmVolume: dto.cbmVolume || 10,
-      packageCount: dto.packageCount || 50,
-      shipperName: dto.shipperName?.trim() || 'Shipper Quốc Tế',
-      consigneeName: dto.consigneeName?.trim() || 'Consignee Nhập Khẩu',
-      currency: dto.currency || 'USD',
-      freightAmount: dto.freightAmount || 1500,
-      customsStatus: 'NOT_FILED',
-      status: (dto.status as any) || 'BOOKING_CONFIRMED',
-      notes: dto.notes,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    const record = await this.prisma.internationalShipment.create({
+      data: {
+        shipment_code: code,
+        direction: (dto.direction as any) || 'EXPORT',
+        transport_mode: (dto.transportMode as any) || 'OCEAN_FCL',
+        incoterm: dto.incoterm || 'FOB',
+        carrier_name: dto.carrierName.trim(),
+        vessel_flight_no: dto.vesselFlightNo?.trim() || 'Chưa xếp tàu/chuyến',
+        pol_port: dto.polPort,
+        pod_port: dto.podPort,
+        etd_date: dto.etdDate ? new Date(dto.etdDate) : new Date(),
+        eta_date: dto.etaDate ? new Date(dto.etaDate) : new Date(Date.now() + 14 * 86400000),
+        bl_awb_number: dto.blAwbNumber?.trim() || `BL-${Date.now().toString().slice(-6)}`,
+        container_number: dto.containerNumber?.trim(),
+        seal_number: dto.sealNumber?.trim(),
+        container_type: dto.containerType || '40HC',
+        gross_weight_kg: dto.grossWeightKg || 1000,
+        cbm_volume: dto.cbmVolume || 10,
+        package_count: dto.packageCount || 50,
+        shipper_name: dto.shipperName?.trim() || 'Shipper Quốc Tế',
+        consignee_name: dto.consigneeName?.trim() || 'Consignee Nhập Khẩu',
+        currency: dto.currency || 'USD',
+        freight_amount: dto.freightAmount || 1500,
+        customs_status: 'NOT_FILED',
+        status: (dto.status as any) || 'BOOKING_CONFIRMED',
+        notes: dto.notes,
+      },
+    });
 
-    this.shipments.unshift(newShipment);
-    return newShipment;
+    return this.mapShipment(record);
   }
 
-  async updateShipment(id: string, dto: Partial<CreateInternationalShipmentDto>) {
-    const index = this.shipments.findIndex((s) => s.id === id);
-    if (index === -1) {
+  async updateShipment(id: string, dto: Partial<CreateInternationalShipmentDto>): Promise<InternationalShipment> {
+    const existing = await this.prisma.internationalShipment.findFirst({
+      where: { OR: [{ id }, { shipment_code: id }] },
+    });
+
+    if (!existing) {
       throw new NotFoundException(`Không tìm thấy lô hàng ${id}`);
     }
 
-    const current = this.shipments[index];
-    const updated: InternationalShipment = {
-      ...current,
-      ...(dto.direction && { direction: dto.direction }),
-      ...(dto.transportMode && { transportMode: dto.transportMode }),
-      ...(dto.incoterm && { incoterm: dto.incoterm }),
-      ...(dto.carrierName && { carrierName: dto.carrierName }),
-      ...(dto.vesselFlightNo !== undefined && { vesselFlightNo: dto.vesselFlightNo }),
-      ...(dto.polPort && { polPort: dto.polPort }),
-      ...(dto.podPort && { podPort: dto.podPort }),
-      ...(dto.etdDate && { etdDate: dto.etdDate }),
-      ...(dto.etaDate && { etaDate: dto.etaDate }),
-      ...(dto.blAwbNumber && { blAwbNumber: dto.blAwbNumber }),
-      ...(dto.containerNumber !== undefined && { containerNumber: dto.containerNumber }),
-      ...(dto.sealNumber !== undefined && { sealNumber: dto.sealNumber }),
-      ...(dto.grossWeightKg !== undefined && { grossWeightKg: dto.grossWeightKg }),
-      ...(dto.cbmVolume !== undefined && { cbmVolume: dto.cbmVolume }),
-      ...(dto.packageCount !== undefined && { packageCount: dto.packageCount }),
-      ...(dto.shipperName && { shipperName: dto.shipperName }),
-      ...(dto.consigneeName && { consigneeName: dto.consigneeName }),
-      ...(dto.currency && { currency: dto.currency }),
-      ...(dto.freightAmount !== undefined && { freightAmount: dto.freightAmount }),
-      ...(dto.status && { status: dto.status as any }),
-      ...(dto.notes !== undefined && { notes: dto.notes }),
-      updatedAt: new Date().toISOString(),
-    };
+    const data: any = {};
+    if (dto.direction) data.direction = dto.direction;
+    if (dto.transportMode) data.transport_mode = dto.transportMode;
+    if (dto.incoterm) data.incoterm = dto.incoterm;
+    if (dto.carrierName) data.carrier_name = dto.carrierName;
+    if (dto.vesselFlightNo !== undefined) data.vessel_flight_no = dto.vesselFlightNo;
+    if (dto.polPort) data.pol_port = dto.polPort;
+    if (dto.podPort) data.pod_port = dto.podPort;
+    if (dto.etdDate) data.etd_date = new Date(dto.etdDate);
+    if (dto.etaDate) data.eta_date = new Date(dto.etaDate);
+    if (dto.blAwbNumber) data.bl_awb_number = dto.blAwbNumber;
+    if (dto.containerNumber !== undefined) data.container_number = dto.containerNumber;
+    if (dto.sealNumber !== undefined) data.seal_number = dto.sealNumber;
+    if (dto.containerType !== undefined) data.container_type = dto.containerType;
+    if (dto.grossWeightKg !== undefined) data.gross_weight_kg = dto.grossWeightKg;
+    if (dto.cbmVolume !== undefined) data.cbm_volume = dto.cbmVolume;
+    if (dto.packageCount !== undefined) data.package_count = dto.packageCount;
+    if (dto.shipperName) data.shipper_name = dto.shipperName;
+    if (dto.consigneeName) data.consignee_name = dto.consigneeName;
+    if (dto.currency) data.currency = dto.currency;
+    if (dto.freightAmount !== undefined) data.freight_amount = dto.freightAmount;
+    if (dto.status) data.status = dto.status;
+    if (dto.notes !== undefined) data.notes = dto.notes;
 
-    this.shipments[index] = updated;
-    return updated;
+    const updated = await this.prisma.internationalShipment.update({
+      where: { id: existing.id },
+      data,
+    });
+
+    return this.mapShipment(updated);
   }
 
   async deleteShipment(id: string) {
-    const index = this.shipments.findIndex((s) => s.id === id);
-    if (index === -1) {
+    const existing = await this.prisma.internationalShipment.findFirst({
+      where: { OR: [{ id }, { shipment_code: id }] },
+    });
+
+    if (!existing) {
       throw new NotFoundException(`Không tìm thấy lô hàng ${id}`);
     }
-    const item = this.shipments[index];
-    this.shipments.splice(index, 1);
-    return { success: true, message: `Đã xóa lô hàng ${item.shipmentCode}` };
+
+    await this.prisma.internationalShipment.delete({
+      where: { id: existing.id },
+    });
+
+    return { success: true, message: `Đã xóa lô hàng ${existing.shipment_code}` };
   }
 
   // ================= CUSTOMS DECLARATIONS API =================
-  async getCustomsDeclarations(params?: { channel?: string; status?: string; search?: string }) {
-    let list = [...this.customsDeclarations];
-
+  async getCustomsDeclarations(params?: { channel?: string; status?: string; search?: string }): Promise<CustomsDeclaration[]> {
+    const where: any = {};
     if (params?.channel && params.channel !== 'ALL') {
-      list = list.filter((c) => c.channel === params.channel);
+      where.channel = params.channel;
     }
     if (params?.status && params.status !== 'ALL') {
-      list = list.filter((c) => c.status === params.status);
+      where.status = params.status;
     }
     if (params?.search && params.search.trim()) {
-      const q = params.search.trim().toLowerCase();
-      list = list.filter(
-        (c) =>
-          c.declarationNo.includes(q) ||
-          c.shipmentCode.toLowerCase().includes(q) ||
-          c.customsBranch.toLowerCase().includes(q) ||
-          c.hsCode.includes(q) ||
-          c.commodityDescription.toLowerCase().includes(q)
-      );
+      const q = params.search.trim();
+      where.OR = [
+        { declaration_no: { contains: q, mode: 'insensitive' } },
+        { shipment_code: { contains: q, mode: 'insensitive' } },
+        { customs_branch: { contains: q, mode: 'insensitive' } },
+        { hs_code: { contains: q, mode: 'insensitive' } },
+        { commodity_description: { contains: q, mode: 'insensitive' } },
+      ];
     }
 
-    return list;
+    const records = await this.prisma.customsDeclaration.findMany({
+      where,
+      orderBy: { registered_date: 'desc' },
+    });
+
+    return records.map((r) => this.mapCustoms(r));
   }
 
-  async createCustomsDeclaration(dto: CreateCustomsDeclarationDto) {
-    const existing = this.customsDeclarations.find((c) => c.declarationNo === dto.declarationNo.trim());
+  async createCustomsDeclaration(dto: CreateCustomsDeclarationDto): Promise<CustomsDeclaration> {
+    const declNo = dto.declarationNo.trim();
+    const existing = await this.prisma.customsDeclaration.findUnique({
+      where: { declaration_no: declNo },
+    });
+
     if (existing) {
-      throw new BadRequestException(`Số tờ khai hải quan "${dto.declarationNo}" đã tồn tại`);
+      throw new BadRequestException(`Số tờ khai hải quan "${declNo}" đã tồn tại`);
     }
 
-    const newDecl: CustomsDeclaration = {
-      id: `cst-${Date.now()}`,
-      declarationNo: dto.declarationNo.trim(),
-      shipmentId: dto.shipmentId,
-      shipmentCode: dto.shipmentId, // or lookup from shipments
-      customsBranch: dto.customsBranch,
-      declarationType: dto.declarationType,
-      channel: dto.channel,
-      hsCode: dto.hsCode || '8471.30.20',
-      commodityDescription: dto.commodityDescription || 'Hàng hóa xuất nhập khẩu tiêu chuẩn',
-      invoiceValue: dto.invoiceValue || 10000,
-      currency: dto.currency || 'USD',
-      importTaxAmount: dto.importTaxAmount || 0,
-      vatTaxAmount: dto.vatTaxAmount || 0,
-      status: dto.status || 'REGISTERED',
-      registeredDate: dto.registeredDate || new Date().toISOString(),
-      clearedDate: dto.status === 'CLEARED' ? new Date().toISOString() : undefined,
-    };
+    let shipmentCode = dto.shipmentId;
+    const shipment = await this.prisma.internationalShipment.findFirst({
+      where: { OR: [{ id: dto.shipmentId }, { shipment_code: dto.shipmentId }] },
+    });
 
-    // Cập nhật trạng thái hải quan trên Shipment
-    const shipment = this.shipments.find((s) => s.id === dto.shipmentId || s.shipmentCode === dto.shipmentId);
     if (shipment) {
-      newDecl.shipmentCode = shipment.shipmentCode;
-      shipment.customsStatus = dto.channel === 'GREEN' ? 'CLEARED' : dto.channel;
-      if (dto.status === 'CLEARED') {
-        shipment.status = 'CUSTOMS_CLEARED';
-      }
+      shipmentCode = shipment.shipment_code;
+      // Cập nhật trạng thái hải quan trên Shipment
+      await this.prisma.internationalShipment.update({
+        where: { id: shipment.id },
+        data: {
+          customs_status: dto.channel === 'GREEN' ? 'CLEARED' : dto.channel,
+          ...(dto.status === 'CLEARED' && { status: 'CUSTOMS_CLEARED' }),
+        },
+      });
     }
 
-    this.customsDeclarations.unshift(newDecl);
-    return newDecl;
+    const record = await this.prisma.customsDeclaration.create({
+      data: {
+        declaration_no: declNo,
+        shipment_id: dto.shipmentId,
+        shipment_code: shipmentCode,
+        customs_branch: dto.customsBranch,
+        declaration_type: dto.declarationType,
+        channel: (dto.channel as any) || 'GREEN',
+        hs_code: dto.hsCode || '8471.30.20',
+        commodity_description: dto.commodityDescription || 'Hàng hóa xuất nhập khẩu tiêu chuẩn',
+        invoice_value: dto.invoiceValue || 10000,
+        currency: dto.currency || 'USD',
+        import_tax_amount: dto.importTaxAmount || 0,
+        vat_tax_amount: dto.vatTaxAmount || 0,
+        status: dto.status || 'REGISTERED',
+        registered_date: dto.registeredDate ? new Date(dto.registeredDate) : new Date(),
+        cleared_date: dto.status === 'CLEARED' ? new Date() : null,
+      },
+    });
+
+    return this.mapCustoms(record);
   }
 
-  async updateCustomsStatus(id: string, status: 'DRAFT' | 'REGISTERED' | 'CLEARED' | 'REJECTED') {
-    const decl = this.customsDeclarations.find((c) => c.id === id);
-    if (!decl) throw new NotFoundException('Không tìm thấy tờ khai');
-    decl.status = status;
+  async updateCustomsStatus(id: string, status: 'DRAFT' | 'REGISTERED' | 'CLEARED' | 'REJECTED'): Promise<CustomsDeclaration> {
+    const decl = await this.prisma.customsDeclaration.findFirst({
+      where: { OR: [{ id }, { declaration_no: id }] },
+    });
+
+    if (!decl) throw new NotFoundException('Không tìm thấy tờ khai hải quan');
+
+    const updateData: any = { status };
     if (status === 'CLEARED') {
-      decl.clearedDate = new Date().toISOString();
-      const shipment = this.shipments.find((s) => s.shipmentCode === decl.shipmentCode);
-      if (shipment) {
-        shipment.customsStatus = 'CLEARED';
-        shipment.status = 'CUSTOMS_CLEARED';
-      }
+      updateData.cleared_date = new Date();
+      // Đồng bộ sang shipment
+      await this.prisma.internationalShipment.updateMany({
+        where: { shipment_code: decl.shipment_code },
+        data: { customs_status: 'CLEARED', status: 'CUSTOMS_CLEARED' },
+      });
     }
-    return decl;
+
+    const updated = await this.prisma.customsDeclaration.update({
+      where: { id: decl.id },
+      data: updateData,
+    });
+
+    return this.mapCustoms(updated);
   }
 
   // ================= CONTAINERS & RATES API =================
-  async getContainers() {
-    return this.containers;
+  async getContainers(): Promise<ContainerTrackingItem[]> {
+    const list = await this.prisma.containerTracking.findMany({
+      orderBy: { created_at: 'desc' },
+    });
+    return list.map((c) => this.mapContainer(c));
   }
 
-  async getPorts() {
-    return this.ports;
+  async getPorts(): Promise<InternationalPort[]> {
+    const list = await this.prisma.internationalPort.findMany({
+      orderBy: { code: 'asc' },
+    });
+    return list.map((p) => this.mapPort(p));
   }
 
-  async getExchangeRates() {
-    return this.exchangeRates;
+  async getExchangeRates(): Promise<ExchangeRateItem[]> {
+    const list = await this.prisma.exchangeRate.findMany({
+      orderBy: { currency: 'asc' },
+    });
+    return list.map((e) => this.mapExchangeRate(e));
   }
 
-  async getLocalCharges() {
-    return this.localCharges;
+  async getLocalCharges(): Promise<LocalChargeItem[]> {
+    const list = await this.prisma.localCharge.findMany({
+      orderBy: { code: 'asc' },
+    });
+    return list.map((c) => this.mapLocalCharge(c));
   }
 
   // ================= SMART HS CODE & FTA TAX ENGINE =================
-  async searchHsCodes(query?: string) {
-    if (!query || !query.trim()) return this.hsCodes;
-    const q = query.trim().toLowerCase();
-    return this.hsCodes.filter(
-      (item) =>
-        item.hsCode.toLowerCase().includes(q) ||
-        item.descriptionVi.toLowerCase().includes(q) ||
-        item.descriptionEn.toLowerCase().includes(q) ||
-        (item.specializedInspection && item.specializedInspection.toLowerCase().includes(q))
-    );
+  async searchHsCodes(query?: string): Promise<HsCodeItem[]> {
+    const where: any = {};
+    if (query && query.trim()) {
+      const q = query.trim();
+      where.OR = [
+        { hs_code: { contains: q, mode: 'insensitive' } },
+        { description_vi: { contains: q, mode: 'insensitive' } },
+        { description_en: { contains: q, mode: 'insensitive' } },
+        { specialized_inspection: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+    const list = await this.prisma.hsCode.findMany({
+      where,
+      orderBy: { hs_code: 'asc' },
+    });
+    return list.map((h) => this.mapHsCode(h));
   }
 
   async calculateFtaTaxes(dto: {
@@ -1380,73 +1464,89 @@ export class InternationalService implements OnModuleInit {
     currency: string;
     originFta?: string;
   }) {
-    const item = this.hsCodes.find((h) => h.hsCode === dto.hsCode) || this.hsCodes[0];
+    let item = await this.prisma.hsCode.findUnique({
+      where: { hs_code: dto.hsCode },
+    });
+
+    if (!item) {
+      item = await this.prisma.hsCode.findFirst();
+    }
+
+    if (!item) {
+      throw new NotFoundException('Không tìm thấy thông tin biểu thuế mã HS');
+    }
+
     const rateUsd = 25450;
     const valueVnd = (dto.currency === 'USD' ? dto.invoiceValue : dto.invoiceValue * 1.1) * rateUsd;
 
-    // Xác định thuế suất theo Hiệp định FTA
-    let applicableDutyRate = item.mfnRate;
+    let applicableDutyRate = item.mfn_rate;
     let ftaName = 'MFN (Tối huệ quốc)';
 
     switch (dto.originFta) {
       case 'EVFTA':
-        applicableDutyRate = item.evftaRate;
+        applicableDutyRate = item.evfta_rate;
         ftaName = 'EVFTA (Việt Nam - Liên minh Châu Âu EU)';
         break;
       case 'CPTPP':
-        applicableDutyRate = item.cptppRate;
+        applicableDutyRate = item.cptpp_rate;
         ftaName = 'CPTPP (Hiệp định Đối tác Toàn diện và Tiến bộ)';
         break;
       case 'ACFTA':
-        applicableDutyRate = item.acftaRate;
+        applicableDutyRate = item.acfta_rate;
         ftaName = 'ACFTA Form E (ASEAN - Trung Quốc)';
         break;
       case 'ATIGA':
-        applicableDutyRate = item.atigaRate;
+        applicableDutyRate = item.atiga_rate;
         ftaName = 'ATIGA Form D (Nội khối ASEAN)';
         break;
       case 'VKFTA':
-        applicableDutyRate = item.vkftaRate;
+        applicableDutyRate = item.vkfta_rate;
         ftaName = 'VKFTA Form AK (Việt Nam - Hàn Quốc)';
         break;
       default:
-        applicableDutyRate = item.mfnRate;
+        applicableDutyRate = item.mfn_rate;
     }
 
-    const standardDutyVnd = (valueVnd * item.standardDutyRate) / 100;
-    const mfnDutyVnd = (valueVnd * item.mfnRate) / 100;
+    const standardDutyVnd = (valueVnd * item.standard_duty_rate) / 100;
+    const mfnDutyVnd = (valueVnd * item.mfn_rate) / 100;
     const applicableDutyVnd = (valueVnd * applicableDutyRate) / 100;
-    const vatVnd = ((valueVnd + applicableDutyVnd) * item.vatRate) / 100;
+    const vatVnd = ((valueVnd + applicableDutyVnd) * item.vat_rate) / 100;
     const totalTaxVnd = applicableDutyVnd + vatVnd;
     const dutySavingsVnd = standardDutyVnd - applicableDutyVnd;
 
     return {
-      hsCode: item.hsCode,
-      descriptionVi: item.descriptionVi,
+      hsCode: item.hs_code,
+      descriptionVi: item.description_vi,
       ftaName,
       applicableDutyRate,
-      mfnRate: item.mfnRate,
-      standardDutyRate: item.standardDutyRate,
-      vatRate: item.vatRate,
+      mfnRate: item.mfn_rate,
+      standardDutyRate: item.standard_duty_rate,
+      vatRate: item.vat_rate,
       cifValueVnd: Math.round(valueVnd),
       applicableDutyVnd: Math.round(applicableDutyVnd),
       vatVnd: Math.round(vatVnd),
       totalTaxVnd: Math.round(totalTaxVnd),
       dutySavingsVnd: Math.round(dutySavingsVnd),
-      specializedInspection: item.specializedInspection,
-      inspectionAgency: item.inspectionAgency,
-      importConditions: item.importConditions,
+      specializedInspection: item.specialized_inspection,
+      inspectionAgency: item.inspection_agency,
+      importConditions: item.import_conditions,
     };
   }
 
   // ================= SHIPMENT FINANCIALS P&L =================
-  async getShipmentFinancials() {
-    return this.shipmentFinancials;
+  async getShipmentFinancials(): Promise<ShipmentFinancialPnl[]> {
+    const list = await this.prisma.shipmentFinancial.findMany({
+      orderBy: { created_at: 'desc' },
+    });
+    return list.map((f) => this.mapFinancial(f));
   }
 
   // ================= CONTAINER DEPOSITS & EIR =================
-  async getContainerDeposits() {
-    return this.containerDeposits;
+  async getContainerDeposits(): Promise<ContainerDepositItem[]> {
+    const list = await this.prisma.containerDeposit.findMany({
+      orderBy: { deposited_date: 'desc' },
+    });
+    return list.map((d) => this.mapDeposit(d));
   }
 
   async refundContainerDeposit(
@@ -1456,102 +1556,179 @@ export class InternationalService implements OnModuleInit {
       refundedAmountVnd?: number;
       deductedReason?: string;
     }
-  ) {
-    const deposit = this.containerDeposits.find((d) => d.id === id);
+  ): Promise<ContainerDepositItem> {
+    const deposit = await this.prisma.containerDeposit.findFirst({
+      where: { OR: [{ id }, { container_no: id }] },
+    });
     if (!deposit) throw new NotFoundException('Không tìm thấy thông tin tiền cược vỏ');
-    deposit.refundStatus = dto.status;
-    deposit.refundedAmountVnd =
+
+    const refundedAmount =
       dto.refundedAmountVnd !== undefined
         ? dto.refundedAmountVnd
         : dto.status === 'REFUNDED_FULL'
-        ? deposit.depositAmountVnd
-        : deposit.depositAmountVnd - 500000;
-    if (dto.deductedReason) deposit.deductedReason = dto.deductedReason;
-    return deposit;
+        ? deposit.deposit_amount_vnd
+        : deposit.deposit_amount_vnd - 500000;
+
+    const updated = await this.prisma.containerDeposit.update({
+      where: { id: deposit.id },
+      data: {
+        refund_status: dto.status,
+        refunded_amount_vnd: refundedAmount,
+        ...(dto.deductedReason && { deducted_reason: dto.deductedReason }),
+      },
+    });
+
+    return this.mapDeposit(updated);
   }
 
   // ================= LIVE AIS VESSEL TRACKING =================
-  async getVesselTracking() {
-    return this.vessels;
+  async getVesselTracking(): Promise<VesselAisTrackingItem[]> {
+    const list = await this.prisma.vesselAisTracking.findMany({
+      orderBy: { updated_at: 'desc' },
+    });
+    return list.map((v) => this.mapVessel(v));
   }
 
   // ================= SHIPPING DOCUMENTS VAULT =================
-  async getShippingDocuments(shipmentCode?: string) {
+  async getShippingDocuments(shipmentCode?: string): Promise<ShippingDocument[]> {
+    const where: any = {};
     if (shipmentCode) {
-      return this.shippingDocuments.filter((d) => d.shipmentCode === shipmentCode);
+      where.shipment_code = shipmentCode;
     }
-    return this.shippingDocuments;
+    const list = await this.prisma.shippingDocumentRecord.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+    });
+    return list.map((d) => this.mapShippingDocument(d));
   }
 
   async verifyShippingDocument(
     id: string,
     dto: { status: 'VERIFIED' | 'REJECTED'; verificationNotes?: string }
-  ) {
-    const doc = this.shippingDocuments.find((d) => d.id === id);
+  ): Promise<ShippingDocument> {
+    const doc = await this.prisma.shippingDocumentRecord.findUnique({
+      where: { id },
+    });
     if (!doc) throw new NotFoundException('Không tìm thấy chứng từ xuất nhập khẩu');
-    doc.status = dto.status;
-    if (dto.verificationNotes) doc.verificationNotes = dto.verificationNotes;
-    return doc;
+
+    const updated = await this.prisma.shippingDocumentRecord.update({
+      where: { id },
+      data: {
+        status: dto.status,
+        ...(dto.verificationNotes && { verification_notes: dto.verificationNotes }),
+      },
+    });
+
+    return this.mapShippingDocument(updated);
+  }
+
+  async createShippingDocument(dto: Partial<ShippingDocument>): Promise<ShippingDocument> {
+    const record = await this.prisma.shippingDocumentRecord.create({
+      data: {
+        shipment_id: dto.shipmentId || 'shp-custom',
+        shipment_code: dto.shipmentCode || 'EXP-2026-001',
+        document_type: dto.documentType || 'BILL_OF_LADING',
+        document_number: dto.documentNumber || `DOC-${Date.now().toString().slice(-6)}`,
+        issue_date: dto.issueDate ? new Date(dto.issueDate) : new Date(),
+        issuer: dto.issuer || 'Đơn vị phát hành',
+        file_format: dto.fileFormat || 'PDF',
+        status: dto.status || 'ISSUED',
+        verification_notes: dto.verificationNotes,
+        is_mandatory: dto.isMandatory !== undefined ? dto.isMandatory : true,
+      },
+    });
+    return this.mapShippingDocument(record);
+  }
+
+  async deleteShippingDocument(id: string): Promise<boolean> {
+    const doc = await this.prisma.shippingDocumentRecord.findUnique({ where: { id } });
+    if (!doc) return false;
+    await this.prisma.shippingDocumentRecord.delete({ where: { id } });
+    return true;
   }
 
   // ================= CONTAINER DRAYAGE DISPATCH =================
-  async getDrayageDispatches(shipmentCode?: string) {
+  async getDrayageDispatches(shipmentCode?: string): Promise<ContainerDrayageDispatchItem[]> {
+    const where: any = {};
     if (shipmentCode) {
-      return this.drayageDispatches.filter((d) => d.shipmentCode === shipmentCode);
+      where.shipment_code = shipmentCode;
     }
-    return this.drayageDispatches;
+    const list = await this.prisma.containerDrayageDispatch.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+    });
+    return list.map((d) => this.mapDrayage(d));
   }
 
-  async createDrayageDispatch(dto: Partial<ContainerDrayageDispatchItem>) {
-    const newDispatch: ContainerDrayageDispatchItem = {
-      id: `dsp-${Date.now()}`,
-      dispatchCode: `DO-TRUCK-${Date.now().toString().slice(-4)}`,
-      shipmentCode: dto.shipmentCode || 'IMP-2026-005',
-      containerNo: dto.containerNo || 'HLXU4819201',
-      containerType: dto.containerType || '40HC',
-      dispatchType: dto.dispatchType || 'PORT_TO_DOOR',
-      pickupLocation: dto.pickupLocation || 'Cảng Tân Cảng Cát Lái',
-      deliveryLocation: dto.deliveryLocation || 'Kho Nhà Máy',
-      tractorPlate: dto.tractorPlate || '51C-881.92',
-      trailerPlate: dto.trailerPlate || '51R-441.20',
-      driverName: dto.driverName || 'Nguyễn Văn Hùng',
-      driverPhone: dto.driverPhone || '0918.441.291',
-      driverLicenseGrade: 'FC',
-      appointmentTime: dto.appointmentTime || new Date(Date.now() + 86400000).toISOString(),
-      status: 'DISPATCHED',
-      tollFeeVnd: dto.tollFeeVnd || 180000,
-      fuelEstimatedLiters: dto.fuelEstimatedLiters || 45,
-      notes: dto.notes,
-      createdAt: new Date().toISOString(),
-    };
-    this.drayageDispatches.unshift(newDispatch);
-    return newDispatch;
+  async createDrayageDispatch(dto: Partial<ContainerDrayageDispatchItem>): Promise<ContainerDrayageDispatchItem> {
+    const code = `DO-TRUCK-${Date.now().toString().slice(-4)}`;
+    const record = await this.prisma.containerDrayageDispatch.create({
+      data: {
+        dispatch_code: code,
+        shipment_code: dto.shipmentCode || 'IMP-2026-005',
+        container_no: dto.containerNo || 'HLXU4819201',
+        container_type: dto.containerType || '40HC',
+        dispatch_type: dto.dispatchType || 'PORT_TO_DOOR',
+        pickup_location: dto.pickupLocation || 'Cảng Tân Cảng Cát Lái',
+        delivery_location: dto.deliveryLocation || 'Kho Nhà Máy',
+        tractor_plate: dto.tractorPlate || '51C-881.92',
+        trailer_plate: dto.trailerPlate || '51R-441.20',
+        driver_name: dto.driverName || 'Nguyễn Văn Hùng',
+        driver_phone: dto.driverPhone || '0918.441.291',
+        driver_license_grade: 'FC',
+        appointment_time: dto.appointmentTime ? new Date(dto.appointmentTime) : new Date(Date.now() + 86400000),
+        status: 'DISPATCHED',
+        toll_fee_vnd: dto.tollFeeVnd || 180000,
+        fuel_estimated_liters: dto.fuelEstimatedLiters || 45,
+        notes: dto.notes,
+      },
+    });
+
+    return this.mapDrayage(record);
   }
 
   async updateDrayageStatus(
     id: string,
     status: 'PENDING_DISPATCH' | 'DISPATCHED' | 'PULLED_FROM_PORT' | 'DELIVERED_FACTORY' | 'COMPLETED'
-  ) {
-    const item = this.drayageDispatches.find((d) => d.id === id);
+  ): Promise<ContainerDrayageDispatchItem> {
+    const item = await this.prisma.containerDrayageDispatch.findFirst({
+      where: { OR: [{ id }, { dispatch_code: id }] },
+    });
+
     if (!item) throw new NotFoundException('Không tìm thấy lệnh điều độ xe');
-    item.status = status;
-    return item;
+
+    const updated = await this.prisma.containerDrayageDispatch.update({
+      where: { id: item.id },
+      data: { status },
+    });
+
+    return this.mapDrayage(updated);
   }
 
   // ================= AI IMPORT ANALYSIS & AUTO-DISPATCH =================
   async getAiImportAnalysis(shipmentCode: string): Promise<AiImportAnalysisReport> {
-    const shipment = this.shipments.find((s) => s.shipmentCode === shipmentCode) || this.shipments[0];
-    const isCustomsCleared = shipment.customsStatus === 'CLEARED';
-    const isReefer = shipment.containerType?.includes('RF');
+    let shipment = await this.prisma.internationalShipment.findFirst({
+      where: { shipment_code: shipmentCode },
+    });
+
+    if (!shipment) {
+      shipment = await this.prisma.internationalShipment.findFirst();
+    }
+
+    const isCustomsCleared = shipment?.customs_status === 'CLEARED';
+    const isReefer = shipment?.container_type?.includes('RF');
+    const freightAmount = shipment?.freight_amount || 2500;
+    const packageCount = shipment?.package_count || 100;
+    const podPort = shipment?.pod_port || 'Cảng Tân Cảng Cát Lái';
 
     return {
-      shipmentCode: shipment.shipmentCode,
+      shipmentCode: shipment?.shipment_code || shipmentCode,
       analyzedAt: new Date().toISOString(),
       overallRiskScore: isCustomsCleared ? 18 : 64,
       riskLevel: isCustomsCleared ? 'LOW_SAFE' : 'MEDIUM_CAUTION',
       portCongestionPrediction: {
         portCode: 'VNSGN',
-        portName: shipment.podPort || 'Cảng Tân Cảng Cát Lái',
+        portName: podPort,
         congestionLevelPercent: 78,
         averageVesselWaitingTimeHours: 6.5,
         recommendedDrayageWindow: '21:30 - 05:00 (Tránh giờ cấm tải container TP.HCM & kẹt cổng cảng)',
@@ -1572,14 +1749,14 @@ export class InternationalService implements OnModuleInit {
         recommendedAction: 'Điều xe kéo container lấy hàng trong khung giờ đêm trước 05:00 sáng mai',
       },
       landedCostBreakdown: {
-        fobValueVnd: Math.round(shipment.freightAmount * 25450 * 5.2),
-        freightAndInsuranceVnd: Math.round(shipment.freightAmount * 25450),
-        importTaxAndVatVnd: Math.round(shipment.freightAmount * 25450 * 0.18),
+        fobValueVnd: Math.round(freightAmount * 25450 * 5.2),
+        freightAndInsuranceVnd: Math.round(freightAmount * 25450),
+        importTaxAndVatVnd: Math.round(freightAmount * 25450 * 0.18),
         portAndLocalChargesVnd: 5400000,
         inlandDrayageTruckingVnd: 4200000,
-        totalLandedCostVnd: Math.round(shipment.freightAmount * 25450 * 6.6) + 9600000,
-        costPerUnitVnd: Math.round((shipment.freightAmount * 25450 * 6.6 + 9600000) / Math.max(1, shipment.packageCount)),
-        unitName: shipment.packageCount > 100 ? 'Carton' : 'Kiện / Unit',
+        totalLandedCostVnd: Math.round(freightAmount * 25450 * 6.6) + 9600000,
+        costPerUnitVnd: Math.round((freightAmount * 25450 * 6.6 + 9600000) / Math.max(1, packageCount)),
+        unitName: packageCount > 100 ? 'Carton' : 'Kiện / Unit',
       },
       aiRecommendations: [
         'Khung giờ điều xe tối ưu nhất: 22:00 - 04:30 qua tuyến Xa lộ Hà Nội - Mai Chí Thọ để giảm 25% thời gian chờ cổng cảng.',
@@ -1591,85 +1768,88 @@ export class InternationalService implements OnModuleInit {
 
   async runAiAutoDispatch(shipmentCode: string) {
     const analysis = await this.getAiImportAnalysis(shipmentCode);
-    const existing = this.drayageDispatches.find((d) => d.shipmentCode === shipmentCode);
+    const existing = await this.prisma.containerDrayageDispatch.findFirst({
+      where: { shipment_code: shipmentCode },
+    });
 
     if (existing) {
-      existing.status = 'DISPATCHED';
-      existing.appointmentTime = new Date().toISOString();
-      return { dispatch: existing, analysis };
+      const updated = await this.prisma.containerDrayageDispatch.update({
+        where: { id: existing.id },
+        data: {
+          status: 'DISPATCHED',
+          appointment_time: new Date(),
+        },
+      });
+      return { dispatch: this.mapDrayage(updated), analysis };
     }
 
-    const newDispatch: ContainerDrayageDispatchItem = {
-      id: `dsp-ai-${Date.now()}`,
-      dispatchCode: `DO-AI-${Date.now().toString().slice(-4)}`,
-      shipmentCode,
-      containerNo: 'AUTO-CONT-8819',
-      containerType: '40HC',
-      dispatchType: 'PORT_TO_DOOR',
-      pickupLocation: analysis.portCongestionPrediction.portName,
-      deliveryLocation: 'Kho Nhà Máy Consignee',
-      tractorPlate: '51C-881.92',
-      trailerPlate: '51R-441.20',
-      driverName: 'Nguyễn Văn Hùng (AI Matched)',
-      driverPhone: '0918.441.291',
-      driverLicenseGrade: 'FC',
-      appointmentTime: 'Khung giờ đêm: 22:00 - 04:30 (Tránh cấm tải)',
-      status: 'DISPATCHED',
-      tollFeeVnd: 180000,
-      fuelEstimatedLiters: 45,
-      notes: 'Được điều phối tự động bởi thuật toán AI Smart Drayage Dispatcher',
-      createdAt: new Date().toISOString(),
-    };
+    const newDispatch = await this.prisma.containerDrayageDispatch.create({
+      data: {
+        dispatch_code: `DO-AI-${Date.now().toString().slice(-4)}`,
+        shipment_code: shipmentCode,
+        container_no: 'AUTO-CONT-8819',
+        container_type: '40HC',
+        dispatch_type: 'PORT_TO_DOOR',
+        pickup_location: analysis.portCongestionPrediction.portName,
+        delivery_location: 'Kho Nhà Máy Consignee',
+        tractor_plate: '51C-881.92',
+        trailer_plate: '51R-441.20',
+        driver_name: 'Nguyễn Văn Hùng (AI Matched)',
+        driver_phone: '0918.441.291',
+        driver_license_grade: 'FC',
+        appointment_time: new Date(),
+        status: 'DISPATCHED',
+        toll_fee_vnd: 180000,
+        fuel_estimated_liters: 45,
+        notes: 'Được điều phối tự động bởi thuật toán AI Smart Drayage Dispatcher',
+      },
+    });
 
-    this.drayageDispatches.unshift(newDispatch);
-    return { dispatch: newDispatch, analysis };
+    return { dispatch: this.mapDrayage(newDispatch), analysis };
   }
 
-  async createShippingDocument(dto: Partial<ShippingDocument>) {
-    const newDoc: ShippingDocument = {
-      id: `doc-${Date.now()}`,
-      shipmentId: dto.shipmentId || 'shp-custom',
-      shipmentCode: dto.shipmentCode || 'EXP-2026-001',
-      documentType: dto.documentType || 'BILL_OF_LADING',
-      documentNumber: dto.documentNumber || `DOC-${Date.now().toString().slice(-6)}`,
-      issueDate: dto.issueDate || new Date().toISOString(),
-      issuer: dto.issuer || 'Đơn vị phát hành',
-      fileFormat: dto.fileFormat || 'PDF',
-      status: dto.status || 'ISSUED',
-      verificationNotes: dto.verificationNotes,
-      isMandatory: dto.isMandatory !== undefined ? dto.isMandatory : true,
-    };
-    this.shippingDocuments.unshift(newDoc);
-    return newDoc;
+  async createLocalCharge(dto: LocalChargeItem): Promise<LocalChargeItem> {
+    const record = await this.prisma.localCharge.upsert({
+      where: { code: dto.code },
+      update: {
+        name: dto.name,
+        description: dto.description,
+        amount: dto.amount,
+        currency: dto.currency,
+        applied_unit: dto.appliedUnit,
+      },
+      create: {
+        code: dto.code,
+        name: dto.name,
+        description: dto.description,
+        amount: dto.amount,
+        currency: dto.currency,
+        applied_unit: dto.appliedUnit,
+      },
+    });
+    return this.mapLocalCharge(record);
   }
 
-  async deleteShippingDocument(id: string) {
-    const prev = this.shippingDocuments.length;
-    this.shippingDocuments = this.shippingDocuments.filter((d) => d.id !== id);
-    return this.shippingDocuments.length < prev;
-  }
-
-  async createLocalCharge(dto: LocalChargeItem) {
-    const existing = this.localCharges.find((c) => c.code === dto.code);
-    if (existing) {
-      existing.name = dto.name;
-      existing.description = dto.description;
-      existing.amount = dto.amount;
-      existing.currency = dto.currency;
-      existing.appliedUnit = dto.appliedUnit;
-      return existing;
+  async updateExchangeRates(rates: ExchangeRateItem[]): Promise<ExchangeRateItem[]> {
+    for (const r of rates) {
+      await this.prisma.exchangeRate.upsert({
+        where: { currency: r.currency },
+        update: {
+          name: r.name,
+          buy_rate_vnd: r.buyRateVnd,
+          transfer_rate_vnd: r.transferRateVnd,
+          sell_rate_vnd: r.sellRateVnd,
+          updated_at: new Date(),
+        },
+        create: {
+          currency: r.currency,
+          name: r.name,
+          buy_rate_vnd: r.buyRateVnd,
+          transfer_rate_vnd: r.transferRateVnd,
+          sell_rate_vnd: r.sellRateVnd,
+        },
+      });
     }
-    this.localCharges.push(dto);
-    return dto;
-  }
-
-  async updateExchangeRates(rates: ExchangeRateItem[]) {
-    this.exchangeRates = rates.map((r) => ({
-      ...r,
-      updatedAt: new Date().toISOString(),
-    }));
-    return this.exchangeRates;
+    return this.getExchangeRates();
   }
 }
-
-
