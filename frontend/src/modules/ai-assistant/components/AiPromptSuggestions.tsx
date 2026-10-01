@@ -6,6 +6,7 @@ import {
   Fuel,
   Building2,
   Sparkles,
+  Anchor,
 } from "lucide-react";
 import { SUGGESTED_PROMPTS } from "../hooks/useAiAssistant";
 
@@ -20,6 +21,7 @@ const iconMap: Record<string, React.ElementType> = {
   Navigation,
   Fuel,
   Building2,
+  Anchor,
 };
 
 export const AiPromptSuggestions: React.FC<AiPromptSuggestionsProps> = ({

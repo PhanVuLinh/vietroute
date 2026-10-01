@@ -23,6 +23,7 @@ import { AuditModule } from './modules/audit/audit.module.js';
 import { DepartmentsModule } from './modules/departments/departments.module.js';
 import { InternationalModule } from './modules/international/international.module.js';
 import { UploadModule } from './modules/upload/upload.module.js';
+import { AiModule } from './modules/ai/ai.module.js';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { UploadModule } from './modules/upload/upload.module.js';
     DepartmentsModule,
     InternationalModule,
     UploadModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

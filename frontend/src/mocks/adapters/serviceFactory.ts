@@ -406,4 +406,60 @@ export const uploadService = {
   },
 };
 
+export interface AiChatMessageResponse {
+  id: string;
+  sender: "AI";
+  text: string;
+  timestamp: string;
+  insights?: {
+    type: "SLA_ALERT" | "ROUTE_OPTIMIZATION" | "DRIVER_DISPATCH" | "FUEL_ANALYTICS" | "WAREHOUSE_OVERLOAD" | "INCIDENT_ALERT";
+    title: string;
+    description: string;
+    metrics?: { label: string; value: string; positive?: boolean }[];
+    actionLabel?: string;
+    actionUrl?: string;
+  };
+}
+
+export interface AiRecommendation {
+  id: string;
+  type: "WARNING" | "OPPORTUNITY" | "ALERT" | "INFO";
+  title: string;
+  description: string;
+  impact: string;
+  actionLabel: string;
+  actionUrl: string;
+  createdAt: string;
+}
+
+export interface PredictEtaRequest {
+  originLat: number;
+  originLng: number;
+  destLat: number;
+  destLng: number;
+  vehicleType?: string;
+  trafficMultiplier?: number;
+}
+
+export interface PredictEtaResponse {
+  distanceKm: number;
+  durationMinutes: number;
+  trafficStatus: string;
+  trafficMultiplier: number;
+  averageSpeedKmH: number;
+  estimatedArrival: string;
+  confidenceScore: number;
+}
+
+const apiAiService = {
+  chat: (prompt: string, conversationId?: string) =>
+    httpClient.post<AiChatMessageResponse>("/ai/chat", { prompt, conversationId }),
+  getRecommendations: () =>
+    httpClient.get<AiRecommendation[]>("/ai/recommendations"),
+  predictEta: (dto: PredictEtaRequest) =>
+    httpClient.post<PredictEtaResponse>("/ai/predict-eta", dto),
+};
+
+export const aiService = apiAiService;
+
 

@@ -5,6 +5,10 @@ import {
   ArrowRight,
   AlertTriangle,
   Navigation,
+  Truck,
+  Fuel,
+  ShieldAlert,
+  Building2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
@@ -31,9 +35,27 @@ export const AiInsightCards: React.FC<AiInsightCardsProps> = ({ insights }) => {
         };
       case "WAREHOUSE_OVERLOAD":
         return {
-          icon: AlertTriangle,
+          icon: Building2,
           color: "text-rose-600 dark:text-rose-400",
           bg: "bg-rose-500/10 border-rose-500/30",
+        };
+      case "DRIVER_DISPATCH":
+        return {
+          icon: Truck,
+          color: "text-emerald-600 dark:text-emerald-400",
+          bg: "bg-emerald-500/10 border-emerald-500/30",
+        };
+      case "FUEL_ANALYTICS":
+        return {
+          icon: Fuel,
+          color: "text-violet-600 dark:text-violet-400",
+          bg: "bg-violet-500/10 border-violet-500/30",
+        };
+      case "INCIDENT_ALERT":
+        return {
+          icon: ShieldAlert,
+          color: "text-red-600 dark:text-red-400",
+          bg: "bg-red-500/10 border-red-500/30",
         };
       default:
         return {
