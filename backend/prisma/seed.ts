@@ -42,6 +42,20 @@ async function main() {
   console.log('🚀 Bắt đầu nạp dữ liệu khởi tạo (Seed) cho VietRoute...');
 
   // 0. Xóa dữ liệu cũ nếu có theo thứ tự ràng buộc khóa ngoại
+  await prisma.routeTemplateRecord.deleteMany();
+  await prisma.containerDrayageDispatch.deleteMany();
+  await prisma.shippingDocumentRecord.deleteMany();
+  await prisma.vesselAisTracking.deleteMany();
+  await prisma.containerDeposit.deleteMany();
+  await prisma.shipmentFinancial.deleteMany();
+  await prisma.containerTracking.deleteMany();
+  await prisma.customsDeclaration.deleteMany();
+  await prisma.internationalShipment.deleteMany();
+  await prisma.hsCode.deleteMany();
+  await prisma.localCharge.deleteMany();
+  await prisma.exchangeRate.deleteMany();
+  await prisma.internationalPort.deleteMany();
+  await prisma.department.deleteMany();
   await prisma.invoiceItem.deleteMany();
   await prisma.invoice.deleteMany();
   await prisma.codEntry.deleteMany();
@@ -72,8 +86,45 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.role.deleteMany();
 
-  // 1. ROLES
-  console.log('📦 1/8. Tạo danh sách vai trò (Roles)...');
+  // 1. ROLES & PERMISSIONS
+  console.log('📦 1/8. Tạo danh sách vai trò (Roles) và ma trận phân quyền...');
+  const rolePermissions: Record<string, string[]> = {
+    ADMIN: [
+      'staff.view', 'staff.manage', 'roles.manage',
+      'routes.view', 'routes.manage', 'routes.dispatch',
+      'orders.view', 'orders.manage', 'orders.create',
+      'vehicles.view', 'vehicles.manage',
+      'drivers.view', 'drivers.manage',
+      'warehouses.view', 'warehouses.manage',
+      'reports.view', 'reports.export',
+      'customers.view', 'customers.manage',
+      'international.view', 'international.manage',
+    ],
+    MANAGER: [
+      'staff.view', 'staff.manage',
+      'routes.view', 'routes.manage', 'routes.dispatch',
+      'orders.view', 'orders.manage',
+      'vehicles.view', 'drivers.view',
+      'warehouses.view', 'warehouses.manage',
+      'reports.view', 'reports.export',
+      'customers.view', 'customers.manage',
+      'international.view',
+    ],
+    DISPATCHER: [
+      'routes.view', 'routes.manage', 'routes.dispatch',
+      'orders.view', 'orders.manage',
+      'vehicles.view', 'drivers.view',
+      'reports.view',
+    ],
+    DRIVER: [
+      'routes.view', 'routes.own',
+    ],
+    WAREHOUSE_STAFF: [
+      'warehouses.view', 'warehouses.manage',
+      'orders.view',
+    ],
+  };
+
   const roleNames = ['ADMIN', 'MANAGER', 'DISPATCHER', 'DRIVER', 'WAREHOUSE_STAFF'];
   const roleMap = new Map<string, Role>();
 
@@ -82,6 +133,7 @@ async function main() {
       data: {
         name,
         description: `Vai trò ${name} trong hệ thống VietRoute`,
+        permissions: rolePermissions[name] || [],
       },
     });
     roleMap.set(name, role);
@@ -1423,6 +1475,274 @@ async function main() {
         ],
       },
     },
+  });
+
+  // 9. DEPARTMENTS
+  console.log('🏢 9/11. Tạo danh mục phòng ban (Departments)...');
+  const departmentsData = [
+    {
+      name: 'Ban Giám đốc (Board of Directors)',
+      code: 'BOD',
+      description: 'Ban lãnh đạo điều hành chiến lược kinh doanh toàn quốc VietRoute',
+      status: 'ACTIVE' as any,
+    },
+    {
+      name: 'Khối Điều hành & Vận tải (Operations & Dispatch)',
+      code: 'OPS',
+      description: 'Bộ phận quản lý đội xe tải, điều phối tuyến đường và giám sát tài xế giao hàng',
+      status: 'ACTIVE' as any,
+    },
+    {
+      name: 'Khối Kho bãi & Chuỗi cung ứng (WMS & Logistics)',
+      code: 'WMS',
+      description: 'Bộ phận quản lý nhập xuất kho, kiểm soát tồn kho và phân loại hàng hóa pallet',
+      status: 'ACTIVE' as any,
+    },
+    {
+      name: 'Phòng Kế toán & Tài chính (Finance & Accounting)',
+      code: 'FIN',
+      description: 'Bộ phận đối soát tiền thu hộ COD, công nợ vận tải và hóa đơn GTGT điện tử',
+      status: 'ACTIVE' as any,
+    },
+    {
+      name: 'Phòng Kinh doanh & Dịch vụ Khách hàng (Sales & CS)',
+      code: 'CS',
+      description: 'Chăm sóc đối tác B2B, xử lý khiếu nại vận chuyển và khảo sát khách hàng',
+      status: 'ACTIVE' as any,
+    },
+    {
+      name: 'Phòng Công nghệ & Chuyển đổi số (IT & Digital)',
+      code: 'IT',
+      description: 'Đội ngũ phát triển phần mềm VietRoute TMS, WMS và hệ thống IoT GPS',
+      status: 'ACTIVE' as any,
+    },
+  ];
+  for (const dept of departmentsData) {
+    await prisma.department.create({ data: dept });
+  }
+
+  // 10. ROUTE TEMPLATES
+  console.log('🛣️ 10/11. Tạo lộ trình tuyến mẫu (Route Templates)...');
+  const defaultRouteTemplates = [
+    {
+      id: 'tpl-hn-retail',
+      name: 'Tuyến Phân phối Siêu thị & Đại lý Nội thành Hà Nội',
+      category: 'RETAIL',
+      description: 'Cung ứng định kỳ hàng ngày cho chuỗi siêu thị BigC, Aeon Mall, Vincom nội thành',
+      warehouse_id: 'wh-hn-lb',
+      total_distance: 38.5,
+      estimated_duration: 110,
+      fuel_est_liters: 9.6,
+      toll_fee_est_vnd: 35000,
+      total_weight_kg: 1850,
+      total_volume_m3: 8.5,
+      traffic_alerts: ['Mật độ cao giờ cao điểm tại nút giao Khuất Duy Tiến'],
+      stops: [
+        {
+          sequence: 1,
+          latitude: 21.0365,
+          longitude: 105.789,
+          customerName: 'Công ty Công nghệ FPT Cầu Giấy',
+          customerPhone: '0912.345.678',
+          address: 'Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội',
+          orderCode: 'ORD-TPL-01',
+          weightKg: 650,
+          packageCount: 12,
+          timeWindowStart: '08:15',
+          timeWindowEnd: '09:00',
+          estimatedArrival: '08:30',
+          status: 'PENDING',
+          notes: 'Giao sảnh lễ tân tầng 1',
+        },
+        {
+          sequence: 2,
+          latitude: 21.025,
+          longitude: 105.772,
+          customerName: 'Đại siêu thị Big C Thăng Long',
+          customerPhone: '0934.567.890',
+          address: '222 Trần Duy Hưng, Trung Hòa, Cầu Giấy, Hà Nội',
+          orderCode: 'ORD-TPL-02',
+          weightKg: 800,
+          packageCount: 25,
+          timeWindowStart: '09:15',
+          timeWindowEnd: '10:30',
+          estimatedArrival: '09:45',
+          status: 'PENDING',
+          notes: 'Cửa nhập hàng B2, liên hệ thủ kho A. Tuấn',
+        },
+      ],
+    },
+    {
+      id: 'tpl-hcm-south',
+      name: 'Tuyến Tiếp tế Chuỗi Bách Hóa Xanh Nam Sài Gòn',
+      category: 'RETAIL',
+      description: 'Cung ứng thực phẩm và hàng tiêu dùng Cát Lái -> Q7 -> Phú Mỹ Hưng -> Nhà Bè',
+      warehouse_id: 'wh-hcm-cl',
+      total_distance: 46.8,
+      estimated_duration: 130,
+      fuel_est_liters: 12.4,
+      toll_fee_est_vnd: 40000,
+      total_weight_kg: 2400,
+      total_volume_m3: 11.2,
+      traffic_alerts: ['Cầu Kênh Tẻ ùn tắc hướng vào trung tâm'],
+      stops: [
+        {
+          sequence: 1,
+          latitude: 10.7325,
+          longitude: 106.7188,
+          customerName: 'Bách Hóa Xanh Huỳnh Tấn Phát',
+          customerPhone: '0901.223.344',
+          address: '789 Huỳnh Tấn Phát, P. Tân Phú, Quận 7, TP.HCM',
+          orderCode: 'ORD-TPL-04',
+          weightKg: 1100,
+          packageCount: 30,
+          timeWindowStart: '07:30',
+          timeWindowEnd: '08:30',
+          estimatedArrival: '08:00',
+          status: 'PENDING',
+          notes: 'Hàng đông lạnh cần dỡ trước',
+        },
+      ],
+    },
+  ];
+  for (const tpl of defaultRouteTemplates) {
+    await prisma.routeTemplateRecord.create({ data: tpl });
+  }
+
+  // 11. INTERNATIONAL LOGISTICS & CUSTOMS
+  console.log('🚢 11/11. Tạo dữ liệu Vận tải quốc tế & Hải quan (International Logistics)...');
+  await prisma.internationalPort.createMany({
+    data: [
+      { code: 'VNSGN', name: 'Cảng Tân Cảng Cát Lái', country: 'Việt Nam', city: 'TP. Hồ Chí Minh', type: 'SEAPORT' },
+      { code: 'VNHPH', name: 'Cảng Hải Phòng (Lạch Huyện / Đình Vũ)', country: 'Việt Nam', city: 'Hải Phòng', type: 'SEAPORT' },
+      { code: 'USLAX', name: 'Port of Los Angeles', country: 'Hoa Kỳ (USA)', city: 'Los Angeles', type: 'SEAPORT' },
+      { code: 'CNSHA', name: 'Port of Shanghai (Cảng Thượng Hải)', country: 'Trung Quốc', city: 'Thượng Hải', type: 'SEAPORT' },
+      { code: 'DEHAM', name: 'Port of Hamburg', country: 'Đức (Germany)', city: 'Hamburg', type: 'SEAPORT' },
+    ],
+    skipDuplicates: true,
+  });
+
+  await prisma.exchangeRate.createMany({
+    data: [
+      { currency: 'USD', name: 'Đô la Mỹ', buy_rate_vnd: 25420, transfer_rate_vnd: 25450, sell_rate_vnd: 25780 },
+      { currency: 'EUR', name: 'Đồng Euro', buy_rate_vnd: 27580, transfer_rate_vnd: 27650, sell_rate_vnd: 28100 },
+      { currency: 'CNY', name: 'Nhân dân tệ Trung Quốc', buy_rate_vnd: 3510, transfer_rate_vnd: 3530, sell_rate_vnd: 3620 },
+    ],
+    skipDuplicates: true,
+  });
+
+  await prisma.localCharge.createMany({
+    data: [
+      { code: 'THC', name: 'Terminal Handling Charge', description: 'Phí bốc xếp container từ cầu tàu lên bãi cảng', amount: 155, currency: 'USD', applied_unit: 'Per 40HC' },
+      { code: 'D/O', name: 'Delivery Order Fee', description: 'Phí phát hành lệnh giao hàng cho chủ hàng nhập khẩu', amount: 45, currency: 'USD', applied_unit: 'Per Bill' },
+      { code: 'CFS', name: 'Container Freight Station', description: 'Phí bốc dỡ và lưu kho cho hàng lẻ đóng ghép LCL', amount: 18, currency: 'USD', applied_unit: 'Per CBM' },
+    ],
+    skipDuplicates: true,
+  });
+
+  await prisma.internationalShipment.createMany({
+    data: [
+      {
+        id: 'shp-exp-001',
+        shipment_code: 'EXP-2026-001',
+        direction: 'EXPORT',
+        transport_mode: 'OCEAN_FCL',
+        incoterm: 'FOB',
+        carrier_name: 'Maersk Line',
+        vessel_flight_no: 'MAERSK MC-KINNEY 2601E',
+        pol_port: 'VNSGN - Cảng Tân Cảng Cát Lái',
+        pod_port: 'USLAX - Port of Los Angeles',
+        etd_date: new Date('2026-09-28T14:00:00.000Z'),
+        eta_date: new Date('2026-10-18T08:00:00.000Z'),
+        bl_awb_number: 'MAEU982180421',
+        container_number: 'MSKU8841920',
+        seal_number: 'ML-VN98412',
+        container_type: '40HC',
+        gross_weight_kg: 24500,
+        cbm_volume: 68.5,
+        package_count: 950,
+        shipper_name: 'Tập Đoàn May Mặc Xuất Khẩu Việt Tiến',
+        consignee_name: 'Walmart Global Sourcing (USA)',
+        currency: 'USD',
+        freight_amount: 3850,
+        customs_status: 'CLEARED',
+        status: 'CUSTOMS_CLEARED',
+        notes: 'Hàng may mặc đi Mỹ, đã kiểm tra hun trùng và kẹp chì điện tử.',
+      },
+      {
+        id: 'shp-imp-002',
+        shipment_code: 'IMP-2026-002',
+        direction: 'IMPORT',
+        transport_mode: 'OCEAN_FCL',
+        incoterm: 'CIF',
+        carrier_name: 'COSCO Shipping Lines',
+        vessel_flight_no: 'COSCO HELLAS 045W',
+        pol_port: 'CNSHA - Port of Shanghai',
+        pod_port: 'VNHPH - Cảng Hải Phòng',
+        etd_date: new Date('2026-09-22T08:00:00.000Z'),
+        eta_date: new Date('2026-09-29T16:00:00.000Z'),
+        bl_awb_number: 'COSU632194012',
+        container_number: 'TCLU1284711',
+        seal_number: 'CS-SH28192',
+        container_type: '20GP',
+        gross_weight_kg: 16800,
+        cbm_volume: 28.2,
+        package_count: 420,
+        shipper_name: 'Semiconductor Precision Ltd (Shanghai)',
+        consignee_name: 'Công ty Cổ phần Công nghệ FPT / Viettel',
+        currency: 'USD',
+        freight_amount: 850,
+        customs_status: 'YELLOW',
+        status: 'CUSTOMS_PROCESSING',
+        notes: 'Linh kiện chip điện tử bán dẫn, hải quan yêu cầu bổ sung C/O Form E.',
+      },
+    ],
+    skipDuplicates: true,
+  });
+
+  await prisma.customsDeclaration.createMany({
+    data: [
+      {
+        id: 'cst-001',
+        declaration_no: '104829104820',
+        shipment_id: 'shp-exp-001',
+        shipment_code: 'EXP-2026-001',
+        customs_branch: 'Chi cục HQ CK Cảng Sài Gòn KV1 (Cát Lái)',
+        declaration_type: 'B11 (Xuất kinh doanh)',
+        channel: 'GREEN',
+        hs_code: '6109.10.00',
+        commodity_description: 'Áo thun cotton dệt kim nam xuất khẩu',
+        invoice_value: 145000,
+        currency: 'USD',
+        import_tax_amount: 0,
+        vat_tax_amount: 0,
+        status: 'CLEARED',
+        registered_date: new Date('2026-09-26T08:30:00.000Z'),
+        cleared_date: new Date('2026-09-26T08:45:00.000Z'),
+      },
+    ],
+    skipDuplicates: true,
+  });
+
+  await prisma.containerTracking.createMany({
+    data: [
+      {
+        id: 'cnt-01',
+        container_no: 'MSKU8841920',
+        type: '40HC',
+        carrier: 'Maersk Line',
+        shipment_code: 'EXP-2026-001',
+        seal_no: 'ML-VN98412',
+        current_location: 'Bãi Cảng Cát Lái - Block E3',
+        dem_det_free_days: 7,
+        gate_in_date: new Date('2026-09-26T15:00:00.000Z'),
+        free_time_expiry_date: new Date('2026-10-03T23:59:59.000Z'),
+        overdue_days: 0,
+        estimated_penalty_amount_vnd: 0,
+        status: 'IN_DEPOT',
+      },
+    ],
+    skipDuplicates: true,
   });
 
   console.log('✨ Seed dữ liệu hoàn tất thành công 100%!');
