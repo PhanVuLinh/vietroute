@@ -8,18 +8,14 @@ echo.
 if not exist venv (
     echo [INFO] Tao moi truong ao Python venv...
     python -m venv venv
+    echo [INFO] Kich hoat va cai dat thu vien lan dau...
+    call venv\Scripts\activate.bat
+    pip install -r requirements.txt
 )
 
-echo [INFO] Kich hoat moi truong ao venv...
-call venv\Scripts\activate.bat
-
-echo [INFO] Kiem tra cai dat thu vien...
-pip install -r requirements.txt
-
-echo.
 echo [INFO] Khoi dong FastAPI server tai http://localhost:8000
 echo [INFO] Tai lieu Swagger UI: http://localhost:8000/docs
 echo.
 
-python run.py
+venv\Scripts\python.exe run.py
 pause
