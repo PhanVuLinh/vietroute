@@ -23,10 +23,12 @@ import {
   Share2,
   ArrowRightLeft,
   ScanLine,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { WarehouseAiDemandForecast } from "./WarehouseAiDemandForecast";
 import {
   WarehouseStatusBadge,
   WarehouseTypeBadge,
@@ -252,6 +254,10 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
                 </TabsTrigger>
                 <TabsTrigger value="divert" className="text-[11px] py-1">
                   Điều hướng
+                </TabsTrigger>
+                <TabsTrigger value="ai-demand" className="text-[11px] py-1 font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  <span>Dự Báo AI</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -859,6 +865,11 @@ export const WarehouseDetailDrawer: React.FC<WarehouseDetailDrawerProps> = ({
                     </div>
                   ))}
                 </div>
+              </TabsContent>
+
+              {/* TAB: DỰ BÁO NHU CẦU AI */}
+              <TabsContent value="ai-demand">
+                <WarehouseAiDemandForecast warehouse={warehouse} />
               </TabsContent>
             </Tabs>
           </div>

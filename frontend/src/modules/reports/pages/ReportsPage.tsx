@@ -27,9 +27,11 @@ import { DriverRankingTable } from "../components/DriverRankingTable";
 import { FleetUtilizationCard } from "../components/FleetUtilizationCard";
 import { RegionalVolumeChart } from "../components/RegionalVolumeChart";
 import { ExportReportDialog } from "../components/ExportReportDialog";
+import { ReportsAiForecastTab } from "../components/ReportsAiForecastTab";
 import { Can } from "@/shared/components/auth/Can";
+import { Sparkles } from "lucide-react";
 
-type ReportTab = "OVERVIEW" | "OTD" | "COSTS" | "FLEET";
+type ReportTab = "OVERVIEW" | "OTD" | "COSTS" | "FLEET" | "AI_FORECAST";
 
 export const ReportsPage: React.FC = () => {
   usePageTitle("Báo cáo & Phân tích Logistics");
@@ -137,6 +139,10 @@ export const ReportsPage: React.FC = () => {
               <Trophy className="h-3.5 w-3.5 text-indigo-500" />
               <span>Đội xe & Tài xế</span>
             </TabsTrigger>
+            <TabsTrigger value="AI_FORECAST" className="text-xs font-semibold px-3 py-1.5 gap-1.5 rounded-lg text-primary">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span>Dự Báo Sản Lượng AI</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* TAB 1: TỔNG QUAN */}
@@ -213,6 +219,11 @@ export const ReportsPage: React.FC = () => {
                 />
               </div>
             </div>
+          </TabsContent>
+
+          {/* TAB 5: DỰ BÁO SẢN LƯỢNG AI */}
+          <TabsContent value="AI_FORECAST" className="space-y-5 mt-0">
+            <ReportsAiForecastTab />
           </TabsContent>
         </Tabs>
       </div>

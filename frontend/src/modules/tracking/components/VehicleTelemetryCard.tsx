@@ -13,6 +13,8 @@ import {
   Thermometer,
   Activity,
   CheckCircle2,
+  Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -170,6 +172,35 @@ export const VehicleTelemetryCard: React.FC<VehicleTelemetryCardProps> = ({
               </div>
             </div>
           )}
+
+          {/* AI Telemetry & Anomaly Analysis (IsolationForest) */}
+          <div className="p-2.5 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-card to-emerald-500/5 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-[11px] text-foreground flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3 text-primary" />
+                AI Giám Sát Cảm Biến & Lộ Trình
+              </span>
+              <Badge variant="outline" className="text-[9px] py-0 px-1.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+                IsolationForest ML
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="p-1.5 rounded-lg bg-card/70 border border-border/50">
+                <span className="text-muted-foreground block text-[9px]">Tiêu hao dầu</span>
+                <span className="font-mono font-bold text-foreground">17.8 L/100km</span>
+                <span className="text-[8px] text-emerald-600 block">Định mức: 19.5L</span>
+              </div>
+              <div className="p-1.5 rounded-lg bg-card/70 border border-border/50">
+                <span className="text-muted-foreground block text-[9px]">Độ lệch GPS</span>
+                <span className="font-mono font-bold text-foreground">0.3 km</span>
+                <span className="text-[8px] text-emerald-600 block">Hành lang an toàn</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium pt-0.5">
+              <ShieldCheck className="h-3 w-3 shrink-0" />
+              <span>Xe tuân thủ lộ trình chuẩn, không ghi nhận dấu hiệu gian lận.</span>
+            </div>
+          </div>
 
           {/* Tài xế phụ trách */}
           <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-muted/20">

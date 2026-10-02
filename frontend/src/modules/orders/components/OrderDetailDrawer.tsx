@@ -31,6 +31,7 @@ import type { DriverStop, PodData } from "@/modules/driver/types/driverPortal";
 import { orderService } from "@/mocks/adapters/serviceFactory";
 import { toast } from "@/shared/components/feedback/Toast";
 import { Badge } from "@/shared/components/ui/badge";
+import { OrderAiEtaCard } from "./OrderAiEtaCard";
 
 interface OrderDetailDrawerProps {
   order: EnrichedOrder | any | null;
@@ -397,6 +398,9 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                 </div>
               )}
             </div>
+
+            {/* AI Dự Báo ETA */}
+            <OrderAiEtaCard order={currentOrder} />
 
             {/* 6. Thời gian cam kết & SLA */}
             <div className="bg-muted/30 border border-border rounded-2xl p-4 space-y-3">

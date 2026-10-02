@@ -24,6 +24,8 @@ import { IncidentTable } from "../components/IncidentTable";
 import { IncidentWorkflowBoard } from "../components/IncidentWorkflowBoard";
 import { IncidentDetailDrawer } from "../components/IncidentDetailDrawer";
 import { CreateIncidentDialog } from "../components/CreateIncidentDialog";
+import { IncidentAiAnomalyIntake } from "../components/IncidentAiAnomalyIntake";
+import { toast } from "@/shared/components/feedback/Toast";
 import {
   type Incident,
   INCIDENT_TYPE_LABELS,
@@ -81,6 +83,14 @@ export const IncidentsPage: React.FC = () => {
     }
   };
 
+  const handleCreateFromAnomaly = (anomaly: any) => {
+    toast.success(
+      "Đã tạo phiếu sự cố thành công từ AI Anomaly!",
+      `Đã ghi nhận sự cố "${anomaly.title}" cho đối tượng ${anomaly.entityRef} với mức độ ${anomaly.severity}.`
+    );
+    refetch();
+  };
+
   return (
     <div className="space-y-5 p-4 sm:p-6 max-w-[1600px] mx-auto">
       {/* 1. Header */}
@@ -122,6 +132,9 @@ export const IncidentsPage: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* AI Anomaly Intake Banner */}
+      <IncidentAiAnomalyIntake onCreateFromAnomaly={handleCreateFromAnomaly} />
 
       {/* 2. Stats Cards */}
       <IncidentStatsCards stats={stats} isLoading={isLoading} />
