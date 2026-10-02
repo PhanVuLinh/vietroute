@@ -106,7 +106,7 @@ export const FloatingAiDrawer: React.FC = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="chat" className="flex-1 min-h-0 m-0">
+              <TabsContent value="chat" className="flex-1 min-h-0 m-0 data-[state=active]:flex data-[state=active]:flex-col h-full overflow-hidden">
                 <AiChatConsole
                   messages={messages}
                   isTyping={isTyping}
