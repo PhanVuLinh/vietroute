@@ -8,6 +8,7 @@ from app.schemas.driver import (
     RecommendedVehicle,
 )
 from app.services.vrp_solver import calculate_haversine_km
+from app.ml.model_loader import ModelLoader
 
 # Danh sách hồ sơ tài xế & phương tiện mẫu chuẩn hóa
 SAMPLE_DRIVERS = [
@@ -113,19 +114,28 @@ class DriverMatcher:
             elif util_pct > 95.0:
                 cap_score = 25.0  # Quá tải
 
-            # Điểm sẵn sàng
-            is_avail = d["status"] == "AVAILABLE"
-            avail_score = 100.0 if is_avail else 50.0
-
-            # Tổng hợp Match Score theo trọng số thực tế
-            match_score = round(
-                prox_score * 0.35
-                + otd_score * 0.25
-                + rating_score * 0.15
-                + cap_score * 0.15
-                + avail_score * 0.10,
-                1,
+            # Thử nghiệm chấm điểm bằng mô hình Machine Learning RandomForest đã huấn luyện
+            loader = ModelLoader.get_instance()
+            ml_score = loader.predict_driver_match_score(
+                proximity_km=dist,
+                otd_rate=float(d["onTimeRate"]),
+                rating=float(d["rating"]),
+                utilization_pct=util_pct,
+                active_trips=2 if not is_avail else 0,
+                is_available=1 if is_avail else 0,
             )
+
+            if ml_score is not None:
+                match_score = ml_score
+            else:
+                match_score = round(
+                    prox_score * 0.35
+                    + otd_score * 0.25
+                    + rating_score * 0.15
+                    + cap_score * 0.15
+                    + avail_score * 0.10,
+                    1,
+                )
             match_score = min(99.4, match_score)
 
             reasoning = []
@@ -139,6 +149,9 @@ class DriverMatcher:
                 reasoning.append("Trực tuyến sẵn sàng")
             if 60.0 <= util_pct <= 85.0:
                 reasoning.append(f"Lấp đầy tải tối ưu ({util_pct}%)")
+            if ml_score is not None:
+                reasoning.append("AI Model Match Verified")
+
 
             rec_veh = RecommendedVehicle(
                 id=v_info["id"],

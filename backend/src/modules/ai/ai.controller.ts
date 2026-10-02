@@ -55,5 +55,15 @@ export class AiController {
   async forecastDemand(@Body() dto: { forecastDays?: number; warehouseId?: string }) {
     return this.aiService.forecastDemand(dto);
   }
+
+  @Get('model-info')
+  async getModelInfo() {
+    return this.aiService.getModelInfo();
+  }
+
+  @Post('train')
+  async triggerTrain() {
+    return this.aiService.triggerTrain();
+  }
 }
 

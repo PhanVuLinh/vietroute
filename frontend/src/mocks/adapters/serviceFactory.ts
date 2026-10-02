@@ -562,6 +562,10 @@ const apiAiService = {
     httpClient.get<AiAnomaliesResponse>("/ai/anomalies"),
   forecastDemand: (dto?: { forecastDays?: number; warehouseId?: string }) =>
     httpClient.post<any>("/ai/forecast-demand", dto || {}),
+  getModelInfo: () =>
+    httpClient.get<any>("/ai/model-info"),
+  trainModels: () =>
+    httpClient.post<any>("/ai/train", {}),
 };
 
 export const aiService = apiAiService;

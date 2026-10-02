@@ -21,6 +21,7 @@ import { AiEtaCalculator } from "../components/AiEtaCalculator";
 import { AiRouteOptimizer } from "../components/AiRouteOptimizer";
 import { AiDriverMatcher } from "../components/AiDriverMatcher";
 import { AiAnomalyMonitor } from "../components/AiAnomalyMonitor";
+import { AiModelTrainer } from "../components/AiModelTrainer";
 
 export const AiAssistantPage: React.FC = () => {
   usePageTitle("Trợ lý AI Logistics & Vận Hành");
@@ -89,6 +90,10 @@ export const AiAssistantPage: React.FC = () => {
               <Calculator className="h-3.5 w-3.5" />
               <span>Dự Báo ETA & Giờ Cao Điểm</span>
             </TabsTrigger>
+            <TabsTrigger value="ml-models" className="gap-1.5 text-xs font-semibold py-1.5 text-primary">
+              <Cpu className="h-3.5 w-3.5 text-primary" />
+              <span>Mô Hình & Huấn Luyện AI (ML Engine)</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Tab 1: Chat Copilot */}
@@ -122,6 +127,11 @@ export const AiAssistantPage: React.FC = () => {
           {/* Tab 5: Dự báo ETA */}
           <TabsContent value="eta" className="m-0">
             <AiEtaCalculator />
+          </TabsContent>
+
+          {/* Tab 6: Quản trị & Huấn luyện mô hình Machine Learning */}
+          <TabsContent value="ml-models" className="m-0">
+            <AiModelTrainer />
           </TabsContent>
         </Tabs>
       </div>
